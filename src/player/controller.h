@@ -16,6 +16,17 @@ namespace player
 class Controller
 {
     public:
+	/// availables commands for the controller
+	enum Command
+	{
+	    PLAY,
+	    STOP,
+	    // sent by the player thread once the sample buffer is empty
+	    PLAYER_DONE,
+	    // sent by the decoder once it started to fill the sample buffer with data
+	    DECODER_WORKING
+	};
+
 	Controller();
 
 	/// returns the current play queue
@@ -27,17 +38,23 @@ class Controller
 	void play();
 	void stop();
 
+	void command(Command cmd);
+
+	/// the mainloop of the controller
 	void run();
 
     private:
-	/// queued files for playing
-	std::vector<std::shared_ptr<library::File>> m_queue;
+	void startPlayback();
 
-	enum Command
-	{
-	    PLAY,
-	    STOP
-	};
+    private:
+	/// queued files for playing
+	std::deque<std::shared_ptr<library::File>> m_queue;
+
+	/// the currently played file
+	std::shared_ptr<library::File> m_currentFile;
+
+	/// the codec used to decode the input file
+	std::shared_ptr<codec::BaseCodec> m_input;
 
 	/// controller commands
 	std::deque<Command> m_commands;

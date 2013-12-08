@@ -1,4 +1,5 @@
 #include "decoder.h"
+#include "controller.h"
 
 #include <thread/blocklock.h>
 
@@ -7,8 +8,9 @@
 using player::Decoder;
 
 // =====================================================================================================================
-Decoder::Decoder(buffer::RingBuffer& buffer)
-    : m_buffer(buffer)
+Decoder::Decoder(buffer::RingBuffer& buffer, Controller& ctrl)
+    : m_buffer(buffer),
+      m_ctrl(ctrl)
 {
 }
 
@@ -38,7 +40,9 @@ void Decoder::run()
 {
     // TODO: this magic number should be a parameter of the decoder
     size_t minBufSize = 2 * sizeof(int16_t) * 44100;
+
     bool working = false;
+    bool notified = false;
 
     while (1)
     {
@@ -63,6 +67,7 @@ void Decoder::run()
 		    }
 
 		    working = true;
+		    notified = false;
 
 		    break;
 
@@ -110,16 +115,19 @@ void Decoder::run()
 		thread::BlockLock bl(m_mutex);
 		m_input.reset();
 
-		// TODO: notify the player
-
 		break;
 	    }
 
 	    size_t size = count * sizeof(int16_t) * input->getChannels();
-	    //std::cerr << "decoder: got " << count << " samples, size=" << size << std::endl;
 
 	    // TODO: handle the return value of write
 	    m_buffer.write(reinterpret_cast<void*>(samples), size);
+
+	    if (!notified)
+	    {
+		m_ctrl.command(Controller::DECODER_WORKING);
+		notified = true;
+	    }
 
 	    if (size < minSize)
 		minSize -= size;

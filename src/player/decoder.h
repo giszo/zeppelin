@@ -12,10 +12,12 @@
 namespace player
 {
 
+class Controller;
+
 class Decoder : public thread::Thread
 {
     public:
-	Decoder(buffer::RingBuffer& buffer);
+	Decoder(buffer::RingBuffer& buffer, Controller& ctrl);
 
 	void setInput(std::shared_ptr<codec::BaseCodec>& input);
 
@@ -41,6 +43,8 @@ class Decoder : public thread::Thread
 	std::shared_ptr<codec::BaseCodec> m_input;
 
 	thread::Mutex m_mutex;
+
+	Controller& m_ctrl;
 };
 
 }

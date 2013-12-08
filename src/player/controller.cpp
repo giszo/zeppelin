@@ -11,8 +11,8 @@ using player::Controller;
 // =====================================================================================================================
 Controller::Controller()
     : m_samples(1 * 1024 * 1024 /* 1Mb for now... */),
-      m_decoder(m_samples),
-      m_player(m_samples)
+      m_decoder(m_samples, *this),
+      m_player(m_samples, *this)
 {
     // start the decoder thread
     m_decoder.start();
@@ -45,23 +45,28 @@ void Controller::queue(const std::shared_ptr<library::File>& file)
 // =====================================================================================================================
 void Controller::play()
 {
-    thread::BlockLock bl(m_mutex);
-    m_commands.push_back(PLAY);
-    m_cond.signal();
+    std::cout << "controller: play" << std::endl;
+    command(PLAY);
 }
 
 // =====================================================================================================================
 void Controller::stop()
 {
+    std::cout << "controller: stop" << std::endl;
+    command(STOP);
+}
+
+// =====================================================================================================================
+void Controller::command(Command cmd)
+{
     thread::BlockLock bl(m_mutex);
-    m_commands.push_back(STOP);
+    m_commands.push_back(cmd);
     m_cond.signal();
 }
 
 // =====================================================================================================================
 void Controller::run()
 {
-    std::shared_ptr<codec::BaseCodec> input;
     std::shared_ptr<output::BaseOutput> output;
 
     // prepare the output
@@ -85,28 +90,7 @@ void Controller::run()
 	switch (cmd)
 	{
 	    case PLAY :
-		if (!input)
-		{
-		    // make sure we have something in the queue to play ...
-		    if (m_queue.empty())
-			break;
-
-		    const std::shared_ptr<library::File>& file = m_queue.front();
-
-		    // open the file
-		    input.reset(new codec::Mp3());
-		    input->open(file->m_path + "/" + file->m_name);
-
-		    // set the input for the decoder thread
-		    m_decoder.setInput(input);
-		}
-
-		// tell the decoder that it's time to work ... :]
-		m_decoder.work();
-
-		// ... start the player as well
-		m_player.play();
-
+		startPlayback();
 		break;
 
 	    case STOP :
@@ -114,8 +98,59 @@ void Controller::run()
 		m_decoder.suspend();
 		m_player.stop();
 		break;
+
+	    case PLAYER_DONE :
+		// force startPlayback() to get the next file from the queue
+		m_currentFile.reset();
+		startPlayback();
+		break;
+
+	    case DECODER_WORKING :
+		// now we can start the player because the decoder started to fill the input buffer
+		m_player.play();
+		break;
 	}
 
 	m_mutex.unlock();
     }
+}
+
+// =====================================================================================================================
+void Controller::startPlayback()
+{
+    // select the next file to play if we have none already
+    while (!m_queue.empty() && !m_currentFile)
+    {
+	// get the next one
+	m_currentFile = m_queue.front();
+	m_queue.pop_front();
+
+	// open the file
+	m_input.reset(new codec::Mp3());
+
+	try
+	{
+	    m_input->open(m_currentFile->m_path + "/" + m_currentFile->m_name);
+	}
+	catch (const codec::CodecException& e)
+	{
+	    // clear everything and try the next one
+	    m_input.reset();
+	    m_currentFile.reset();
+	    continue;
+	}
+
+	std::cout << "Playing file: " << m_currentFile->m_path << "/" << m_currentFile->m_name << std::endl;
+
+	// set the input for the decoder thread
+	m_decoder.setInput(m_input);
+    }
+
+    // can't start playback without a file
+    if (!m_currentFile)
+	return;
+
+    // start the decoder thread here... the player will be started later on once the decoder notifies us
+    // with DECODER_WORKING
+    m_decoder.work();
 }
