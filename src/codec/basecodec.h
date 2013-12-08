@@ -3,6 +3,7 @@
 
 #include <string>
 #include <stdexcept>
+#include <memory>
 
 namespace codec
 {
@@ -13,6 +14,16 @@ class CodecException : public std::runtime_error
 	CodecException(const std::string& error) :
 	    runtime_error(error)
 	{}
+};
+
+struct MediaInfo
+{
+    /// sampling rate
+    int m_rate;
+    /// number of channels
+    int m_channels;
+    /// the number of samples in the resource
+    size_t m_samples;
 };
 
 class BaseCodec
@@ -28,11 +39,16 @@ class BaseCodec
 	/// returns the number of channels in the media stream
 	virtual int getChannels() = 0;
 
+	/// returns informations about the media
+	virtual MediaInfo getMediaInfo() = 0;
+
 	/**
 	 * Decodes the next part of the media stream.
 	 * @return false is returned at the end of the stream
 	 */
 	virtual bool decode(int16_t*& samples, size_t& count) = 0;
+
+	static std::shared_ptr<BaseCodec> openFile(const std::string& file);
 };
 
 }

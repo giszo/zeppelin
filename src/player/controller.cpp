@@ -1,7 +1,6 @@
 #include "controller.h"
 
 #include <output/alsa.h>
-#include <codec/mp3.h>
 #include <thread/blocklock.h>
 
 #include <iostream>
@@ -126,16 +125,11 @@ void Controller::startPlayback()
 	m_queue.pop_front();
 
 	// open the file
-	m_input.reset(new codec::Mp3());
+	m_input = codec::BaseCodec::openFile(m_currentFile->m_path + "/" + m_currentFile->m_name);
 
-	try
+	if (!m_input)
 	{
-	    m_input->open(m_currentFile->m_path + "/" + m_currentFile->m_name);
-	}
-	catch (const codec::CodecException& e)
-	{
-	    // clear everything and try the next one
-	    m_input.reset();
+	    // try the next one if we were not able to open this file
 	    m_currentFile.reset();
 	    continue;
 	}

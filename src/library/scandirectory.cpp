@@ -1,5 +1,7 @@
 #include "scandirectory.h"
 
+#include <utils/stringutils.h>
+
 #include <dirent.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -58,10 +60,7 @@ bool ScanDirectory::isMediaFile(const std::string& name)
     {
 	const std::string& ext = s_mediaExtensions[i];
 
-	if (name.length() < ext.length())
-	    continue;
-
-	if (name.compare(name.length() - ext.length(), ext.length(), ext) == 0)
+	if (utils::StringUtils::endsWith(name, ext))
 	    return true;
     }
 

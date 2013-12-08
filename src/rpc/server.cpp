@@ -71,6 +71,7 @@ void Server::libraryListFiles(const Json::Value& request, Json::Value& response)
 	file["id"] = f.m_id;
 	file["path"] = f.m_path;
 	file["name"] = f.m_name;
+	file["length"] = f.m_length;
 
 	response.append(file);
     }
@@ -109,6 +110,7 @@ void Server::playerQueueGet(const Json::Value& request, Json::Value& response)
 	file["id"] = f->m_id;
 	file["path"] = f->m_path;
 	file["name"] = f->m_name;
+	file["length"] = f->m_length;
 
 	response.append(file);
     }

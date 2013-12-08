@@ -12,16 +12,19 @@ env["LINKFLAGS"] = ["-pthread"]
 
 sources = [
     "output/alsa.cpp",
+    "codec/basecodec.cpp",
     "codec/mp3.cpp",
     "library/musiclibrary.cpp",
     "library/worker.cpp",
     "library/scandirectory.cpp",
+    "library/parsefiles.cpp",
     "rpc/server.cpp",
     "player/player.cpp",
     "player/decoder.cpp",
     "player/controller.cpp",
     "buffer/ringbuffer.cpp",
-    "thread/thread.cpp"
+    "thread/thread.cpp",
+    "utils/stringutils.cpp"
 ]
 
 woms_lib = env.StaticLibrary(

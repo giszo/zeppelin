@@ -15,6 +15,8 @@ Mp3::Mp3()
 // =====================================================================================================================
 Mp3::~Mp3()
 {
+    if (m_handle)
+	mpg123_delete(m_handle);
 }
 
 // =====================================================================================================================
@@ -50,6 +52,27 @@ int Mp3::getRate()
 int Mp3::getChannels()
 {
     return m_channels;
+}
+
+// =====================================================================================================================
+codec::MediaInfo Mp3::getMediaInfo()
+{
+    MediaInfo info;
+
+    info.m_rate = m_rate;
+    info.m_channels = m_channels;
+
+    if (mpg123_scan(m_handle) != MPG123_OK)
+	throw CodecException("unable to scan media");
+
+    off_t samples = mpg123_length(m_handle);
+
+    if (samples == MPG123_ERR)
+	throw CodecException("unable to get media length");
+
+    info.m_samples = samples;
+
+    return info;
 }
 
 // =====================================================================================================================

@@ -19,6 +19,8 @@ class Mp3 : public BaseCodec
 	int getRate() override;
 	int getChannels() override;
 
+	MediaInfo getMediaInfo() override;
+
 	bool decode(int16_t*& samples, size_t& count) override;
 
     private:
