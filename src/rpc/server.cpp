@@ -10,6 +10,7 @@ Server::Server(library::MusicLibrary& library, player::Controller& ctrl)
       m_library(library),
       m_ctrl(ctrl)
 {
+    // library
     bindAndAddMethod(new jsonrpc::Procedure("library_scan_directory",
 					    jsonrpc::PARAMS_BY_NAME,
 					    jsonrpc::JSON_NULL,
@@ -23,6 +24,7 @@ Server::Server(library::MusicLibrary& library, player::Controller& ctrl)
 					    NULL),
 		     &Server::libraryListFiles);
 
+    // player queue
     bindAndAddMethod(new jsonrpc::Procedure("player_queue_file",
 					    jsonrpc::PARAMS_BY_NAME,
 					    jsonrpc::JSON_NULL,
@@ -30,6 +32,13 @@ Server::Server(library::MusicLibrary& library, player::Controller& ctrl)
 					    jsonrpc::JSON_INTEGER,
 					    NULL),
 		     &Server::playerQueueFile);
+    bindAndAddMethod(new jsonrpc::Procedure("player_queue_get",
+					    jsonrpc::PARAMS_BY_NAME,
+					    jsonrpc::JSON_ARRAY,
+					    NULL),
+		     &Server::playerQueueGet);
+
+    // player control
     bindAndAddMethod(new jsonrpc::Procedure("player_play",
 					    jsonrpc::PARAMS_BY_NAME,
 					    jsonrpc::JSON_NULL,
@@ -70,7 +79,7 @@ void Server::libraryListFiles(const Json::Value& request, Json::Value& response)
 // =====================================================================================================================
 void Server::playerQueueFile(const Json::Value& request, Json::Value& response)
 {
-    library::File file;
+    std::shared_ptr<library::File> file;
 
     try
     {
@@ -82,9 +91,27 @@ void Server::playerQueueFile(const Json::Value& request, Json::Value& response)
 	return;
     }
 
-    std::cout << "Queueing file: " << file.m_path << "/" << file.m_name << std::endl;
+    std::cout << "Queueing file: " << file->m_path << "/" << file->m_name << std::endl;
 
     m_ctrl.queue(file);
+}
+
+// =====================================================================================================================
+void Server::playerQueueGet(const Json::Value& request, Json::Value& response)
+{
+    auto queue = m_ctrl.getQueue();
+
+    response = Json::Value(Json::arrayValue);
+
+    for (const auto& f : queue)
+    {
+	Json::Value file(Json::objectValue);
+	file["id"] = f->m_id;
+	file["path"] = f->m_path;
+	file["name"] = f->m_name;
+
+	response.append(file);
+    }
 }
 
 // =====================================================================================================================

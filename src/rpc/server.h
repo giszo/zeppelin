@@ -19,6 +19,8 @@ class Server : public jsonrpc::AbstractServer<Server>
 	void libraryListFiles(const Json::Value& request, Json::Value& response);
 
 	void playerQueueFile(const Json::Value& request, Json::Value& response);
+	void playerQueueGet(const Json::Value& request, Json::Value& response);
+
 	void playerPlay(const Json::Value& request, Json::Value& response);
 	void playerStop(const Json::Value& request, Json::Value& response);
 

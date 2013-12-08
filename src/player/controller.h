@@ -8,7 +8,7 @@
 #include <library/musiclibrary.h>
 #include <thread/condition.h>
 
-#include <deque>
+#include <vector>
 
 namespace player
 {
@@ -18,7 +18,11 @@ class Controller
     public:
 	Controller();
 
-	void queue(const library::File& file);
+	/// returns the current play queue
+	std::vector<std::shared_ptr<library::File>> getQueue();
+
+	/// puts a new file onto the playback queue
+	void queue(const std::shared_ptr<library::File>& file);
 
 	void play();
 	void stop();
@@ -26,7 +30,8 @@ class Controller
 	void run();
 
     private:
-	std::deque<library::File> m_queue;
+	/// queued files for playing
+	std::vector<std::shared_ptr<library::File>> m_queue;
 
 	enum Command
 	{
@@ -34,12 +39,15 @@ class Controller
 	    STOP
 	};
 
+	/// controller commands
 	std::deque<Command> m_commands;
 
-	// buffer for storing decoded samples
+	/// buffer for storing decoded samples
 	buffer::RingBuffer m_samples;
 
+	/// input decoder thread filling the sample buffer
 	Decoder m_decoder;
+	/// player thread putting decoded samples to the output device
 	Player m_player;
 
 	thread::Mutex m_mutex;

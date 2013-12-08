@@ -21,7 +21,22 @@ Controller::Controller()
 }
 
 // =====================================================================================================================
-void Controller::queue(const library::File& file)
+std::vector<std::shared_ptr<library::File>> Controller::getQueue()
+{
+    std::vector<std::shared_ptr<library::File>> q;
+
+    {
+	thread::BlockLock bl(m_mutex);
+
+	for (const auto& file : m_queue)
+	    q.push_back(file);
+    }
+
+    return q;
+}
+
+// =====================================================================================================================
+void Controller::queue(const std::shared_ptr<library::File>& file)
 {
     thread::BlockLock bl(m_mutex);
     m_queue.push_back(file);
@@ -76,11 +91,11 @@ void Controller::run()
 		    if (m_queue.empty())
 			break;
 
-		    library::File& file = m_queue.front();
+		    const std::shared_ptr<library::File>& file = m_queue.front();
 
 		    // open the file
 		    input.reset(new codec::Mp3());
-		    input->open(file.m_path + "/" + file.m_name);
+		    input->open(file->m_path + "/" + file->m_name);
 
 		    // set the input for the decoder thread
 		    m_decoder.setInput(input);

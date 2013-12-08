@@ -15,6 +15,10 @@ namespace library
 
 struct File
 {
+    File(int id, const std::string& path, const std::string& name)
+	: m_id(id), m_path(path), m_name(name)
+    {}
+
     int m_id;
     std::string m_path;
     std::string m_name;
@@ -36,7 +40,7 @@ class MusicLibrary : public DirectoryScannerListener
 
 	void open();
 
-	File getFile(int id);
+	std::shared_ptr<File> getFile(int id);
 	std::vector<File> getFileList();
 
 	void scanDirectory(const std::string& path);

@@ -49,9 +49,9 @@ void MusicLibrary::open()
 }
 
 // =====================================================================================================================
-library::File MusicLibrary::getFile(int id)
+std::shared_ptr<library::File> MusicLibrary::getFile(int id)
 {
-    File file;
+    std::shared_ptr<File> file;
 
     pthread_mutex_lock(&m_lock);
 
@@ -60,11 +60,11 @@ library::File MusicLibrary::getFile(int id)
     if (sqlite3_step(m_getfile) != SQLITE_ROW)
 	throw FileNotFoundException("file not found with ID");
 
-    file = File{
+    file = std::make_shared<File>(
 	id,
 	reinterpret_cast<const char*>(sqlite3_column_text(m_getfile, 0)),
 	reinterpret_cast<const char*>(sqlite3_column_text(m_getfile, 1))
-    };
+    );
 
     sqlite3_reset(m_getfile);
 
