@@ -5,10 +5,10 @@
 using rpc::Server;
 
 // =====================================================================================================================
-Server::Server(library::MusicLibrary& library, player::Player& player)
+Server::Server(library::MusicLibrary& library, player::Controller& ctrl)
     : AbstractServer<Server>(new jsonrpc::HttpServer(8080, false)),
       m_library(library),
-      m_player(player)
+      m_ctrl(ctrl)
 {
     bindAndAddMethod(new jsonrpc::Procedure("library_scan_directory",
 					    jsonrpc::PARAMS_BY_NAME,
@@ -30,6 +30,16 @@ Server::Server(library::MusicLibrary& library, player::Player& player)
 					    jsonrpc::JSON_INTEGER,
 					    NULL),
 		     &Server::playerQueueFile);
+    bindAndAddMethod(new jsonrpc::Procedure("player_play",
+					    jsonrpc::PARAMS_BY_NAME,
+					    jsonrpc::JSON_NULL,
+					    NULL),
+		     &Server::playerPlay);
+    bindAndAddMethod(new jsonrpc::Procedure("player_stop",
+					    jsonrpc::PARAMS_BY_NAME,
+					    jsonrpc::JSON_NULL,
+					    NULL),
+		     &Server::playerStop);
 }
 
 // =====================================================================================================================
@@ -74,5 +84,17 @@ void Server::playerQueueFile(const Json::Value& request, Json::Value& response)
 
     std::cout << "Queueing file: " << file.m_path << "/" << file.m_name << std::endl;
 
-    m_player.queue(file);
+    m_ctrl.queue(file);
+}
+
+// =====================================================================================================================
+void Server::playerPlay(const Json::Value& request, Json::Value& response)
+{
+    m_ctrl.play();
+}
+
+// =====================================================================================================================
+void Server::playerStop(const Json::Value& request, Json::Value& response)
+{
+    m_ctrl.stop();
 }

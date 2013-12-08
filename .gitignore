@@ -3,4 +3,7 @@
 /.sconsign.dblite
 
 /woms
+/libwoms.a
+/unit_test
+
 /library.db

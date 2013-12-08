@@ -1,19 +1,22 @@
 #ifndef PLAYER_PLAYER_H_INCLUDED
 #define PLAYER_PLAYER_H_INCLUDED
 
-#include "queue.h"
+#include <output/baseoutput.h>
+#include <buffer/ringbuffer.h>
+#include <thread/thread.h>
 
-#include "../output/baseoutput.h"
+#include <deque>
+#include <memory>
 
 namespace player
 {
 
-class Player
+class Player : public thread::Thread
 {
     public:
-	Player();
+	Player(buffer::RingBuffer& buffer);
 
-	void queue(const library::File& file);
+	void setOutput(const std::shared_ptr<output::BaseOutput>& output);
 
 	void play();
 	void stop();
@@ -21,9 +24,19 @@ class Player
 	void run();
 
     private:
-	Queue m_queue;
+	enum Command
+	{
+	    PLAY,
+	    STOP
+	};
+
+	std::deque<Command> m_commands;
+
+	buffer::RingBuffer& m_buffer;
 
 	std::shared_ptr<output::BaseOutput> m_output;
+
+	thread::Mutex m_mutex;
 };
 
 }

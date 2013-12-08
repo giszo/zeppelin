@@ -1,10 +1,10 @@
 #ifndef LIBRARY_WORKER_H_INCLUDED
 #define LIBRARY_WORKER_H_INCLUDED
 
+#include <thread/thread.h>
+
 #include <deque>
 #include <memory>
-
-#include <pthread.h>
 
 namespace library
 {
@@ -18,27 +18,21 @@ class BaseWork
 	virtual void run() = 0;
 };
 
-class Worker
+class Worker : public thread::Thread
 {
     public:
 	Worker();
 
 	void add(const std::shared_ptr<BaseWork>& work);
 
-	void start();
-
     private:
-	void run();
-
-	static void* _run(void* p);
+	void run() override;
 
     private:
 	std::deque<std::shared_ptr<BaseWork>> m_queue;
 
 	pthread_mutex_t m_lock;
 	pthread_cond_t m_cond;
-
-	pthread_t m_thread;
 };
 
 }

@@ -2,7 +2,7 @@
 #include "codec/mp3.h"
 #include "library/musiclibrary.h"
 #include "rpc/server.h"
-#include "player/player.h"
+#include "player/controller.h"
 
 #include <iostream>
 
@@ -17,14 +17,14 @@ int main(int argc, char** argv)
     lib.open();
 
     // create the main part of our wonderful player :)
-    player::Player player;
+    player::Controller ctrl;
 
     // start the RPC server
-    rpc::Server server(lib, player);
+    rpc::Server server(lib, ctrl);
     server.StartListening();
 
     // run the main loop of the player
-    player.run();
+    ctrl.run();
 
     mpg123_exit();
 

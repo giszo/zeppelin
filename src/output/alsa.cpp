@@ -30,6 +30,12 @@ int AlsaOutput::getChannels()
 }
 
 // =====================================================================================================================
+int AlsaOutput::getAvailableSize()
+{
+    return snd_pcm_avail_update(m_handle);
+}
+
+// =====================================================================================================================
 void AlsaOutput::setup(int rate, int channels)
 {
     if (snd_pcm_open(&m_handle, "default", SND_PCM_STREAM_PLAYBACK, 0) != 0)
@@ -52,8 +58,19 @@ void AlsaOutput::setup(int rate, int channels)
 }
 
 // =====================================================================================================================
+void AlsaOutput::start()
+{
+    snd_pcm_prepare(m_handle);
+}
+
+// =====================================================================================================================
+void AlsaOutput::stop()
+{
+    snd_pcm_drop(m_handle);
+}
+
+// =====================================================================================================================
 void AlsaOutput::write(const int16_t* samples, size_t count)
 {
     snd_pcm_writei(m_handle, samples, count);
 }
-
