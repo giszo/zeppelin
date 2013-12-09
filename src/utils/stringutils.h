@@ -8,8 +8,9 @@ namespace utils
 
 class StringUtils
 {
-    public:
-	static bool endsWith(const std::string& s, const std::string& ending);
+	public:
+		static bool endsWith(const std::string& s, const std::string& ending);
+		static int toInt(const std::string& s);
 };
 
 }
