@@ -17,8 +17,24 @@ namespace library
 
 struct File
 {
-    File(int id, const std::string& path, const std::string& name, int length)
-	: m_id(id), m_path(path), m_name(name), m_length(length)
+    File(int id, const std::string& path, const std::string& name)
+	: m_id(id),
+	  m_path(path),
+	  m_name(name),
+	  m_length(0),
+	  m_year(0)
+    {}
+
+    File(int id, const std::string& path, const std::string& name,
+	 int length, const std::string& artist, const std::string& album, const std::string& title, int year)
+	: m_id(id),
+	  m_path(path),
+	  m_name(name),
+	  m_length(length),
+	  m_artist(artist),
+	  m_album(album),
+	  m_title(title),
+	  m_year(year)
     {}
 
     int m_id;
@@ -27,6 +43,11 @@ struct File
 
     /// the length of the music file in seconds
     int m_length;
+
+    std::string m_artist;
+    std::string m_album;
+    std::string m_title;
+    int m_year;
 };
 
 class FileNotFoundException : public std::runtime_error
@@ -46,19 +67,15 @@ class MusicLibrary : public DirectoryScannerListener
 	void open();
 
 	std::shared_ptr<File> getFile(int id);
-	std::vector<File> getFileList();
+	std::vector<std::shared_ptr<File>> getFileList();
 
 	/// retuns the given amount of files at most from the library having no metadata yet
-	std::vector<std::shared_ptr<File>> getNewFiles(int amount);
+	std::vector<std::shared_ptr<File>> getFilesWithoutMetadata(int amount);
 
 	void scanDirectory(const std::string& path);
 
-	/**
-	 * Updates the metadate of the given file.
-	 * @param id the ID of the file
-	 * @param length the length of the music file in seconds
-	 */
-	void updateMeta(int id, int length);
+	/// updates the metadate of the given file.
+	void updateMetadata(const library::File& file);
 
 	/// puts a new work onto the queue of the music library
 	void addWork(const std::shared_ptr<BaseWork>& work);
@@ -76,7 +93,7 @@ class MusicLibrary : public DirectoryScannerListener
 	sqlite3_stmt* m_newfile;
 	sqlite3_stmt* m_getfile;
 	sqlite3_stmt* m_listfiles;
-	sqlite3_stmt* m_getnewfiles;
+	sqlite3_stmt* m_getnometafiles;
 	sqlite3_stmt* m_updatemeta;
 
 	// mutex for the music database

@@ -60,7 +60,7 @@ void Server::libraryScanDirectory(const Json::Value& request, Json::Value& respo
 // =====================================================================================================================
 void Server::libraryListFiles(const Json::Value& request, Json::Value& response)
 {
-    std::vector<library::File> files = m_library.getFileList();
+    std::vector<std::shared_ptr<library::File>> files = m_library.getFileList();
     std::cout << "files: " << files.size() << std::endl;
 
     response = Json::Value(Json::arrayValue);
@@ -68,11 +68,14 @@ void Server::libraryListFiles(const Json::Value& request, Json::Value& response)
     for (const auto& f : files)
     {
 	Json::Value file(Json::objectValue);
-	file["id"] = f.m_id;
-	file["path"] = f.m_path;
-	file["name"] = f.m_name;
-	file["length"] = f.m_length;
-
+	file["id"] = f->m_id;
+	file["path"] = f->m_path;
+	file["name"] = f->m_name;
+	file["length"] = f->m_length;
+	file["artist"] = f->m_artist;
+	file["album"] = f->m_album;
+	file["title"] = f->m_title;
+	file["year"] = f->m_year;
 	response.append(file);
     }
 }

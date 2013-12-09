@@ -16,7 +16,7 @@ class CodecException : public std::runtime_error
 	{}
 };
 
-struct MediaInfo
+struct Metadata
 {
     /// sampling rate
     int m_rate;
@@ -24,6 +24,11 @@ struct MediaInfo
     int m_channels;
     /// the number of samples in the resource
     size_t m_samples;
+
+    std::string m_artist;
+    std::string m_album;
+    std::string m_title;
+    int m_year;
 };
 
 class BaseCodec
@@ -40,7 +45,7 @@ class BaseCodec
 	virtual int getChannels() = 0;
 
 	/// returns informations about the media
-	virtual MediaInfo getMediaInfo() = 0;
+	virtual Metadata getMetadata() = 0;
 
 	/**
 	 * Decodes the next part of the media stream.

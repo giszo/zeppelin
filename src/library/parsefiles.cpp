@@ -19,12 +19,12 @@ void ParseFiles::run()
     std::vector<std::shared_ptr<library::File>> files;
 
     // get a set of new files to work on
-    files = m_library.getNewFiles(10 /* 10 files per round */);
+    files = m_library.getFilesWithoutMetadata(10 /* 10 files per round */);
 
     for (const auto& f : files)
     {
-	if (!parse(*f))
-	    m_library.updateMeta(f->m_id, 0);
+	parse(*f);
+	m_library.updateMetadata(*f);
     }
 
     // schedule a new round of file parsing work if the currnet one got files because there could be more ...
@@ -33,31 +33,29 @@ void ParseFiles::run()
 }
 
 // =====================================================================================================================
-bool ParseFiles::parse(const library::File& file)
+void ParseFiles::parse(library::File& file)
 {
     std::cout << "Parsing meta information of " << file.m_path << "/" << file.m_name << std::endl;
 
     std::shared_ptr<codec::BaseCodec> codec = codec::BaseCodec::openFile(file.m_path + "/" + file.m_name);
 
     if (!codec)
-	return false;
+	return;
 
-    codec::MediaInfo info;
+    codec::Metadata meta;
 
     try
     {
-	info = codec->getMediaInfo();
+	meta = codec->getMetadata();
     }
     catch (const codec::CodecException& e)
     {
-	return false;
+	return;
     }
 
-    size_t seconds = info.m_samples / info.m_rate;
-    std::cout << "Length: " << seconds << " secs" << std::endl;
-
-    // update the metadate of the file
-    m_library.updateMeta(file.m_id, seconds);
-
-    return true;
+    file.m_length = meta.m_samples / meta.m_rate;
+    file.m_artist = meta.m_artist;
+    file.m_album = meta.m_album;
+    file.m_title = meta.m_title;
+    file.m_year = meta.m_year;
 }

@@ -1,5 +1,7 @@
 #include "mp3.h"
 
+#include <iostream>
+
 using codec::Mp3;
 using codec::CodecException;
 
@@ -55,9 +57,9 @@ int Mp3::getChannels()
 }
 
 // =====================================================================================================================
-codec::MediaInfo Mp3::getMediaInfo()
+codec::Metadata Mp3::getMetadata()
 {
-    MediaInfo info;
+    Metadata info;
 
     info.m_rate = m_rate;
     info.m_channels = m_channels;
@@ -71,6 +73,24 @@ codec::MediaInfo Mp3::getMediaInfo()
 	throw CodecException("unable to get media length");
 
     info.m_samples = samples;
+
+    // TODO: support ID3 v1
+
+    mpg123_id3v2* id3_v2;
+
+    if (mpg123_id3(m_handle, NULL, &id3_v2) != MPG123_OK)
+	throw CodecException("unable to get id3");
+
+    if (id3_v2)
+    {
+	if (id3_v2->artist)
+	    info.m_artist = id3_v2->artist->p;
+	if (id3_v2->album)
+	    info.m_album = id3_v2->album->p;
+	if (id3_v2->title)
+	    info.m_title = id3_v2->title->p;
+	// TODO: handle year
+    }
 
     return info;
 }

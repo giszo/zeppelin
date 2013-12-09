@@ -20,7 +20,7 @@ class ParseFiles : public BaseWork
 	void run() override;
 
     private:
-	bool parse(const library::File& file);
+	void parse(library::File& file);
 
     private:
 	MusicLibrary& m_library;
