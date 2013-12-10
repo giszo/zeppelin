@@ -2,6 +2,8 @@
 
 #include <utils/stringutils.h>
 
+#include <iostream>
+
 #include <dirent.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -22,6 +24,8 @@ ScanDirectory::ScanDirectory(const std::string& path, DirectoryScannerListener& 
 // =====================================================================================================================
 void ScanDirectory::run()
 {
+    std::cout << "Scanning directory: " << m_path << std::endl;
+
     // open the directory
     DIR* dir = opendir(m_path.c_str());
 
