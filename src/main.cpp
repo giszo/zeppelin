@@ -2,6 +2,7 @@
 #include <codec/mp3.h>
 #include <library/musiclibrary.h>
 #include <library/parsefiles.h>
+#include <library/sqlitestorage.h>
 #include <rpc/server.h>
 #include <player/controller.h>
 
@@ -14,8 +15,19 @@ int main(int argc, char** argv)
     mpg123_init();
 
     // open the music library
-    library::MusicLibrary lib;
-    lib.open();
+    library::SqliteStorage storage;
+
+    try
+    {
+	storage.open();
+    }
+    catch (const library::StorageException& e)
+    {
+	std::cerr << "Unable to open music library storage: " << e.what() << std::endl;
+	return 1;
+    }
+
+    library::MusicLibrary lib(storage);
 
     // try to parse the metadate of new files
     lib.addWork(std::make_shared<library::ParseFiles>(lib));

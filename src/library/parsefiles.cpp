@@ -19,12 +19,12 @@ void ParseFiles::run()
     std::vector<std::shared_ptr<library::File>> files;
 
     // get a set of new files to work on
-    files = m_library.getFilesWithoutMetadata(10 /* 10 files per round */);
+    files = m_library.getStorage().getFilesWithoutMetadata(10 /* 10 files per round */);
 
     for (const auto& f : files)
     {
 	parse(*f);
-	m_library.updateMetadata(*f);
+	m_library.getStorage().updateFileMetadata(*f);
     }
 
     // schedule a new round of file parsing work if the currnet one got files because there could be more ...

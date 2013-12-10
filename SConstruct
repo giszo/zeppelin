@@ -18,6 +18,7 @@ sources = [
     "library/worker.cpp",
     "library/scandirectory.cpp",
     "library/parsefiles.cpp",
+    "library/sqlitestorage.cpp",
     "rpc/server.cpp",
     "player/player.cpp",
     "player/decoder.cpp",

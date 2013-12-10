@@ -18,6 +18,12 @@ class Server : public jsonrpc::AbstractServer<Server>
 	void libraryScanDirectory(const Json::Value& request, Json::Value& response);
 	void libraryListFiles(const Json::Value& request, Json::Value& response);
 
+	// library - artists
+	void libraryGetArtists(const Json::Value& request, Json::Value& response);
+
+	// library - albums
+	void libraryGetAlbums(const Json::Value& request, Json::Value& response);
+
 	void playerQueueFile(const Json::Value& request, Json::Value& response);
 	void playerQueueGet(const Json::Value& request, Json::Value& response);
 
