@@ -17,8 +17,15 @@ def call(method, params) :
         "id" : 1,
         "params" : params
     }
-    urlopen('http://localhost:8080', json.dumps(req).encode('utf-8'))
+    f = urlopen('http://localhost:8080', json.dumps(req).encode('utf-8'))
+    print f.read()
 
+def lib_list() :
+    call('library_list_files', {})
+
+def queue_list() :
+    call('player_queue_get', {})
+	
 def queue(id) :
     call('player_queue_file', {'id' : id})
 
@@ -40,3 +47,7 @@ elif cmd == "play" :
     play()
 elif cmd == "stop" :
     stop()
+elif cmd == "lib_list" :
+    lib_list()
+elif cmd == "queue_list" :
+    queue_list()
