@@ -29,6 +29,9 @@ def lib_artists() :
 def lib_albums() :
     call('library_get_albums', {})
 
+def lib_albums_by_artist(id) :
+    call('library_get_albums_by_artist', {'artist_id' : id})
+
 def queue_list() :
     call('player_queue_get', {})
 
@@ -59,5 +62,8 @@ elif cmd == "lib_artists" :
     lib_artists()
 elif cmd == "lib_albums" :
     lib_albums()
+elif cmd == "lib_albums_by_artist" :
+    if len(sys.argv) >= 3 :
+        lib_albums_by_artist(int(sys.argv[2]))
 elif cmd == "queue_list" :
     queue_list()

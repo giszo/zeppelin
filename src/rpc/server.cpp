@@ -37,6 +37,13 @@ Server::Server(library::MusicLibrary& library, player::Controller& ctrl)
 					    jsonrpc::JSON_ARRAY,
 					    NULL),
 		     &Server::libraryGetAlbums);
+    bindAndAddMethod(new jsonrpc::Procedure("library_get_albums_by_artist",
+					    jsonrpc::PARAMS_BY_NAME,
+					    jsonrpc::JSON_ARRAY,
+					    "artist_id",
+					    jsonrpc::JSON_INTEGER,
+					    NULL),
+		     &Server::libraryGetAlbumsByArtist);
 
     // player queue
     bindAndAddMethod(new jsonrpc::Procedure("player_queue_file",
@@ -126,6 +133,23 @@ void Server::libraryGetAlbums(const Json::Value& request, Json::Value& response)
 	album["name"] = a->m_name;
 	album["artist_id"] = a->m_artist.m_id;
 	album["artist_name"] = a->m_artist.m_name;
+
+	response.append(album);
+    }
+}
+
+// =====================================================================================================================
+void Server::libraryGetAlbumsByArtist(const Json::Value& request, Json::Value& response)
+{
+    auto albums = m_library.getStorage().getAlbumsByArtist(request["artist_id"].asInt());
+
+    response = Json::Value(Json::arrayValue);
+
+    for (const auto& a : albums)
+    {
+	Json::Value album(Json::objectValue);
+	album["id"] = a->m_id;
+	album["name"] = a->m_name;
 
 	response.append(album);
     }

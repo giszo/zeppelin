@@ -30,6 +30,12 @@ struct Artist
 
 struct Album
 {
+    Album(int id, const std::string& name)
+	: m_id(id),
+	  m_name(name),
+	  m_artist(-1, "")
+    {}
+
     Album(int id, const std::string& name, int artistId, const std::string& artistName)
 	: m_id(id),
 	  m_name(name),
@@ -108,6 +114,8 @@ class Storage
 
 	/// returns the available albums from the database (without artist filtering)
 	virtual std::vector<std::shared_ptr<Album>> getAlbums() = 0;
+	/// returns the available albums associated to the given artist
+	virtual std::vector<std::shared_ptr<Album>> getAlbumsByArtist(int artistId) = 0;
 };
 
 }

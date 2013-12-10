@@ -32,6 +32,7 @@ class SqliteStorage : public Storage
 	std::vector<std::shared_ptr<Artist>> getArtists() override;
 
 	std::vector<std::shared_ptr<Album>> getAlbums() override;
+	std::vector<std::shared_ptr<Album>> getAlbumsByArtist(int artistId) override;
 
     private:
 	void execute(const std::string& sql);
@@ -60,8 +61,9 @@ class SqliteStorage : public Storage
 
 	/// album handling
 	sqlite3_stmt* m_addAlbum;
-	sqlite3_stmt* m_getAlbums;
 	sqlite3_stmt* m_getAlbumByName;
+	sqlite3_stmt* m_getAlbums;
+	sqlite3_stmt* m_getAlbumsByArtist;
 
 	// mutex for the music database
 	thread::Mutex m_mutex;

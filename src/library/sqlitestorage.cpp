@@ -80,9 +80,10 @@ void SqliteStorage::open()
 
     // albums
     prepareStatement(&m_addAlbum, "INSERT OR IGNORE INTO albums(artist_id, name) VALUES(?, ?)");
+    prepareStatement(&m_getAlbumByName, "SELECT id FROM albums WHERE artist_id = ? AND name = ?");
     prepareStatement(&m_getAlbums, R"(SELECT albums.id, albums.name, artists.id, artists.name
                                       FROM albums LEFT JOIN artists ON albums.artist_id = artists.id)");
-    prepareStatement(&m_getAlbumByName, "SELECT id FROM albums WHERE artist_id = ? AND name = ?");
+    prepareStatement(&m_getAlbumsByArtist, "SELECT id, name FROM albums WHERE artist_id = ?");
 }
 
 // =====================================================================================================================
@@ -279,6 +280,28 @@ std::vector<std::shared_ptr<library::Album>> SqliteStorage::getAlbums()
     }
 
     sqlite3_reset(m_getAlbums);
+
+    return albums;
+}
+
+// =====================================================================================================================
+std::vector<std::shared_ptr<library::Album>> SqliteStorage::getAlbumsByArtist(int artistId)
+{
+    std::vector<std::shared_ptr<Album>> albums;
+
+    thread::BlockLock bl(m_mutex);
+
+    sqlite3_bind_int(m_getAlbumsByArtist, 1, artistId);
+
+    while (sqlite3_step(m_getAlbumsByArtist) == SQLITE_ROW)
+    {
+	std::shared_ptr<Album> album = std::make_shared<Album>(
+	    sqlite3_column_int(m_getAlbumsByArtist, 0),
+	    getText(m_getAlbumsByArtist, 1));
+	albums.push_back(album);
+    }
+
+    sqlite3_reset(m_getAlbumsByArtist);
 
     return albums;
 }
