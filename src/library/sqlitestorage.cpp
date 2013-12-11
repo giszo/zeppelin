@@ -61,13 +61,14 @@ void SqliteStorage::open()
                         FROM files LEFT JOIN albums  ON albums.id = files.album_id
                                    LEFT JOIN artists ON artists.id = files.artist_id
                         WHERE files.id = ?)");
+    prepareStatement(&m_getFileByPath, "SELECT id FROM files WHERE path = ? AND name = ?");
     prepareStatement(&m_getFiles,
                      R"(SELECT files.id, files.path, files.name, files.length, files.title, files.year,
                                albums.name,
                                artists.name
                         FROM files LEFT JOIN albums  ON albums.id = files.album_id
                                    LEFT JOIN artists ON artists.id = files.artist_id)");
-    prepareStatement(&m_getFilesWithoutMeta, "SELECT id, path, name FROM files WHERE length IS NULL LIMIT ?");
+    prepareStatement(&m_getFilesWithoutMeta, "SELECT id, path, name FROM files WHERE length IS NULL");
     prepareStatement(&m_updateFileMeta,
                      R"(UPDATE files
                         SET artist_id = ?, album_id = ?, length = ?, title = ?, year = ?
@@ -87,14 +88,32 @@ void SqliteStorage::open()
 }
 
 // =====================================================================================================================
-void SqliteStorage::addFile(File& file)
+bool SqliteStorage::addFile(File& file)
 {
+    int r;
+
     thread::BlockLock bl(m_mutex);
 
+    // first check whether the file already exists
+    bindText(m_getFileByPath, 1, file.m_path);
+    bindText(m_getFileByPath, 2, file.m_name);
+    r = sqlite3_step(m_getFileByPath);
+    sqlite3_reset(m_getFileByPath);
+
+    // the file was found ...
+    if (r == SQLITE_ROW)
+	return false;
+
+    // add the new file
     bindText(m_newFile, 1, file.m_path);
     bindText(m_newFile, 2, file.m_name);
     sqlite3_step(m_newFile);
     sqlite3_reset(m_newFile);
+
+    // set the ID of the new file
+    file.m_id = sqlite3_last_insert_rowid(m_db);
+
+    return true;
 }
 
 // =====================================================================================================================
@@ -153,14 +172,12 @@ std::vector<std::shared_ptr<library::File>> SqliteStorage::getFiles()
 }
 
 // =====================================================================================================================
-std::vector<std::shared_ptr<library::File>> SqliteStorage::getFilesWithoutMetadata(int amount)
+std::vector<std::shared_ptr<library::File>> SqliteStorage::getFilesWithoutMetadata()
 {
     int r;
     std::vector<std::shared_ptr<File>> files;
 
     thread::BlockLock bl(m_mutex);
-
-    sqlite3_bind_int(m_getFilesWithoutMeta, 1, amount);
 
     while ((r = sqlite3_step(m_getFilesWithoutMeta)) == SQLITE_ROW)
     {

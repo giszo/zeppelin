@@ -18,7 +18,7 @@ class Server : public jsonrpc::AbstractServer<Server>
 	       config::RPC& config);
 
     private:
-	void libraryScanDirectory(const Json::Value& request, Json::Value& response);
+	void libraryScan(const Json::Value& request, Json::Value& response);
 	void libraryListFiles(const Json::Value& request, Json::Value& response);
 
 	// library - artists

@@ -96,15 +96,18 @@ class Storage
 	virtual ~Storage()
 	{}
 
-	/// adds a new file to the storage
-	virtual void addFile(File& file) = 0;
+	/**
+	 * Adds a new file to the storage.
+	 * @return true if this is a new file
+	 */
+	virtual bool addFile(File& file) = 0;
 
 	/// returns the file informations associated to the given ID
 	virtual std::shared_ptr<File> getFile(int id) = 0;
 	/// returns all of the files from the underlying storage
 	virtual std::vector<std::shared_ptr<File>> getFiles() = 0;
 	/// retuns the given amount of files at most from the library having no metadata yet
-	virtual std::vector<std::shared_ptr<File>> getFilesWithoutMetadata(int amount) = 0;
+	virtual std::vector<std::shared_ptr<File>> getFilesWithoutMetadata() = 0;
 
 	/// updates the metadate of the given file.
 	virtual void updateFileMetadata(const File& file) = 0;

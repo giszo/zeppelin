@@ -3,14 +3,16 @@
 #include <iostream>
 
 using library::MusicLibrary;
-using library::ScanDirectory;
 
 // =====================================================================================================================
-MusicLibrary::MusicLibrary(Storage& storage)
-    : m_storage(storage)
+MusicLibrary::MusicLibrary(Storage& storage, const config::Library& config)
+    : m_roots(config.m_root),
+      m_scanner(*this),
+      m_metaParser(*this),
+      m_storage(storage)
 {
-    // start the thread of the worker
-    m_worker.start();
+    m_scanner.start();
+    m_metaParser.start();
 }
 
 // =====================================================================================================================
@@ -20,28 +22,19 @@ library::Storage& MusicLibrary::getStorage()
 }
 
 // =====================================================================================================================
-void MusicLibrary::scanDirectory(const std::string& path)
+void MusicLibrary::scan()
 {
-    addWork(std::make_shared<ScanDirectory>(path, *this));
-}
-
-// =====================================================================================================================
-void MusicLibrary::addWork(const std::shared_ptr<BaseWork>& work)
-{
-    m_worker.add(work);
-}
-
-// =====================================================================================================================
-void MusicLibrary::directoryFound(const std::string& path)
-{
-    // recursively scan sub-directories
-    scanDirectory(path);
+    // scan all of the configured root directories
+    for (const auto& r : m_roots)
+	m_scanner.add(r);
 }
 
 // =====================================================================================================================
 void MusicLibrary::musicFound(const std::string& path, const std::string& name)
 {
-    // add the new file to the library
-    File file(-1, path, name);
-    m_storage.addFile(file);
+    std::shared_ptr<File> file = std::make_shared<File>(-1, path, name);
+
+    // add the file into the library and start metadata parsing if it is a new one
+    if (m_storage.addFile(*file))
+	m_metaParser.add(file);
 }

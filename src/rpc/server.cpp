@@ -13,13 +13,11 @@ Server::Server(library::MusicLibrary& library,
       m_ctrl(ctrl)
 {
     // library
-    bindAndAddMethod(new jsonrpc::Procedure("library_scan_directory",
+    bindAndAddMethod(new jsonrpc::Procedure("library_scan",
 					    jsonrpc::PARAMS_BY_NAME,
 					    jsonrpc::JSON_NULL,
-					    "path",
-					    jsonrpc::JSON_STRING,
 					    NULL),
-		     &Server::libraryScanDirectory);
+		     &Server::libraryScan);
     bindAndAddMethod(new jsonrpc::Procedure("library_list_files",
 					    jsonrpc::PARAMS_BY_NAME,
 					    jsonrpc::JSON_ARRAY,
@@ -75,9 +73,9 @@ Server::Server(library::MusicLibrary& library,
 }
 
 // =====================================================================================================================
-void Server::libraryScanDirectory(const Json::Value& request, Json::Value& response)
+void Server::libraryScan(const Json::Value& request, Json::Value& response)
 {
-    m_library.scanDirectory(request["path"].asString());
+    m_library.scan();
 }
 
 // =====================================================================================================================

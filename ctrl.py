@@ -20,6 +20,9 @@ def call(method, params) :
     f = urlopen('http://localhost:8080', json.dumps(req).encode('utf-8'))
     print(f.read())
 
+def lib_scan() :
+    call('library_scan', {})
+
 def lib_list() :
     call('library_list_files', {})
 
@@ -56,6 +59,8 @@ elif cmd == "play" :
     play()
 elif cmd == "stop" :
     stop()
+elif cmd == "lib_scan" :
+    lib_scan()
 elif cmd == "lib_list" :
     lib_list()
 elif cmd == "lib_artists" :

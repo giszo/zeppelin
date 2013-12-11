@@ -21,11 +21,11 @@ class SqliteStorage : public Storage
 
 	void open();
 
-	void addFile(File& file) override;
+	bool addFile(File& file) override;
 
 	std::shared_ptr<File> getFile(int id) override;
 	std::vector<std::shared_ptr<library::File>> getFiles() override;
-	std::vector<std::shared_ptr<library::File>> getFilesWithoutMetadata(int amount) override;
+	std::vector<std::shared_ptr<library::File>> getFilesWithoutMetadata() override;
 
 	void updateFileMetadata(const library::File& file) override;
 
@@ -49,6 +49,7 @@ class SqliteStorage : public Storage
 	sqlite3_stmt* m_newFile;
 
 	sqlite3_stmt* m_getFile;
+	sqlite3_stmt* m_getFileByPath;
 	sqlite3_stmt* m_getFiles;
 	sqlite3_stmt* m_getFilesWithoutMeta;
 

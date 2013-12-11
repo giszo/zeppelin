@@ -1,30 +1,32 @@
 #ifndef LIBRARY_MUSICLIBRARY_H_INCLUDED
 #define LIBRARY_MUSICLIBRARY_H_INCLUDED
 
-#include "worker.h"
-#include "scandirectory.h"
+#include "scanner.h"
 #include "storage.h"
+#include "metaparser.h"
+
+#include <config/config.h>
 
 namespace library
 {
 
-class MusicLibrary : public DirectoryScannerListener
+class MusicLibrary : public ScannerListener
 {
     public:
-	MusicLibrary(Storage& storage);
+	MusicLibrary(Storage& storage, const config::Library& config);
 
 	Storage& getStorage();
 
-	void scanDirectory(const std::string& path);
+	void scan();
 
-	/// puts a new work onto the queue of the music library
-	void addWork(const std::shared_ptr<BaseWork>& work);
-
-	void directoryFound(const std::string& path) override;
 	void musicFound(const std::string& path, const std::string& name) override;
 
     private:
-	Worker m_worker;
+	/// configured root directories for searching music files
+	std::vector<std::string> m_roots;
+
+	Scanner m_scanner;
+	MetaParser m_metaParser;
 
 	/// music library storage
 	Storage& m_storage;

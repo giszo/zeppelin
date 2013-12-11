@@ -1,7 +1,6 @@
 #include <output/alsa.h>
 #include <codec/mp3.h>
 #include <library/musiclibrary.h>
-#include <library/parsefiles.h>
 #include <library/sqlitestorage.h>
 #include <rpc/server.h>
 #include <player/controller.h>
@@ -48,10 +47,7 @@ int main(int argc, char** argv)
 	return 1;
     }
 
-    library::MusicLibrary lib(storage);
-
-    // try to parse the metadate of new files
-    lib.addWork(std::make_shared<library::ParseFiles>(lib));
+    library::MusicLibrary lib(storage, config.m_library);
 
     // create the main part of our wonderful player :)
     player::Controller ctrl;
