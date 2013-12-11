@@ -7,6 +7,11 @@ env["CPPPATH"] = ["../libjson-rpc-cpp-lib/include", "src"]
 env["LIBPATH"] = ["../libjson-rpc-cpp-lib/lib"]
 env["LINKFLAGS"] = ["-pthread"]
 
+env["CXXCOMSTR"] = "Compiling $SOURCE"
+env["ARCOMSTR"] = "Creating $TARGET"
+env["RANLIBCOMSTR"] = "Indexing $TARGET"
+env["LINKCOMSTR"] = "Linking $TARGET"
+
 ########################################################################################################################
 # application library
 
