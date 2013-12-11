@@ -5,8 +5,10 @@
 using rpc::Server;
 
 // =====================================================================================================================
-Server::Server(library::MusicLibrary& library, player::Controller& ctrl)
-    : AbstractServer<Server>(new jsonrpc::HttpServer(8080, false, "", 3 /* use 3 worker threads */)),
+Server::Server(library::MusicLibrary& library,
+	       player::Controller& ctrl,
+	       config::RPC& config)
+    : AbstractServer<Server>(new jsonrpc::HttpServer(config.m_port, false, "", 3 /* use 3 worker threads */)),
       m_library(library),
       m_ctrl(ctrl)
 {

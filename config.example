@@ -1,0 +1,9 @@
+{
+    "rpc" : {
+        "address" : "",
+        "port" : 8080
+    },
+    "library" : {
+        "root" : [""]
+    }
+}

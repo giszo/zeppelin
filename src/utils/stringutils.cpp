@@ -16,7 +16,11 @@ bool StringUtils::endsWith(const std::string& s, const std::string& ending)
 // =====================================================================================================================
 int StringUtils::toInt(const std::string& s)
 {
-	int result = 0;
-	std::stringstream(s) >> result;
-	return result;
+    int result;
+    std::stringstream ss;
+    ss << s;
+    ss >> result;
+    if (ss.fail())
+	throw NumberFormatException("invalid number");
+    return result;
 }

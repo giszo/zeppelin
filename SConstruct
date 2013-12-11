@@ -30,7 +30,8 @@ sources = [
     "player/controller.cpp",
     "buffer/ringbuffer.cpp",
     "thread/thread.cpp",
-    "utils/stringutils.cpp"
+    "utils/stringutils.cpp",
+    "config/parser.cpp"
 ]
 
 woms_lib = env.StaticLibrary(

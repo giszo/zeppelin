@@ -84,17 +84,26 @@ codec::Metadata Mp3::getMetadata()
     if (mpg123_id3(m_handle, NULL, &id3_v2) != MPG123_OK)
 	throw CodecException("unable to get id3");
 
-	if (id3_v2)
+    if (id3_v2)
+    {
+	if (id3_v2->artist)
+	    info.m_artist = id3_v2->artist->p;
+	if (id3_v2->album)
+	    info.m_album = id3_v2->album->p;
+	if (id3_v2->title)
+	    info.m_title = id3_v2->title->p;
+	if (id3_v2->year)
 	{
-		if (id3_v2->artist)
-			info.m_artist = id3_v2->artist->p;
-		if (id3_v2->album)
-			info.m_album = id3_v2->album->p;
-		if (id3_v2->title)
-			info.m_title = id3_v2->title->p;
-		if (id3_v2->year)
-			info.m_year = StringUtils::toInt(id3_v2->year->p);
+	    try
+	    {
+		info.m_year = StringUtils::toInt(id3_v2->year->p);
+	    }
+	    catch (const utils::NumberFormatException& e)
+	    {
+		info.m_year = 0;
+	    }
 	}
+    }
 
     return info;
 }

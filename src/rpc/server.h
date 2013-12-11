@@ -3,6 +3,7 @@
 
 #include <library/musiclibrary.h>
 #include <player/controller.h>
+#include <config/config.h>
 
 #include <jsonrpc/rpc.h>
 
@@ -12,7 +13,9 @@ namespace rpc
 class Server : public jsonrpc::AbstractServer<Server>
 {
     public:
-	Server(library::MusicLibrary& library, player::Controller& ctrl);
+	Server(library::MusicLibrary& library,
+	       player::Controller& ctrl,
+	       config::RPC& config);
 
     private:
 	void libraryScanDirectory(const Json::Value& request, Json::Value& response);

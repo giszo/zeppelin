@@ -5,14 +5,35 @@
 #include <library/sqlitestorage.h>
 #include <rpc/server.h>
 #include <player/controller.h>
+#include <config/parser.h>
 
 #include <iostream>
 
 // =====================================================================================================================
 int main(int argc, char** argv)
 {
+    if (argc != 2)
+    {
+	std::cerr << "Config parameter missing!" << std::endl;
+	return 1;
+    }
+
     // perform global initialization
     mpg123_init();
+
+    // load configuration
+    config::Config config;
+    config::Parser parser(argv[1]);
+
+    try
+    {
+	config = parser.parse();
+    }
+    catch (const config::ConfigException& e)
+    {
+	std::cerr << "Unable to load configuration: " << e.what() << std::endl;
+	return 1;
+    }
 
     // open the music library
     library::SqliteStorage storage;
@@ -36,7 +57,7 @@ int main(int argc, char** argv)
     player::Controller ctrl;
 
     // start the RPC server
-    rpc::Server server(lib, ctrl);
+    rpc::Server server(lib, ctrl, config.m_rpc);
     server.StartListening();
 
     // run the main loop of the player
