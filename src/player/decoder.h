@@ -1,9 +1,10 @@
 #ifndef PLAYER_DECODER_H_INCLUDED
 #define PLAYER_DECODER_H_INCLUDED
 
+#include "fifo.h"
+
 #include <thread/thread.h>
 #include <thread/mutex.h>
-#include <buffer/ringbuffer.h>
 #include <codec/basecodec.h>
 
 #include <memory>
@@ -17,14 +18,12 @@ class Controller;
 class Decoder : public thread::Thread
 {
     public:
-	Decoder(buffer::RingBuffer& buffer, Controller& ctrl);
+	Decoder(Fifo& fifo, Controller& ctrl);
 
-	void setInput(std::shared_ptr<codec::BaseCodec>& input);
+	void setInput(const std::shared_ptr<codec::BaseCodec>& input);
 
-	// notifies the decoder thread to start working
-	void work();
-	// notifies the decoder thread to suspend its job
-	void suspend();
+	void startDecoding();
+	void stopDecoding();
 
     private:
 	void run() override;
@@ -32,13 +31,14 @@ class Decoder : public thread::Thread
     private:
 	enum Command
 	{
-	    WORK,
-	    SUSPEND
+	    START,
+	    STOP
 	};
 
 	std::deque<Command> m_commands;
 
-	buffer::RingBuffer& m_buffer;
+	/// samples will be put into this container
+	Fifo& m_fifo;
 
 	std::shared_ptr<codec::BaseCodec> m_input;
 

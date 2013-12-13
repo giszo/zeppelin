@@ -31,7 +31,10 @@ class Server : public jsonrpc::AbstractServer<Server>
 	void playerQueueFile(const Json::Value& request, Json::Value& response);
 	void playerQueueGet(const Json::Value& request, Json::Value& response);
 
+	void playerStatus(const Json::Value& request, Json::Value& response);
+
 	void playerPlay(const Json::Value& request, Json::Value& response);
+	void playerPause(const Json::Value& request, Json::Value& response);
 	void playerStop(const Json::Value& request, Json::Value& response);
 
     private:

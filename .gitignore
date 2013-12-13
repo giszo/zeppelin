@@ -1,9 +1,12 @@
 *.o
+*.pyc
 
 /.sconsign.dblite
 
 /woms
 /libwoms.a
 /unit_test
+
+/cli/__pycache__
 
 /library.db

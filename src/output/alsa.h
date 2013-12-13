@@ -17,12 +17,11 @@ class AlsaOutput : public BaseOutput
 	int getRate() override;
 	int getChannels() override;
 
-	int getAvailableSize() override;
+	int getFreeSize() override;
 
 	void setup(int rate, int channels) override;
 
-	void start() override;
-	void stop() override;
+	void drop() override;
 
 	void write(const int16_t* samples, size_t count) override;
 

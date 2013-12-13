@@ -8,31 +8,31 @@
 using player::Decoder;
 
 // =====================================================================================================================
-Decoder::Decoder(buffer::RingBuffer& buffer, Controller& ctrl)
-    : m_buffer(buffer),
+Decoder::Decoder(Fifo& fifo, Controller& ctrl)
+    : m_fifo(fifo),
       m_ctrl(ctrl)
 {
 }
 
 // =====================================================================================================================
-void Decoder::setInput(std::shared_ptr<codec::BaseCodec>& input)
+void Decoder::setInput(const std::shared_ptr<codec::BaseCodec>& input)
 {
     thread::BlockLock bl(m_mutex);
     m_input = input;
 }
 
 // =====================================================================================================================
-void Decoder::work()
+void Decoder::startDecoding()
 {
     thread::BlockLock bl(m_mutex);
-    m_commands.push_back(WORK);
+    m_commands.push_back(START);
 }
 
 // =====================================================================================================================
-void Decoder::suspend()
+void Decoder::stopDecoding()
 {
     thread::BlockLock bl(m_mutex);
-    m_commands.push_back(SUSPEND);
+    m_commands.push_back(STOP);
 }
 
 // =====================================================================================================================
@@ -42,7 +42,6 @@ void Decoder::run()
     size_t minBufSize = 2 * sizeof(int16_t) * 44100;
 
     bool working = false;
-    bool notified = false;
 
     while (1)
     {
@@ -59,7 +58,7 @@ void Decoder::run()
 
 	    switch (cmd)
 	    {
-		case WORK :
+		case START :
 		    if (!m_input)
 		    {
 			std::cerr << "decoder: unable to start working without input!" << std::endl;
@@ -67,11 +66,11 @@ void Decoder::run()
 		    }
 
 		    working = true;
-		    notified = false;
 
 		    break;
 
-		case SUSPEND :
+		case STOP :
+		    m_fifo.reset();
 		    working = false;
 		    break;
 	    }
@@ -91,9 +90,10 @@ void Decoder::run()
 
 	// calculate the minimum size of the data we must put into the buffer
 	size_t minSize;
+	size_t fifoSize = m_fifo.getBytes();
 
-	if (m_buffer.getAvailableSize() < minBufSize)
-	    minSize = minBufSize - m_buffer.getAvailableSize();
+	if (fifoSize < minBufSize)
+	    minSize = minBufSize - fifoSize;
 	else
 	{
 	    // the buffer is fine for now, do nothing ...
@@ -111,6 +111,9 @@ void Decoder::run()
 		// the end of the stream has been reached
 
 		std::cout << "decoder: end of stream" << std::endl;
+		m_fifo.addMarker();
+
+		m_ctrl.command(Controller::DECODER_FINISHED);
 
 		thread::BlockLock bl(m_mutex);
 		m_input.reset();
@@ -120,14 +123,7 @@ void Decoder::run()
 
 	    size_t size = count * sizeof(int16_t) * input->getChannels();
 
-	    // TODO: handle the return value of write
-	    m_buffer.write(reinterpret_cast<void*>(samples), size);
-
-	    if (!notified)
-	    {
-		m_ctrl.command(Controller::DECODER_WORKING);
-		notified = true;
-	    }
+	    m_fifo.addSamples(samples, size);
 
 	    if (size < minSize)
 		minSize -= size;

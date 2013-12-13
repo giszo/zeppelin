@@ -59,12 +59,24 @@ Server::Server(library::MusicLibrary& library,
 					    NULL),
 		     &Server::playerQueueGet);
 
+    // player status
+    bindAndAddMethod(new jsonrpc::Procedure("player_status",
+					    jsonrpc::PARAMS_BY_NAME,
+					    jsonrpc::JSON_OBJECT,
+					    NULL),
+		     &Server::playerStatus);
+
     // player control
     bindAndAddMethod(new jsonrpc::Procedure("player_play",
 					    jsonrpc::PARAMS_BY_NAME,
 					    jsonrpc::JSON_NULL,
 					    NULL),
 		     &Server::playerPlay);
+    bindAndAddMethod(new jsonrpc::Procedure("player_pause",
+					    jsonrpc::PARAMS_BY_NAME,
+					    jsonrpc::JSON_NULL,
+					    NULL),
+		     &Server::playerPause);
     bindAndAddMethod(new jsonrpc::Procedure("player_stop",
 					    jsonrpc::PARAMS_BY_NAME,
 					    jsonrpc::JSON_NULL,
@@ -195,9 +207,38 @@ void Server::playerQueueGet(const Json::Value& request, Json::Value& response)
 }
 
 // =====================================================================================================================
+void Server::playerStatus(const Json::Value& request, Json::Value& response)
+{
+    player::Status s = m_ctrl.getStatus();
+
+    response = Json::Value(Json::objectValue);
+
+    if (s.m_file)
+    {
+	Json::Value current(Json::objectValue);
+	current["id"] = s.m_file->m_id;
+	current["path"] = s.m_file->m_path;
+	current["name"] = s.m_file->m_name;
+
+	response["current"] = current;
+    }
+    else
+	response["current"] = Json::Value(Json::nullValue);
+
+    response["state"] = static_cast<int>(s.m_state);
+    response["position"] = s.m_position;
+}
+
+// =====================================================================================================================
 void Server::playerPlay(const Json::Value& request, Json::Value& response)
 {
     m_ctrl.play();
+}
+
+// =====================================================================================================================
+void Server::playerPause(const Json::Value& request, Json::Value& response)
+{
+    m_ctrl.pause();
 }
 
 // =====================================================================================================================

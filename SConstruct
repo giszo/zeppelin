@@ -27,7 +27,7 @@ sources = [
     "player/player.cpp",
     "player/decoder.cpp",
     "player/controller.cpp",
-    "buffer/ringbuffer.cpp",
+    "player/fifo.cpp",
     "thread/thread.cpp",
     "utils/stringutils.cpp",
     "config/parser.cpp"
@@ -54,7 +54,7 @@ Default(woms)
 # testing
 
 tests = [
-    "ringbuffer.cpp"
+    "fifo.cpp"
 ]
 
 env.Program(

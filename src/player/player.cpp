@@ -10,29 +10,37 @@
 using player::Player;
 
 // =====================================================================================================================
-Player::Player(buffer::RingBuffer& buffer, Controller& ctrl)
-    : m_playing(false),
-      m_buffer(buffer),
+Player::Player(const std::shared_ptr<output::BaseOutput>& output, Fifo& fifo, Controller& ctrl)
+    : m_fifo(fifo),
+      m_output(output),
+      m_position(0),
+      m_running(false),
       m_ctrl(ctrl)
 {
 }
 
 // =====================================================================================================================
-void Player::setOutput(const std::shared_ptr<output::BaseOutput>& output)
+unsigned Player::getPosition() const
 {
-    thread::BlockLock bl(m_mutex);
-    m_output = output;
+    return m_position / m_output->getRate();
 }
 
 // =====================================================================================================================
-void Player::play()
+void Player::startPlayback()
 {
     thread::BlockLock bl(m_mutex);
-    m_commands.push_back(PLAY);
+    m_commands.push_back(START);
 }
 
 // =====================================================================================================================
-void Player::stop()
+void Player::pausePlayback()
+{
+    thread::BlockLock bl(m_mutex);
+    m_commands.push_back(PAUSE);
+}
+
+// =====================================================================================================================
+void Player::stopPlayback()
 {
     thread::BlockLock bl(m_mutex);
     m_commands.push_back(STOP);
@@ -45,100 +53,80 @@ void Player::run()
 
     while (1)
     {
-	std::shared_ptr<output::BaseOutput> output;
+	processCommands();
 
-	m_mutex.lock();
-
-	// process queued commands
-	while (!m_commands.empty())
+	// do nothing if the player is stopped
+	if (!m_running)
 	{
-	    Command cmd = m_commands.front();
-	    m_commands.pop_front();
-
-	    processCommand(cmd);
-	}
-
-	// copy the output device pointer while holding the lock
-	if (m_playing)
-	    output = m_output;
-
-	m_mutex.unlock();
-
-	// do nothing if we have no output device, it means we are not playing
-	if (!output)
-	{
-	    thread::Thread::sleep(100 * 1000);
-	    continue;
-	}
-
-	// fid out how many samples we have to play
-	int availInput = m_buffer.getAvailableSize();
-
-	// end of the current playback session
-	if (availInput == 0)
-	{
-	    // tell the controller that the player has finished its work
-	    m_ctrl.command(Controller::PLAYER_DONE);
-	    m_playing = false;
+	    Thread::sleep(100 * 1000);
 	    continue;
 	}
 
 	// find out the available space on the output device for samples
-	int availOutput = m_output->getAvailableSize() * sizeof(int16_t) * output->getChannels();
+	size_t availOutput = m_output->getFreeSize() * sizeof(int16_t) * m_output->getChannels();
 
-	int size = std::min(availInput, availOutput);
-	size = std::min(size, (int)sizeof(buffer));
+	// try to flush the fifo until it is empty ...
+	auto event = m_fifo.getNextEvent();
 
-	if (size > 0)
+	while (event != Fifo::NONE)
 	{
-	    // TODO: handle return value!
-	    m_buffer.read(buffer, size);
-	    m_output->write((int16_t*)buffer, size / (output->getChannels() * sizeof(int16_t)));
+	    switch (event)
+	    {
+		case Fifo::SAMPLES :
+		{
+		    size_t size = std::min(availOutput, sizeof(buffer));
+		    size_t res = m_fifo.readSamples(buffer, size);
+		    size_t samples = res / (m_output->getChannels() * sizeof(int16_t));
+		    m_output->write(reinterpret_cast<int16_t*>(buffer), samples);
+		    m_position += samples;
+		    availOutput -= res;
+		    break;
+		}
+
+		case Fifo::MARKER :
+		    m_position = 0;
+		    m_ctrl.command(Controller::SONG_FINISHED);
+		    break;
+
+		case Fifo::NONE :
+		    break;
+	    }
+
+	    if (availOutput == 0)
+		break;
+
+	    event = m_fifo.getNextEvent();
 	}
 
-	// sleep if we had nothing to play this round or we filled the whole space in the output buffer
-	if (size == 0 || size == availOutput)
-	    Thread::sleep(100 * 1000);
+	// now we can wait for a little because we put as much data into the output buffer as possible
+	Thread::sleep(100 * 1000);
     }
 }
 
 // =====================================================================================================================
-void Player::processCommand(Command cmd)
+void Player::processCommands()
 {
-    std::cout << "player: cmd=" << cmd << std::endl;
+    thread::BlockLock bl(m_mutex);
 
-    switch (cmd)
+    while (!m_commands.empty())
     {
-	case PLAY :
-	    if (m_playing)
+	Command cmd = m_commands.front();
+	m_commands.pop_front();
+
+	switch (cmd)
+	{
+	    case START :
+		m_running = true;
 		break;
 
-	    if (!m_output)
-	    {
-		std::cerr << "player: no output to play on!" << std::endl;
+	    case STOP :
+		m_position = 0;
+		// NOTE: there is no break here intentionally!
+
+	    case PAUSE :
+		m_running = false;
+		m_output->drop();
 		break;
-	    }
-
-	    // start the output and begin playing ...
-	    m_output->start();
-	    m_playing = true;
-
-	    break;
-
-	case STOP :
-	    if (!m_playing)
-		break;
-
-	    if (!m_output)
-	    {
-		std::cerr << "player: no output to stop playing on!" << std::endl;
-		break;
-	    }
-
-	    // stop the output
-	    m_output->stop();
-	    m_playing = false;
-
-	    break;
+	}
     }
 }

@@ -9,29 +9,45 @@ using player::Controller;
 
 // =====================================================================================================================
 Controller::Controller()
-    : m_samples(1 * 1024 * 1024 /* 1Mb for now... */),
-      m_decoder(m_samples, *this),
-      m_player(m_samples, *this)
+    : m_state(STOPPED),
+      m_decoderIndex(0),
+      m_decoderInitialized(false),
+      m_playerIndex(0),
+      m_fifo(4 * 1024 /* 4kB for now */),
+      m_decoder(m_fifo, *this)
 {
-    // start the decoder thread
+    // prepare the output
+    std::shared_ptr<output::BaseOutput> output = std::make_shared<output::AlsaOutput>();
+    output->setup(44100, 2);
+
+    // prepare player thread
+    m_player.reset(new Player(output, m_fifo, *this));
+
+    // start decoder and player threads
     m_decoder.start();
-    // start the player thread
-    m_player.start();
+    m_player->start();
 }
 
 // =====================================================================================================================
 std::vector<std::shared_ptr<library::File>> Controller::getQueue()
 {
-    std::vector<std::shared_ptr<library::File>> q;
+    thread::BlockLock bl(m_mutex);
+    return m_queue;
+}
 
-    {
-	thread::BlockLock bl(m_mutex);
+// =====================================================================================================================
+auto Controller::getStatus() -> Status
+{
+    Status s;
 
-	for (const auto& file : m_queue)
-	    q.push_back(file);
-    }
+    thread::BlockLock bl(m_mutex);
 
-    return q;
+    if (isPlayerIndexValid())
+	s.m_file = m_queue[m_playerIndex];
+    s.m_state = m_state;
+    s.m_position = m_player->getPosition();
+
+    return s;
 }
 
 // =====================================================================================================================
@@ -46,6 +62,13 @@ void Controller::play()
 {
     std::cout << "controller: play" << std::endl;
     command(PLAY);
+}
+
+// =====================================================================================================================
+void Controller::pause()
+{
+    std::cout << "controller: pause" << std::endl;
+    command(PAUSE);
 }
 
 // =====================================================================================================================
@@ -66,14 +89,6 @@ void Controller::command(Command cmd)
 // =====================================================================================================================
 void Controller::run()
 {
-    std::shared_ptr<output::BaseOutput> output;
-
-    // prepare the output
-    output.reset(new output::AlsaOutput());
-    output->setup(44100, 2);
-
-    m_player.setOutput(output);
-
     while (1)
     {
 	m_mutex.lock();
@@ -89,24 +104,74 @@ void Controller::run()
 	switch (cmd)
 	{
 	    case PLAY :
-		startPlayback();
+		if (m_state == PLAYING)
+		    break;
+
+		// reset decoder index to the start of the queue if it is invalid
+		if (!isDecoderIndexValid())
+		    m_decoderIndex = 0;
+
+		// initialize the decoder if it has no input
+		if (!m_decoderInitialized)
+		    setDecoderInput();
+
+		if (m_decoderInitialized)
+		{
+		    m_decoder.startDecoding();
+		    m_player->startPlayback();
+
+		    m_state = PLAYING;
+		}
+
+		break;
+
+	    case PAUSE :
+		if (m_state != PLAYING)
+		    break;
+
+		m_player->pausePlayback();
+
+		m_state = PAUSED;
+
 		break;
 
 	    case STOP :
-		// stop both the decoder and the player thread
-		m_decoder.suspend();
-		m_player.stop();
+		if (m_state != PLAYING && m_state != PAUSED)
+		    break;
+
+		// stop both the decoder and the player threads
+		m_decoder.stopDecoding();
+		m_player->stopPlayback();
+
+		// reset the decoder index to the currently played song
+		m_decoderIndex = m_playerIndex;
+		m_decoderInitialized = false;
+		m_decoder.setInput(nullptr);
+
+		m_state = STOPPED;
+
 		break;
 
-	    case PLAYER_DONE :
-		// force startPlayback() to get the next file from the queue
-		m_currentFile.reset();
-		startPlayback();
+	    case DECODER_FINISHED :
+		// jump to the next file
+		++m_decoderIndex;
+
+		setDecoderInput();
+
+		if (m_decoderInitialized)
+		    m_decoder.startDecoding();
+
 		break;
 
-	    case DECODER_WORKING :
-		// now we can start the player because the decoder started to fill the input buffer
-		m_player.play();
+	    case SONG_FINISHED :
+		std::cout << "song finished" << std::endl;
+
+		// step to the next song
+		++m_playerIndex;
+
+		if (!isPlayerIndexValid())
+		    m_state = STOPPED;
+
 		break;
 	}
 
@@ -115,36 +180,42 @@ void Controller::run()
 }
 
 // =====================================================================================================================
-void Controller::startPlayback()
+bool Controller::isDecoderIndexValid() const
 {
-    // select the next file to play if we have none already
-    while (!m_queue.empty() && !m_currentFile)
+    return (m_decoderIndex >= 0 && m_decoderIndex < static_cast<int>(m_queue.size()));
+}
+
+// =====================================================================================================================
+bool Controller::isPlayerIndexValid() const
+{
+    return (m_playerIndex >= 0 && m_playerIndex < static_cast<int>(m_queue.size()));
+}
+
+// =====================================================================================================================
+void Controller::setDecoderInput()
+{
+    while (m_decoderIndex < static_cast<int>(m_queue.size()))
     {
-	// get the next one
-	m_currentFile = m_queue.front();
-	m_queue.pop_front();
+	const library::File& file = *m_queue[m_decoderIndex];
 
 	// open the file
-	m_input = codec::BaseCodec::openFile(m_currentFile->m_path + "/" + m_currentFile->m_name);
+	std::shared_ptr<codec::BaseCodec> input = codec::BaseCodec::openFile(file.m_path + "/" + file.m_name);
 
-	if (!m_input)
+	// try the next one if we were unable to open
+	if (!input)
 	{
-	    // try the next one if we were not able to open this file
-	    m_currentFile.reset();
+	    ++m_decoderIndex;
 	    continue;
 	}
 
-	std::cout << "Playing file: " << m_currentFile->m_path << "/" << m_currentFile->m_name << std::endl;
+	std::cout << "Playing file: " << file.m_path << "/" << file.m_name << std::endl;
 
-	// set the input for the decoder thread
-	m_decoder.setInput(m_input);
+	m_decoder.setInput(input);
+	m_decoderInitialized = true;
+
+	return;
     }
 
-    // can't start playback without a file
-    if (!m_currentFile)
-	return;
-
-    // start the decoder thread here... the player will be started later on once the decoder notifies us
-    // with DECODER_WORKING
-    m_decoder.work();
+    m_decoder.setInput(nullptr);
+    m_decoderInitialized = false;
 }

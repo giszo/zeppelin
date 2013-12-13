@@ -1,12 +1,14 @@
 #ifndef PLAYER_PLAYER_H_INCLUDED
 #define PLAYER_PLAYER_H_INCLUDED
 
+#include "fifo.h"
+
 #include <output/baseoutput.h>
-#include <buffer/ringbuffer.h>
 #include <thread/thread.h>
 
 #include <deque>
 #include <memory>
+#include <atomic>
 
 namespace player
 {
@@ -16,38 +18,44 @@ class Controller;
 class Player : public thread::Thread
 {
     public:
-	Player(buffer::RingBuffer& buffer, Controller& ctrl);
+	Player(const std::shared_ptr<output::BaseOutput>& output,
+	       Fifo& fifo,
+	       Controller& ctrl);
 
-	void setOutput(const std::shared_ptr<output::BaseOutput>& output);
+	unsigned getPosition() const;
 
-	void play();
-	void stop();
+	void startPlayback();
+	void pausePlayback();
+	void stopPlayback();
 
 	void run();
 
     private:
+	void processCommands();
+
+    private:
 	enum Command
 	{
-	    PLAY,
+	    START,
+	    PAUSE,
 	    STOP
 	};
 
-	void processCommand(Command cmd);
-
-    private:
-	// true when the player is running
-	bool m_playing;
-
-	// queue of player commands
-	std::deque<Command> m_commands;
-
 	// the sample buffer we are going to play from
-	buffer::RingBuffer& m_buffer;
+	Fifo& m_fifo;
 
 	// the output device instance
 	std::shared_ptr<output::BaseOutput> m_output;
 
+	// number of played samples
+	std::atomic_uint m_position;
+
+	std::deque<Command> m_commands;
+
 	thread::Mutex m_mutex;
+
+	// true when the player is currently working
+	bool m_running;
 
 	Controller& m_ctrl;
 };

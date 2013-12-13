@@ -1,30 +1,24 @@
 #!/usr/bin/python
 
 import sys
-import json
 
-try :
-    import urllib.request
-    urlopen = urllib.request.urlopen
-except ImportError :
-    import urllib
-    urlopen = urllib.urlopen
-
-def call(method, params) :
-    req = {
-        "jsonrpc" : "2.0",
-        "method" : method,
-        "id" : 1,
-        "params" : params
-    }
-    f = urlopen('http://localhost:8080', json.dumps(req).encode('utf-8'))
-    print(f.read())
+from rpc import call
 
 def lib_scan() :
     call('library_scan', {})
 
 def lib_list() :
-    call('library_list_files', {})
+    files = call('library_list_files', {})
+    for f in files :
+        artist = f["artist"]
+        title = f["title"]
+
+        if not artist or not title :
+            desc = f["name"]
+        else :
+            desc = "%s - %s" % (artist, title)
+
+        print("%d -> %s" % (f["id"], desc.encode('utf-8')))
 
 def lib_artists() :
     call('library_get_artists', {})
@@ -44,6 +38,9 @@ def queue(id) :
 def play() :
     call('player_play', {})
 
+def pause() :
+    call('player_pause', {})
+
 def stop() :
     call('player_stop', {})
 
@@ -57,6 +54,8 @@ if cmd == "queue" :
         queue(int(sys.argv[2]))
 elif cmd == "play" :
     play()
+elif cmd == "pause" :
+    pause()
 elif cmd == "stop" :
     stop()
 elif cmd == "lib_scan" :
