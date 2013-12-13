@@ -213,18 +213,7 @@ void Server::playerStatus(const Json::Value& request, Json::Value& response)
 
     response = Json::Value(Json::objectValue);
 
-    if (s.m_file)
-    {
-	Json::Value current(Json::objectValue);
-	current["id"] = s.m_file->m_id;
-	current["path"] = s.m_file->m_path;
-	current["name"] = s.m_file->m_name;
-
-	response["current"] = current;
-    }
-    else
-	response["current"] = Json::Value(Json::nullValue);
-
+    response["current"] = s.m_file ? Json::Value(s.m_file->m_id) : Json::Value(Json::nullValue);
     response["state"] = static_cast<int>(s.m_state);
     response["position"] = s.m_position;
 }
