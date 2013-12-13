@@ -27,7 +27,15 @@ void Fifo::addSamples(const void* buffer, size_t size)
 
     while (size > 0)
     {
-	std::shared_ptr<Samples> buf = std::make_shared<Samples>(m_bufferSize);
+	std::shared_ptr<Samples> buf;
+
+	if (m_samples.empty())
+	    buf = std::make_shared<Samples>(m_bufferSize);
+	else
+	{
+	    buf = m_samples.front();
+	    m_samples.pop_front();
+	}
 
 	buf->m_offset = 0;
 	buf->m_realSize = std::min(buf->m_size, size);
