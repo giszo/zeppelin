@@ -107,9 +107,12 @@ void Controller::run()
 		if (m_state == PLAYING)
 		    break;
 
-		// reset decoder index to the start of the queue if it is invalid
+		// reset both decoder and player index to the start of the queue if we are in an undefined state
 		if (!isDecoderIndexValid())
+		{
 		    m_decoderIndex = 0;
+		    m_playerIndex = 0;
+		}
 
 		// initialize the decoder if it has no input
 		if (!m_decoderInitialized)
