@@ -26,6 +26,9 @@ class AlsaOutput : public BaseOutput
 	void write(const int16_t* samples, size_t count) override;
 
     private:
+	void handleError(int error);
+
+    private:
 	snd_pcm_t* m_handle;
 
 	int m_rate;

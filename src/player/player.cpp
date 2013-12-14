@@ -62,12 +62,19 @@ void Player::run()
 	    continue;
 	}
 
+	// get the next event from the fifo
+	auto event = m_fifo.getNextEvent();
+
+	if (event == Fifo::NONE)
+	{
+	    Thread::sleep(100 * 1000);
+	    continue;
+	}
+
 	// find out the available space on the output device for samples
 	size_t availOutput = m_output->getFreeSize() * sizeof(int16_t) * m_output->getChannels();
 
 	// try to flush the fifo until it is empty ...
-	auto event = m_fifo.getNextEvent();
-
 	while (event != Fifo::NONE)
 	{
 	    switch (event)
@@ -112,6 +119,8 @@ void Player::processCommands()
     {
 	Command cmd = m_commands.front();
 	m_commands.pop_front();
+
+	std::cout << "player: cmd=" << cmd << std::endl;
 
 	switch (cmd)
 	{

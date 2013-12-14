@@ -114,6 +114,9 @@ void Controller::run()
 	m_commands.pop_front();
 
 	std::cout << "controller: cmd=" << cmd << std::endl;
+	std::cout << "controller: state=" << m_state <<
+	    ", decoderIndex=" << m_decoderIndex <<
+	    ", playerIndex=" << m_playerIndex << std::endl;
 
 	switch (cmd)
 	{

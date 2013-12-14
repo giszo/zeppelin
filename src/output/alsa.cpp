@@ -35,7 +35,17 @@ int AlsaOutput::getChannels()
 // =====================================================================================================================
 int AlsaOutput::getFreeSize()
 {
-    return snd_pcm_avail(m_handle);
+    snd_pcm_sframes_t frames;
+
+    while (1)
+    {
+	frames = snd_pcm_avail(m_handle);
+
+	if (frames < 0)
+	    handleError(frames);
+	else
+	    return frames;
+    }
 }
 
 // =====================================================================================================================
@@ -74,24 +84,31 @@ void AlsaOutput::write(const int16_t* samples, size_t count)
     {
 	snd_pcm_sframes_t ret = snd_pcm_writei(m_handle, samples, count);
 
-	if (ret == -EAGAIN)
-	    continue;
-	else if (ret == -EPIPE)
-	{
-	    if (snd_pcm_prepare(m_handle) < 0)
-		throw OutputException("can't recover from underrun");
-	}
-	else if (ret == -ESTRPIPE)
-	{
-	    // wait until suspend flag is released
-	    while (snd_pcm_resume(m_handle) == -EAGAIN)
-		thread::Thread::sleep(100 * 1000);
-	    if (snd_pcm_prepare(m_handle) < 0)
-		throw OutputException("can't recover from suspend");
-	}
-	else if (ret < 0)
-	    throw OutputException(utils::MakeString() << "unable to write samples: " << ret);
-
-	count -= ret;
+	if (ret < 0)
+	    handleError(ret);
+	else
+	    count -= ret;
     }
+}
+
+// =====================================================================================================================
+void AlsaOutput::handleError(int error)
+{
+    if (error == -EAGAIN)
+	return;
+    else if (error == -EPIPE)
+    {
+	if (snd_pcm_prepare(m_handle) < 0)
+	    throw OutputException("can't recover from underrun");
+    }
+    else if (error == -ESTRPIPE)
+    {
+	// wait until suspend flag is released
+	while (snd_pcm_resume(m_handle) == -EAGAIN)
+	    thread::Thread::sleep(100 * 1000);
+	if (snd_pcm_prepare(m_handle) < 0)
+	    throw OutputException("can't recover from suspend");
+    }
+    else
+	throw OutputException(utils::MakeString() << "unable to write samples: " << error);
 }
