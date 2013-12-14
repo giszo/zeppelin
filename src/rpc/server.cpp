@@ -89,6 +89,16 @@ Server::Server(library::MusicLibrary& library,
 					    jsonrpc::JSON_NULL,
 					    NULL),
 		     &Server::playerStop);
+    bindAndAddMethod(new jsonrpc::Procedure("player_prev",
+					    jsonrpc::PARAMS_BY_NAME,
+					    jsonrpc::JSON_NULL,
+					    NULL),
+		     &Server::playerPrev);
+    bindAndAddMethod(new jsonrpc::Procedure("player_next",
+					    jsonrpc::PARAMS_BY_NAME,
+					    jsonrpc::JSON_NULL,
+					    NULL),
+		     &Server::playerNext);
 }
 
 // =====================================================================================================================
@@ -251,4 +261,16 @@ void Server::playerPause(const Json::Value& request, Json::Value& response)
 void Server::playerStop(const Json::Value& request, Json::Value& response)
 {
     m_ctrl.stop();
+}
+
+// =====================================================================================================================
+void Server::playerPrev(const Json::Value& request, Json::Value& response)
+{
+    m_ctrl.prev();
+}
+
+// =====================================================================================================================
+void Server::playerNext(const Json::Value& request, Json::Value& response)
+{
+    m_ctrl.next();
 }

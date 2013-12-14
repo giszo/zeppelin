@@ -79,6 +79,20 @@ void Controller::stop()
 }
 
 // =====================================================================================================================
+void Controller::prev()
+{
+    std::cout << "controller: prev" << std::endl;
+    command(PREV);
+}
+
+// =====================================================================================================================
+void Controller::next()
+{
+    std::cout << "controller: next" << std::endl;
+    command(NEXT);
+}
+
+// =====================================================================================================================
 void Controller::command(Command cmd)
 {
     thread::BlockLock bl(m_mutex);
@@ -135,6 +149,37 @@ void Controller::run()
 		m_player->pausePlayback();
 
 		m_state = PAUSED;
+
+		break;
+
+	    case PREV :
+	    case NEXT :
+		if (m_state == PLAYING || m_state == PAUSED)
+		{
+		    m_decoder.stopDecoding();
+		    m_player->stopPlayback();
+		}
+
+		if (cmd == PREV)
+		{
+		    if (m_playerIndex > 0) --m_playerIndex;
+		}
+		else if (cmd == NEXT)
+		{
+		    if (!m_queue.empty() && (m_playerIndex < static_cast<int>(m_queue.size() - 1))) ++m_playerIndex;
+		}
+
+		// set the decoder to the same position
+		m_decoderIndex = m_playerIndex;
+
+		// load the file into the decoder
+		setDecoderInput();
+
+		if (m_decoderInitialized && m_state == PLAYING)
+		{
+		    m_decoder.startDecoding();
+		    m_player->startPlayback();
+		}
 
 		break;
 

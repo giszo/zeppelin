@@ -39,6 +39,8 @@ class Controller
 	    PLAY,
 	    PAUSE,
 	    STOP,
+	    PREV,
+	    NEXT,
 	    // sent by the player thread once all samples of the current track have been written to the output
 	    SONG_FINISHED,
 	    // sent by the decoder thread when the decoding of the current file has been finished
@@ -59,6 +61,8 @@ class Controller
 	void play();
 	void pause();
 	void stop();
+	void prev();
+	void next();
 
 	void command(Command cmd);
 
