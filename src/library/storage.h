@@ -48,11 +48,12 @@ struct File
 	  m_path(path),
 	  m_name(name),
 	  m_length(0),
-	  m_year(0)
+	  m_year(0),
+	  m_trackIndex(0)
     {}
 
     File(int id, const std::string& path, const std::string& name,
-	 int length, const std::string& artist, const std::string& album, const std::string& title, int year)
+	 int length, const std::string& artist, const std::string& album, const std::string& title, int year, int trackIndex)
 	: m_id(id),
 	  m_path(path),
 	  m_name(name),
@@ -60,7 +61,8 @@ struct File
 	  m_artist(artist),
 	  m_album(album),
 	  m_title(title),
-	  m_year(year)
+	  m_year(year),
+	  m_trackIndex(trackIndex)
     {}
 
     int m_id;
@@ -74,6 +76,7 @@ struct File
     std::string m_album;
     std::string m_title;
     int m_year;
+    int m_trackIndex;
 };
 
 class StorageException : public std::runtime_error

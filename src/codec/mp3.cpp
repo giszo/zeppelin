@@ -1,6 +1,6 @@
 #include "mp3.h"
 
-#include <iostream>
+#include <cstring>
 
 #include "utils/stringutils.h"
 
@@ -100,7 +100,22 @@ codec::Metadata Mp3::getMetadata()
 	    }
 	    catch (const utils::NumberFormatException& e)
 	    {
-		info.m_year = 0;
+	    }
+	}
+
+	for (size_t i = 0; i < id3_v2->texts; ++i)
+	{
+	    mpg123_text* t = &id3_v2->text[i];
+
+	    if (memcmp(t->id, "TRCK", 4) == 0)
+	    {
+		try
+		{
+		    info.m_trackIndex = StringUtils::toInt(t->text.p);
+		}
+		catch (const utils::NumberFormatException& e)
+		{
+		}
 	    }
 	}
     }

@@ -48,6 +48,7 @@ void SqliteStorage::open()
 	    length INTEGER DEFAULT NULL,
 	    title TEXT DEFAULT NULL,
 	    year INTEGER DEFAULT NULL,
+	    track_index INTEGER DEFAULT NULL,
 	    UNIQUE(path, name),
 	    FOREIGN KEY(artist_id) REFERENCES artists(id),
 	    FOREIGN KEY(album_id) REFERENCES albums(id)))");
@@ -55,7 +56,7 @@ void SqliteStorage::open()
     // prepare statements
     prepareStatement(&m_newFile, "INSERT OR IGNORE INTO files(path, name) VALUES(?, ?)");
     prepareStatement(&m_getFile,
-                     R"(SELECT files.path, files.name, files.length, files.title, files.year,
+                     R"(SELECT files.path, files.name, files.length, files.title, files.year, files.track_index,
                                albums.name,
                                artists.name
                         FROM files LEFT JOIN albums  ON albums.id = files.album_id
@@ -63,17 +64,20 @@ void SqliteStorage::open()
                         WHERE files.id = ?)");
     prepareStatement(&m_getFileByPath, "SELECT id FROM files WHERE path = ? AND name = ?");
     prepareStatement(&m_getFiles,
-                     R"(SELECT files.id, files.path, files.name, files.length, files.title, files.year,
+                     R"(SELECT files.id, files.path, files.name, files.length, files.title, files.year, files.track_index,
                                albums.name,
                                artists.name
                         FROM files LEFT JOIN albums  ON albums.id = files.album_id
                                    LEFT JOIN artists ON artists.id = files.artist_id)");
     prepareStatement(&m_getFilesWithoutMeta, "SELECT id, path, name FROM files WHERE length IS NULL");
-    prepareStatement(&m_getFilesOfAlbum, "SELECT id, path, name, length, title, year FROM files WHERE album_id = ?");
+    prepareStatement(&m_getFilesOfAlbum, R"(SELECT id, path, name, length, title, year, track_index
+                                            FROM files
+                                            WHERE album_id = ?
+                                            ORDER BY track_index)");
 
     prepareStatement(&m_updateFileMeta,
                      R"(UPDATE files
-                        SET artist_id = ?, album_id = ?, length = ?, title = ?, year = ?
+                        SET artist_id = ?, album_id = ?, length = ?, title = ?, year = ?, track_index = ?
                         WHERE id = ?)");
 
     // artists
@@ -134,10 +138,11 @@ std::shared_ptr<library::File> SqliteStorage::getFile(int id)
 	getText(m_getFile, 0), // path
 	getText(m_getFile, 1), // name
 	sqlite3_column_int(m_getFile, 2), // length
-	getText(m_getFile, 6), // artist
-	getText(m_getFile, 5), // album
+	getText(m_getFile, 7), // artist
+	getText(m_getFile, 6), // album
 	getText(m_getFile, 3), // title
-	sqlite3_column_int(m_getFile, 4) // year
+	sqlite3_column_int(m_getFile, 4), // year
+	sqlite3_column_int(m_getFile, 5) // track index
     );
 
     sqlite3_reset(m_getFile);
@@ -160,10 +165,11 @@ std::vector<std::shared_ptr<library::File>> SqliteStorage::getFiles()
 	    getText(m_getFiles, 1), // path
 	    getText(m_getFiles, 2), // name
 	    sqlite3_column_int(m_getFiles, 3), // length
-	    getText(m_getFiles, 7), // artist
-	    getText(m_getFiles, 6), // album
+	    getText(m_getFiles, 8), // artist
+	    getText(m_getFiles, 7), // album
 	    getText(m_getFiles, 4), // title
-	    sqlite3_column_int(m_getFiles, 5) // year
+	    sqlite3_column_int(m_getFiles, 5), // year
+	    sqlite3_column_int(m_getFiles, 6) // track index
 	);
 	files.push_back(file);
     }
@@ -211,7 +217,8 @@ std::vector<std::shared_ptr<library::File>> SqliteStorage::getFilesOfAlbum(int a
 	    "", // artist
 	    "", // album
 	    getText(m_getFilesOfAlbum, 4),
-	    sqlite3_column_int(m_getFilesOfAlbum, 5)
+	    sqlite3_column_int(m_getFilesOfAlbum, 5),
+	    sqlite3_column_int(m_getFilesOfAlbum, 6)
 	));
     }
     sqlite3_reset(m_getFilesOfAlbum);
@@ -281,7 +288,8 @@ void SqliteStorage::updateFileMetadata(const library::File& file)
     sqlite3_bind_int(m_updateFileMeta, 3, file.m_length);
     bindText(m_updateFileMeta, 4, file.m_title);
     sqlite3_bind_int(m_updateFileMeta, 5, file.m_year);
-    sqlite3_bind_int(m_updateFileMeta, 6, file.m_id);
+    sqlite3_bind_int(m_updateFileMeta, 6, file.m_trackIndex);
+    sqlite3_bind_int(m_updateFileMeta, 7, file.m_id);
 
     sqlite3_step(m_updateFileMeta);
     sqlite3_reset(m_updateFileMeta);

@@ -79,4 +79,5 @@ void MetaParser::parse(File& file)
     file.m_album = meta.m_album;
     file.m_title = meta.m_title;
     file.m_year = meta.m_year;
+    file.m_trackIndex = meta.m_trackIndex;
 }

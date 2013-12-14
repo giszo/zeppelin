@@ -18,6 +18,13 @@ class CodecException : public std::runtime_error
 
 struct Metadata
 {
+    Metadata()
+	: m_rate(-1),
+	  m_channels(-1),
+	  m_year(0),
+	  m_trackIndex(0)
+    {}
+
     /// sampling rate
     int m_rate;
     /// number of channels
@@ -29,6 +36,7 @@ struct Metadata
     std::string m_album;
     std::string m_title;
     int m_year;
+    int m_trackIndex;
 };
 
 class BaseCodec
