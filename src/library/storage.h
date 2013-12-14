@@ -30,21 +30,15 @@ struct Artist
 
 struct Album
 {
-    Album(int id, const std::string& name)
+    Album(int id, const std::string& name, int artist)
 	: m_id(id),
 	  m_name(name),
-	  m_artist(-1, "")
-    {}
-
-    Album(int id, const std::string& name, int artistId, const std::string& artistName)
-	: m_id(id),
-	  m_name(name),
-	  m_artist(artistId, artistName)
+	  m_artist(artist)
     {}
 
     int m_id;
     std::string m_name;
-    Artist m_artist;
+    int m_artist;
 };
 
 struct File
@@ -106,8 +100,10 @@ class Storage
 	virtual std::shared_ptr<File> getFile(int id) = 0;
 	/// returns all of the files from the underlying storage
 	virtual std::vector<std::shared_ptr<File>> getFiles() = 0;
-	/// retuns the given amount of files at most from the library having no metadata yet
+	/// returns the given amount of files at most from the library having no metadata yet
 	virtual std::vector<std::shared_ptr<File>> getFilesWithoutMetadata() = 0;
+	/// returns the files of the given album
+	virtual std::vector<std::shared_ptr<File>> getFilesOfAlbum(int albumId) = 0;
 
 	/// updates the metadate of the given file.
 	virtual void updateFileMetadata(const File& file) = 0;

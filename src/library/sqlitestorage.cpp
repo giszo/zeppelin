@@ -69,6 +69,8 @@ void SqliteStorage::open()
                         FROM files LEFT JOIN albums  ON albums.id = files.album_id
                                    LEFT JOIN artists ON artists.id = files.artist_id)");
     prepareStatement(&m_getFilesWithoutMeta, "SELECT id, path, name FROM files WHERE length IS NULL");
+    prepareStatement(&m_getFilesOfAlbum, "SELECT id, path, name, length, title, year FROM files WHERE album_id = ?");
+
     prepareStatement(&m_updateFileMeta,
                      R"(UPDATE files
                         SET artist_id = ?, album_id = ?, length = ?, title = ?, year = ?
@@ -82,8 +84,7 @@ void SqliteStorage::open()
     // albums
     prepareStatement(&m_addAlbum, "INSERT OR IGNORE INTO albums(artist_id, name) VALUES(?, ?)");
     prepareStatement(&m_getAlbumByName, "SELECT id FROM albums WHERE artist_id = ? AND name = ?");
-    prepareStatement(&m_getAlbums, R"(SELECT albums.id, albums.name, artists.id, artists.name
-                                      FROM albums LEFT JOIN artists ON albums.artist_id = artists.id)");
+    prepareStatement(&m_getAlbums, "SELECT id, name, artist_id FROM albums");
     prepareStatement(&m_getAlbumsByArtist, "SELECT id, name FROM albums WHERE artist_id = ?");
 }
 
@@ -174,12 +175,11 @@ std::vector<std::shared_ptr<library::File>> SqliteStorage::getFiles()
 // =====================================================================================================================
 std::vector<std::shared_ptr<library::File>> SqliteStorage::getFilesWithoutMetadata()
 {
-    int r;
     std::vector<std::shared_ptr<File>> files;
 
     thread::BlockLock bl(m_mutex);
 
-    while ((r = sqlite3_step(m_getFilesWithoutMeta)) == SQLITE_ROW)
+    while (sqlite3_step(m_getFilesWithoutMeta) == SQLITE_ROW)
     {
 	files.push_back(std::make_shared<File>(
 	    sqlite3_column_int(m_getFilesWithoutMeta, 0),
@@ -190,6 +190,34 @@ std::vector<std::shared_ptr<library::File>> SqliteStorage::getFilesWithoutMetada
     sqlite3_reset(m_getFilesWithoutMeta);
 
     return files;
+}
+
+// =====================================================================================================================
+std::vector<std::shared_ptr<library::File>> SqliteStorage::getFilesOfAlbum(int albumId)
+{
+    std::vector<std::shared_ptr<File>> files;
+
+    thread::BlockLock bl(m_mutex);
+
+    sqlite3_bind_int(m_getFilesOfAlbum, 1, albumId);
+
+    while (sqlite3_step(m_getFilesOfAlbum) == SQLITE_ROW)
+    {
+	files.push_back(std::make_shared<File>(
+	    sqlite3_column_int(m_getFilesOfAlbum, 0),
+	    getText(m_getFilesOfAlbum, 1),
+	    getText(m_getFilesOfAlbum, 2),
+	    sqlite3_column_int(m_getFilesOfAlbum, 3),
+	    "", // artist
+	    "", // album
+	    getText(m_getFilesOfAlbum, 4),
+	    sqlite3_column_int(m_getFilesOfAlbum, 5)
+	));
+    }
+    sqlite3_reset(m_getFilesOfAlbum);
+
+    return files;
+
 }
 
 // =====================================================================================================================
@@ -291,8 +319,7 @@ std::vector<std::shared_ptr<library::Album>> SqliteStorage::getAlbums()
 	std::shared_ptr<Album> album = std::make_shared<Album>(
 	    sqlite3_column_int(m_getAlbums, 0),
 	    getText(m_getAlbums, 1),
-	    sqlite3_column_int(m_getAlbums, 2),
-	    getText(m_getAlbums, 3));
+	    sqlite3_column_int(m_getAlbums, 2));
 	albums.push_back(album);
     }
 
@@ -314,7 +341,8 @@ std::vector<std::shared_ptr<library::Album>> SqliteStorage::getAlbumsByArtist(in
     {
 	std::shared_ptr<Album> album = std::make_shared<Album>(
 	    sqlite3_column_int(m_getAlbumsByArtist, 0),
-	    getText(m_getAlbumsByArtist, 1));
+	    getText(m_getAlbumsByArtist, 1),
+	    artistId);
 	albums.push_back(album);
     }
 

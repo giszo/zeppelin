@@ -26,6 +26,7 @@ class SqliteStorage : public Storage
 	std::shared_ptr<File> getFile(int id) override;
 	std::vector<std::shared_ptr<library::File>> getFiles() override;
 	std::vector<std::shared_ptr<library::File>> getFilesWithoutMetadata() override;
+	std::vector<std::shared_ptr<File>> getFilesOfAlbum(int albumId) override;
 
 	void updateFileMetadata(const library::File& file) override;
 
@@ -52,6 +53,7 @@ class SqliteStorage : public Storage
 	sqlite3_stmt* m_getFileByPath;
 	sqlite3_stmt* m_getFiles;
 	sqlite3_stmt* m_getFilesWithoutMeta;
+	sqlite3_stmt* m_getFilesOfAlbum;
 
 	sqlite3_stmt* m_updateFileMeta;
 

@@ -28,7 +28,9 @@ class Server : public jsonrpc::AbstractServer<Server>
 	void libraryGetAlbums(const Json::Value& request, Json::Value& response);
 	void libraryGetAlbumsByArtist(const Json::Value& request, Json::Value& response);
 
+	// player - queue
 	void playerQueueFile(const Json::Value& request, Json::Value& response);
+	void playerQueueAlbum(const Json::Value& request, Json::Value& response);
 	void playerQueueGet(const Json::Value& request, Json::Value& response);
 
 	void playerStatus(const Json::Value& request, Json::Value& response);

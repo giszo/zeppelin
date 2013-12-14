@@ -53,6 +53,13 @@ Server::Server(library::MusicLibrary& library,
 					    jsonrpc::JSON_INTEGER,
 					    NULL),
 		     &Server::playerQueueFile);
+    bindAndAddMethod(new jsonrpc::Procedure("player_queue_album",
+					    jsonrpc::PARAMS_BY_NAME,
+					    jsonrpc::JSON_NULL,
+					    "id",
+					    jsonrpc::JSON_INTEGER,
+					    NULL),
+		     &Server::playerQueueAlbum);
     bindAndAddMethod(new jsonrpc::Procedure("player_queue_get",
 					    jsonrpc::PARAMS_BY_NAME,
 					    jsonrpc::JSON_ARRAY,
@@ -143,8 +150,7 @@ void Server::libraryGetAlbums(const Json::Value& request, Json::Value& response)
 	Json::Value album(Json::objectValue);
 	album["id"] = a->m_id;
 	album["name"] = a->m_name;
-	album["artist_id"] = a->m_artist.m_id;
-	album["artist_name"] = a->m_artist.m_name;
+	album["artist"] = a->m_artist;
 
 	response.append(album);
     }
@@ -185,6 +191,17 @@ void Server::playerQueueFile(const Json::Value& request, Json::Value& response)
     std::cout << "Queueing file: " << file->m_path << "/" << file->m_name << std::endl;
 
     m_ctrl.queue(file);
+}
+
+// =====================================================================================================================
+void Server::playerQueueAlbum(const Json::Value& request, Json::Value& response)
+{
+    std::cout << "Queueing album: " << request["id"] << std::endl;
+
+    auto files = m_library.getStorage().getFilesOfAlbum(request["id"].asInt());
+
+    for (const auto& file : files)
+	m_ctrl.queue(file);
 }
 
 // =====================================================================================================================
