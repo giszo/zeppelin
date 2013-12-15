@@ -18,11 +18,6 @@ Server::Server(library::MusicLibrary& library,
 					    jsonrpc::JSON_NULL,
 					    NULL),
 		     &Server::libraryScan);
-    bindAndAddMethod(new jsonrpc::Procedure("library_list_files",
-					    jsonrpc::PARAMS_BY_NAME,
-					    jsonrpc::JSON_ARRAY,
-					    NULL),
-		     &Server::libraryListFiles);
 
     // library - artists
     bindAndAddMethod(new jsonrpc::Procedure("library_get_artists",
@@ -44,6 +39,15 @@ Server::Server(library::MusicLibrary& library,
 					    jsonrpc::JSON_INTEGER,
 					    NULL),
 		     &Server::libraryGetAlbumsByArtist);
+
+    // library - files
+    bindAndAddMethod(new jsonrpc::Procedure("library_get_files_of_album",
+					    jsonrpc::PARAMS_BY_NAME,
+					    jsonrpc::JSON_ARRAY,
+					    "album_id",
+					    jsonrpc::JSON_INTEGER,
+					    NULL),
+		     &Server::libraryGetFilesOfAlbum);
 
     // player queue
     bindAndAddMethod(new jsonrpc::Procedure("player_queue_file",
@@ -125,30 +129,6 @@ void Server::libraryScan(const Json::Value& request, Json::Value& response)
 }
 
 // =====================================================================================================================
-void Server::libraryListFiles(const Json::Value& request, Json::Value& response)
-{
-    std::vector<std::shared_ptr<library::File>> files = m_library.getStorage().getFiles();
-    std::cout << "files: " << files.size() << std::endl;
-
-    response = Json::Value(Json::arrayValue);
-
-    for (const auto& f : files)
-    {
-	Json::Value file(Json::objectValue);
-	file["id"] = f->m_id;
-	file["path"] = f->m_path;
-	file["name"] = f->m_name;
-	file["length"] = f->m_length;
-	file["artist"] = f->m_artist;
-	file["album"] = f->m_album;
-	file["title"] = f->m_title;
-	file["year"] = f->m_year;
-
-	response.append(file);
-    }
-}
-
-// =====================================================================================================================
 void Server::libraryGetArtists(const Json::Value& request, Json::Value& response)
 {
     auto artists = m_library.getStorage().getArtists();
@@ -207,6 +187,27 @@ void Server::libraryGetAlbumsByArtist(const Json::Value& request, Json::Value& r
 }
 
 // =====================================================================================================================
+void Server::libraryGetFilesOfAlbum(const Json::Value& request, Json::Value& response)
+{
+    auto files = m_library.getStorage().getFilesOfAlbum(request["album_id"].asInt());
+
+    response = Json::Value(Json::arrayValue);
+
+    for (const auto& f : files)
+    {
+	Json::Value file(Json::objectValue);
+	file["id"] = f->m_id;
+	file["path"] = f->m_path;
+	file["name"] = f->m_name;
+	file["length"] = f->m_length;
+	file["title"] = f->m_title;
+	file["year"] = f->m_year;
+
+	response.append(file);
+    }
+}
+
+// =====================================================================================================================
 void Server::playerQueueFile(const Json::Value& request, Json::Value& response)
 {
     std::shared_ptr<library::File> file;
@@ -250,6 +251,7 @@ void Server::playerQueueGet(const Json::Value& request, Json::Value& response)
 	file["id"] = f->m_id;
 	file["path"] = f->m_path;
 	file["name"] = f->m_name;
+	file["title"] = f->m_title;
 	file["length"] = f->m_length;
 
 	response.append(file);
