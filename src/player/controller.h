@@ -44,6 +44,7 @@ class Controller
 	    STOP,
 	    PREV,
 	    NEXT,
+	    GOTO,
 	    // sent by the player thread once all samples of the current track have been written to the output
 	    SONG_FINISHED,
 	    // sent by the decoder thread when the decoding of the current file has been finished
@@ -66,6 +67,7 @@ class Controller
 	void stop();
 	void prev();
 	void next();
+	void goTo(int index);
 
 	/// sets the volume level (level must be between 0 and 100)
 	void setVolume(int level);
@@ -100,8 +102,20 @@ class Controller
 	/// the index of the currently played file from the queue
 	int m_playerIndex;
 
+	struct CmdBase
+	{
+	    CmdBase(Command cmd) : m_cmd(cmd) {}
+	    Command m_cmd;
+	};
+
+	struct GoTo : public CmdBase
+	{
+	    GoTo(int index) : CmdBase(GOTO), m_index(index) {}
+	    int m_index;
+	};
+
 	/// controller commands
-	std::deque<Command> m_commands;
+	std::deque<std::shared_ptr<CmdBase>> m_commands;
 
 	/// fifo for decoder and player threads
 	Fifo m_fifo;

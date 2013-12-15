@@ -42,6 +42,7 @@ class Server : public jsonrpc::AbstractServer<Server>
 	void playerStop(const Json::Value& request, Json::Value& response);
 	void playerPrev(const Json::Value& request, Json::Value& response);
 	void playerNext(const Json::Value& request, Json::Value& response);
+	void playerGoto(const Json::Value& request, Json::Value& response);
 
 	void playerSetVolume(const Json::Value& request, Json::Value& response);
 	void playerIncVolume(const Json::Value& request, Json::Value& response);

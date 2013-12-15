@@ -99,6 +99,15 @@ void Controller::next()
 }
 
 // =====================================================================================================================
+void Controller::goTo(int index)
+{
+    std::cout << "controller: goto " << index << std::endl;
+    thread::BlockLock bl(m_mutex);
+    m_commands.push_back(std::make_shared<GoTo>(index));
+    m_cond.signal();
+}
+
+// =====================================================================================================================
 void Controller::setVolume(int level)
 {
     // make sure volume level is valid
@@ -139,7 +148,7 @@ void Controller::decVolume()
 void Controller::command(Command cmd)
 {
     thread::BlockLock bl(m_mutex);
-    m_commands.push_back(cmd);
+    m_commands.push_back(std::make_shared<CmdBase>(cmd));
     m_cond.signal();
 }
 
@@ -153,7 +162,7 @@ void Controller::run()
 	while (m_commands.empty())
 	    m_cond.wait(m_mutex);
 
-	Command cmd = m_commands.front();
+	std::shared_ptr<CmdBase> cmd = m_commands.front();
 	m_commands.pop_front();
 
 	std::cout << "controller: cmd=" << cmd << std::endl;
@@ -161,7 +170,7 @@ void Controller::run()
 	    ", decoderIndex=" << m_decoderIndex <<
 	    ", playerIndex=" << m_playerIndex << std::endl;
 
-	switch (cmd)
+	switch (cmd->m_cmd)
 	{
 	    case PLAY :
 		if (m_state == PLAYING)
@@ -200,19 +209,25 @@ void Controller::run()
 
 	    case PREV :
 	    case NEXT :
+	    case GOTO :
 		if (m_state == PLAYING || m_state == PAUSED)
 		{
 		    m_decoder.stopDecoding();
 		    m_player->stopPlayback();
 		}
 
-		if (cmd == PREV)
+		if (cmd->m_cmd == PREV)
 		{
 		    if (m_playerIndex > 0) --m_playerIndex;
 		}
-		else if (cmd == NEXT)
+		else if (cmd->m_cmd == NEXT)
 		{
 		    if (!m_queue.empty() && (m_playerIndex < static_cast<int>(m_queue.size() - 1))) ++m_playerIndex;
+		}
+		else if (cmd->m_cmd == GOTO)
+		{
+		    const GoTo& g = static_cast<GoTo&>(*cmd);
+		    if (g.m_index >= 0 && g.m_index < static_cast<int>(m_queue.size())) m_playerIndex = g.m_index;
 		}
 
 		// set the decoder to the same position

@@ -103,6 +103,13 @@ Server::Server(library::MusicLibrary& library,
 					    jsonrpc::JSON_NULL,
 					    NULL),
 		     &Server::playerNext);
+    bindAndAddMethod(new jsonrpc::Procedure("player_goto",
+					    jsonrpc::PARAMS_BY_NAME,
+					    jsonrpc::JSON_NULL,
+					    "index",
+					    jsonrpc::JSON_INTEGER,
+					    NULL),
+		     &Server::playerGoto);
     bindAndAddMethod(new jsonrpc::Procedure("player_set_volume",
 					    jsonrpc::PARAMS_BY_NAME,
 					    jsonrpc::JSON_NULL,
@@ -299,6 +306,12 @@ void Server::playerPrev(const Json::Value& request, Json::Value& response)
 void Server::playerNext(const Json::Value& request, Json::Value& response)
 {
     m_ctrl.next();
+}
+
+// =====================================================================================================================
+void Server::playerGoto(const Json::Value& request, Json::Value& response)
+{
+    m_ctrl.goTo(request["index"].asInt());
 }
 
 // =====================================================================================================================
