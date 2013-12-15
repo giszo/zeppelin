@@ -7,6 +7,7 @@
 
 #include <library/musiclibrary.h>
 #include <thread/condition.h>
+#include <filter/volume.h>
 
 #include <vector>
 
@@ -28,6 +29,8 @@ struct Status
     State m_state;
     // position inside the current track in seconds
     unsigned m_position;
+    // volume level (0 - 100)
+    int m_volume;
 };
 
 class Controller
@@ -63,6 +66,13 @@ class Controller
 	void stop();
 	void prev();
 	void next();
+
+	/// sets the volume level (level must be between 0 and 100)
+	void setVolume(int level);
+	/// increases volume level
+	void incVolume();
+	/// decreases volume level
+	void decVolume();
 
 	void command(Command cmd);
 
@@ -101,6 +111,11 @@ class Controller
 
 	/// player thread putting decoded samples to the output device
 	std::unique_ptr<Player> m_player;
+
+	/// current volume level (between 0 and 100)
+	int m_volumeLevel;
+	/// volume adjuster filter
+	std::shared_ptr<filter::Volume> m_volumeAdj;
 
 	thread::Mutex m_mutex;
 	thread::Condition m_cond;

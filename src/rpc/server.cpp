@@ -99,6 +99,23 @@ Server::Server(library::MusicLibrary& library,
 					    jsonrpc::JSON_NULL,
 					    NULL),
 		     &Server::playerNext);
+    bindAndAddMethod(new jsonrpc::Procedure("player_set_volume",
+					    jsonrpc::PARAMS_BY_NAME,
+					    jsonrpc::JSON_NULL,
+					    "level",
+					    jsonrpc::JSON_INTEGER,
+					    NULL),
+		     &Server::playerSetVolume);
+    bindAndAddMethod(new jsonrpc::Procedure("player_inc_volume",
+					    jsonrpc::PARAMS_BY_NAME,
+					    jsonrpc::JSON_NULL,
+					    NULL),
+		     &Server::playerIncVolume);
+    bindAndAddMethod(new jsonrpc::Procedure("player_dec_volume",
+					    jsonrpc::PARAMS_BY_NAME,
+					    jsonrpc::JSON_NULL,
+					    NULL),
+		     &Server::playerDecVolume);
 }
 
 // =====================================================================================================================
@@ -243,6 +260,7 @@ void Server::playerStatus(const Json::Value& request, Json::Value& response)
     response["current"] = s.m_file ? Json::Value(s.m_file->m_id) : Json::Value(Json::nullValue);
     response["state"] = static_cast<int>(s.m_state);
     response["position"] = s.m_position;
+    response["volume"] = s.m_volume;
 }
 
 // =====================================================================================================================
@@ -273,4 +291,22 @@ void Server::playerPrev(const Json::Value& request, Json::Value& response)
 void Server::playerNext(const Json::Value& request, Json::Value& response)
 {
     m_ctrl.next();
+}
+
+// =====================================================================================================================
+void Server::playerSetVolume(const Json::Value& request, Json::Value& response)
+{
+    m_ctrl.setVolume(request["level"].asInt());
+}
+
+// =====================================================================================================================
+void Server::playerIncVolume(const Json::Value& request, Json::Value& response)
+{
+    m_ctrl.incVolume();
+}
+
+// =====================================================================================================================
+void Server::playerDecVolume(const Json::Value& request, Json::Value& response)
+{
+    m_ctrl.decVolume();
 }

@@ -41,6 +41,10 @@ class Server : public jsonrpc::AbstractServer<Server>
 	void playerPrev(const Json::Value& request, Json::Value& response);
 	void playerNext(const Json::Value& request, Json::Value& response);
 
+	void playerSetVolume(const Json::Value& request, Json::Value& response);
+	void playerIncVolume(const Json::Value& request, Json::Value& response);
+	void playerDecVolume(const Json::Value& request, Json::Value& response);
+
     private:
 	library::MusicLibrary& m_library;
 	player::Controller& m_ctrl;

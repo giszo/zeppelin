@@ -23,6 +23,11 @@ Controller::Controller()
     // prepare player thread
     m_player.reset(new Player(output, m_fifo, *this));
 
+    // create and register volume adjuster filter
+    m_volumeAdj.reset(new filter::Volume());
+    setVolume(100 /* max */);
+    m_decoder.addFilter(m_volumeAdj);
+
     // start decoder and player threads
     m_decoder.start();
     m_player->start();
@@ -46,6 +51,7 @@ auto Controller::getStatus() -> Status
 	s.m_file = m_queue[m_playerIndex];
     s.m_state = m_state;
     s.m_position = m_player->getPosition();
+    s.m_volume = m_volumeLevel;
 
     return s;
 }
@@ -90,6 +96,43 @@ void Controller::next()
 {
     std::cout << "controller: next" << std::endl;
     command(NEXT);
+}
+
+// =====================================================================================================================
+void Controller::setVolume(int level)
+{
+    // make sure volume level is valid
+    if (level < 0 || level > 100)
+	return;
+
+    thread::BlockLock bl(m_mutex);
+
+    m_volumeLevel = level;
+    m_volumeAdj->setLevel(level / 100.0f);
+}
+
+// =====================================================================================================================
+void Controller::incVolume()
+{
+    thread::BlockLock bl(m_mutex);
+
+    if (m_volumeLevel == 100)
+	return;
+
+    ++m_volumeLevel;
+    m_volumeAdj->setLevel(m_volumeLevel / 100.0f);
+}
+
+// =====================================================================================================================
+void Controller::decVolume()
+{
+    thread::BlockLock bl(m_mutex);
+
+    if (m_volumeLevel == 0)
+	return;
+
+    --m_volumeLevel;
+    m_volumeAdj->setLevel(m_volumeLevel / 100.0f);
 }
 
 // =====================================================================================================================

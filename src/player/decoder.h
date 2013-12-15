@@ -6,9 +6,11 @@
 #include <thread/thread.h>
 #include <thread/mutex.h>
 #include <codec/basecodec.h>
+#include <filter/basefilter.h>
 
 #include <memory>
 #include <deque>
+#include <vector>
 
 namespace player
 {
@@ -20,6 +22,8 @@ class Decoder : public thread::Thread
     public:
 	Decoder(Fifo& fifo, Controller& ctrl);
 
+	void addFilter(const std::shared_ptr<filter::BaseFilter>& filter);
+
 	void setInput(const std::shared_ptr<codec::BaseCodec>& input);
 
 	void startDecoding();
@@ -27,6 +31,8 @@ class Decoder : public thread::Thread
 
     private:
 	void run() override;
+
+	void runFilters(int16_t* samples, size_t count);
 
     private:
 	enum Command
@@ -41,6 +47,9 @@ class Decoder : public thread::Thread
 	Fifo& m_fifo;
 
 	std::shared_ptr<codec::BaseCodec> m_input;
+
+	/// filter chain that will be executed in the decoded samples
+	std::vector<std::shared_ptr<filter::BaseFilter>> m_filters;
 
 	thread::Mutex m_mutex;
 

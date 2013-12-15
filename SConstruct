@@ -30,7 +30,8 @@ sources = [
     "player/fifo.cpp",
     "thread/thread.cpp",
     "utils/stringutils.cpp",
-    "config/parser.cpp"
+    "config/parser.cpp",
+    "filter/volume.cpp"
 ]
 
 woms_lib = env.StaticLibrary(

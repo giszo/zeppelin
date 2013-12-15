@@ -15,6 +15,12 @@ Decoder::Decoder(Fifo& fifo, Controller& ctrl)
 }
 
 // =====================================================================================================================
+void Decoder::addFilter(const std::shared_ptr<filter::BaseFilter>& filter)
+{
+    m_filters.push_back(filter);
+}
+
+// =====================================================================================================================
 void Decoder::setInput(const std::shared_ptr<codec::BaseCodec>& input)
 {
     thread::BlockLock bl(m_mutex);
@@ -121,6 +127,9 @@ void Decoder::run()
 		break;
 	    }
 
+	    // perform filters on the decoded samples
+	    runFilters(samples, count);
+
 	    size_t size = count * sizeof(int16_t) * input->getChannels();
 
 	    m_fifo.addSamples(samples, size);
@@ -131,4 +140,21 @@ void Decoder::run()
 		break;
 	}
     }
+}
+
+// =====================================================================================================================
+void Decoder::runFilters(int16_t* samples, size_t count)
+{
+    float s[count * 2];
+
+    // convert sample values to float
+    for (size_t i = 0; i < count * 2; ++i)
+	s[i] = (float)samples[i];
+
+    for (const auto& filter : m_filters)
+	filter->run(s, count);
+
+    // convert the float samples back to the original buffer
+    for (size_t i = 0; i < count * 2; ++i)
+	samples[i] = (int16_t)s[i];
 }
