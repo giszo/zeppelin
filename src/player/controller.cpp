@@ -165,7 +165,7 @@ void Controller::run()
 	std::shared_ptr<CmdBase> cmd = m_commands.front();
 	m_commands.pop_front();
 
-	std::cout << "controller: cmd=" << cmd << std::endl;
+	std::cout << "controller: cmd=" << cmd->m_cmd << std::endl;
 	std::cout << "controller: state=" << m_state <<
 	    ", decoderIndex=" << m_decoderIndex <<
 	    ", playerIndex=" << m_playerIndex << std::endl;
