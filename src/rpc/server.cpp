@@ -160,6 +160,8 @@ void Server::libraryGetArtists(const Json::Value& request, Json::Value& response
 	Json::Value artist(Json::objectValue);
 	artist["id"] = a->m_id;
 	artist["name"] = a->m_name;
+	artist["albums"] = a->m_albums;
+	artist["songs"] = a->m_songs;
 
 	response.append(artist);
     }
@@ -178,6 +180,8 @@ void Server::libraryGetAlbums(const Json::Value& request, Json::Value& response)
 	album["id"] = a->m_id;
 	album["name"] = a->m_name;
 	album["artist"] = a->m_artist;
+	album["songs"] = a->m_songs;
+	album["length"] = a->m_length;
 
 	response.append(album);
     }
@@ -195,6 +199,8 @@ void Server::libraryGetAlbumsByArtist(const Json::Value& request, Json::Value& r
 	Json::Value album(Json::objectValue);
 	album["id"] = a->m_id;
 	album["name"] = a->m_name;
+	album["songs"] = a->m_songs;
+	album["length"] = a->m_length;
 
 	response.append(album);
     }

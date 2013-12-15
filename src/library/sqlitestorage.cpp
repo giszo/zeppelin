@@ -82,14 +82,28 @@ void SqliteStorage::open()
 
     // artists
     prepareStatement(&m_addArtist, "INSERT OR IGNORE INTO artists(name) VALUES(?)");
-    prepareStatement(&m_getArtists, "SELECT id, name FROM artists");
-    prepareStatement(&m_getArtistByName, "SELECT id FROM artists WHERE name = ?");
+    prepareStatement(&m_getArtists,
+                     R"(SELECT artists.id, artists.name, COUNT(DISTINCT files.album_id), COUNT(files.id)
+                        FROM files LEFT JOIN artists ON artists.id = files.artist_id
+                        GROUP BY files.artist_id
+                        ORDER BY artists.name)");
+
+    prepareStatement(&m_getArtistIdByName, "SELECT id FROM artists WHERE name = ?");
 
     // albums
     prepareStatement(&m_addAlbum, "INSERT OR IGNORE INTO albums(artist_id, name) VALUES(?, ?)");
-    prepareStatement(&m_getAlbumByName, "SELECT id FROM albums WHERE artist_id = ? AND name = ?");
-    prepareStatement(&m_getAlbums, "SELECT id, name, artist_id FROM albums");
-    prepareStatement(&m_getAlbumsByArtist, "SELECT id, name FROM albums WHERE artist_id = ?");
+    prepareStatement(&m_getAlbumIdByName, "SELECT id FROM albums WHERE artist_id = ? AND name = ?");
+    prepareStatement(&m_getAlbums,
+                     R"(SELECT albums.id, albums.name, files.artist_id, COUNT(files.id), SUM(files.length)
+                        FROM files LEFT JOIN albums ON albums.id = files.album_id
+                        GROUP BY files.album_id
+                        ORDER BY albums.name)");
+    prepareStatement(&m_getAlbumsByArtist,
+                     R"(SELECT albums.id, albums.name, COUNT(files.id), SUM(files.length)
+                        FROM files LEFT JOIN albums ON albums.id = files.album_id
+                        WHERE files.artist_id = ?
+                        GROUP BY files.album_id
+                        ORDER BY albums.name)");
 }
 
 // =====================================================================================================================
@@ -245,11 +259,11 @@ void SqliteStorage::updateFileMetadata(const library::File& file)
 	    throw StorageException("unable to insert artist");
 	sqlite3_reset(m_addArtist);
 
-	bindText(m_getArtistByName, 1, file.m_artist);
-	if (sqlite3_step(m_getArtistByName) != SQLITE_ROW)
+	bindText(m_getArtistIdByName, 1, file.m_artist);
+	if (sqlite3_step(m_getArtistIdByName) != SQLITE_ROW)
 	    throw StorageException("unable to get artist after inserting!");
-	artistId = sqlite3_column_int(m_getArtistByName, 0);
-	sqlite3_reset(m_getArtistByName);
+	artistId = sqlite3_column_int(m_getArtistIdByName, 0);
+	sqlite3_reset(m_getArtistIdByName);
     }
 
     // handle album
@@ -267,14 +281,14 @@ void SqliteStorage::updateFileMetadata(const library::File& file)
 	sqlite3_reset(m_addAlbum);
 
 	if (artistId == -1)
-	    sqlite3_bind_null(m_getAlbumByName, 1);
+	    sqlite3_bind_null(m_getAlbumIdByName, 1);
 	else
-	    sqlite3_bind_int(m_getAlbumByName, 1, artistId);
-	bindText(m_getAlbumByName, 2, file.m_album);
-	if (sqlite3_step(m_getAlbumByName) != SQLITE_ROW)
+	    sqlite3_bind_int(m_getAlbumIdByName, 1, artistId);
+	bindText(m_getAlbumIdByName, 2, file.m_album);
+	if (sqlite3_step(m_getAlbumIdByName) != SQLITE_ROW)
 	    throw StorageException("unable to get album after inserting!");
-	albumId = sqlite3_column_int(m_getAlbumByName, 0);
-	sqlite3_reset(m_getAlbumByName);
+	albumId = sqlite3_column_int(m_getAlbumIdByName, 0);
+	sqlite3_reset(m_getAlbumIdByName);
     }
 
     if (artistId == -1)
@@ -306,7 +320,9 @@ std::vector<std::shared_ptr<library::Artist>> SqliteStorage::getArtists()
     {
 	std::shared_ptr<Artist> artist = std::make_shared<Artist>(
 	    sqlite3_column_int(m_getArtists, 0),
-	    getText(m_getArtists, 1));
+	    getText(m_getArtists, 1),
+	    sqlite3_column_int(m_getArtists, 2),
+	    sqlite3_column_int(m_getArtists, 3));
 	artists.push_back(artist);
     }
 
@@ -327,7 +343,9 @@ std::vector<std::shared_ptr<library::Album>> SqliteStorage::getAlbums()
 	std::shared_ptr<Album> album = std::make_shared<Album>(
 	    sqlite3_column_int(m_getAlbums, 0),
 	    getText(m_getAlbums, 1),
-	    sqlite3_column_int(m_getAlbums, 2));
+	    sqlite3_column_int(m_getAlbums, 2),
+	    sqlite3_column_int(m_getAlbums, 3),
+	    sqlite3_column_int(m_getAlbums, 4));
 	albums.push_back(album);
     }
 
@@ -350,7 +368,9 @@ std::vector<std::shared_ptr<library::Album>> SqliteStorage::getAlbumsByArtist(in
 	std::shared_ptr<Album> album = std::make_shared<Album>(
 	    sqlite3_column_int(m_getAlbumsByArtist, 0),
 	    getText(m_getAlbumsByArtist, 1),
-	    artistId);
+	    artistId,
+	    sqlite3_column_int(m_getAlbumsByArtist, 2),
+	    sqlite3_column_int(m_getAlbumsByArtist, 3));
 	albums.push_back(album);
     }
 

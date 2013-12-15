@@ -60,11 +60,11 @@ class SqliteStorage : public Storage
 	/// artist handling
 	sqlite3_stmt* m_addArtist;
 	sqlite3_stmt* m_getArtists;
-	sqlite3_stmt* m_getArtistByName;
+	sqlite3_stmt* m_getArtistIdByName;
 
 	/// album handling
 	sqlite3_stmt* m_addAlbum;
-	sqlite3_stmt* m_getAlbumByName;
+	sqlite3_stmt* m_getAlbumIdByName;
 	sqlite3_stmt* m_getAlbums;
 	sqlite3_stmt* m_getAlbumsByArtist;
 

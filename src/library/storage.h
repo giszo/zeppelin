@@ -19,26 +19,36 @@ class FileNotFoundException : public std::runtime_error
 
 struct Artist
 {
-    Artist(int id, const std::string& name)
+    Artist(int id, const std::string& name, int albums, int songs)
 	: m_id(id),
-	  m_name(name)
+	  m_name(name),
+	  m_albums(albums),
+	  m_songs(songs)
     {}
 
     int m_id;
     std::string m_name;
+    int m_albums;
+    int m_songs;
 };
 
 struct Album
 {
-    Album(int id, const std::string& name, int artist)
+    Album(int id, const std::string& name, int artist, int songs, int length)
 	: m_id(id),
 	  m_name(name),
-	  m_artist(artist)
+	  m_artist(artist),
+	  m_songs(songs),
+	  m_length(length)
     {}
 
     int m_id;
     std::string m_name;
     int m_artist;
+    /// number of songs in this album
+    int m_songs;
+    /// length of the album in seconds
+    int m_length;
 };
 
 struct File
