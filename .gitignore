@@ -3,8 +3,8 @@
 
 /.sconsign.dblite
 
-/woms
-/libwoms.a
+/zeppelin
+/libzeppelin.a
 /unit_test
 
 /cli/__pycache__

@@ -34,22 +34,22 @@ sources = [
     "filter/volume.cpp"
 ]
 
-woms_lib = env.StaticLibrary(
-    "woms",
+zep_lib = env.StaticLibrary(
+    "zeppelin",
     source = ["src/%s" % s for s in sources]
 )
 
 ########################################################################################################################
 # main application
 
-woms = env.Program(
-    "woms",
-    source = ["src/main.cpp"] + woms_lib,
+zep = env.Program(
+    "zeppelin",
+    source = ["src/main.cpp"] + zep_lib,
     LIBS = ["asound", "mpg123", "sqlite3", "jsonrpc"]
 )
 
 # define the defualt target
-Default(woms)
+Default(zep)
 
 ########################################################################################################################
 # testing
@@ -60,6 +60,6 @@ tests = [
 
 env.Program(
     "unit_test",
-    source = ["tst/%s" % t for t in tests] + ["tst/main.cpp"] + woms_lib,
+    source = ["tst/%s" % t for t in tests] + ["tst/main.cpp"] + zep_lib,
     LIBS = ["boost_unit_test_framework"]
 )
