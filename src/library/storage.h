@@ -115,6 +115,8 @@ class Storage
 	virtual std::vector<std::shared_ptr<File>> getFiles() = 0;
 	/// returns the given amount of files at most from the library having no metadata yet
 	virtual std::vector<std::shared_ptr<File>> getFilesWithoutMetadata() = 0;
+	/// returns the files of the given artist
+	virtual std::vector<std::shared_ptr<File>> getFilesOfArtist(int artistId) = 0;
 	/// returns the files of the given album
 	virtual std::vector<std::shared_ptr<File>> getFilesOfAlbum(int albumId) = 0;
 

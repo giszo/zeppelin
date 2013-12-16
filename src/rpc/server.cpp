@@ -41,6 +41,13 @@ Server::Server(library::MusicLibrary& library,
 		     &Server::libraryGetAlbumsByArtist);
 
     // library - files
+    bindAndAddMethod(new jsonrpc::Procedure("library_get_files_of_artist",
+					    jsonrpc::PARAMS_BY_NAME,
+					    jsonrpc::JSON_ARRAY,
+					    "artist_id",
+					    jsonrpc::JSON_INTEGER,
+					    NULL),
+		     &Server::libraryGetFilesOfArtist);
     bindAndAddMethod(new jsonrpc::Procedure("library_get_files_of_album",
 					    jsonrpc::PARAMS_BY_NAME,
 					    jsonrpc::JSON_ARRAY,
@@ -190,6 +197,27 @@ void Server::libraryGetAlbumsByArtist(const Json::Value& request, Json::Value& r
 	album["length"] = a->m_length;
 
 	response.append(album);
+    }
+}
+
+// =====================================================================================================================
+void Server::libraryGetFilesOfArtist(const Json::Value& request, Json::Value& response)
+{
+    auto files = m_library.getStorage().getFilesOfArtist(request["artist_id"].asInt());
+
+    response = Json::Value(Json::arrayValue);
+
+    for (const auto& f : files)
+    {
+	Json::Value file(Json::objectValue);
+	file["id"] = f->m_id;
+	file["path"] = f->m_path;
+	file["name"] = f->m_name;
+	file["length"] = f->m_length;
+	file["title"] = f->m_title;
+	file["year"] = f->m_year;
+
+	response.append(file);
     }
 }
 
