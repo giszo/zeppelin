@@ -49,6 +49,7 @@ void SqliteStorage::open()
 	    title TEXT DEFAULT NULL,
 	    year INTEGER DEFAULT NULL,
 	    track_index INTEGER DEFAULT NULL,
+	    mark INTEGER DEFAULT 1,
 	    UNIQUE(path, name),
 	    FOREIGN KEY(artist_id) REFERENCES artists(id),
 	    FOREIGN KEY(album_id) REFERENCES albums(id)))");
@@ -76,6 +77,7 @@ void SqliteStorage::open()
                                             FROM files
                                             WHERE album_id = ?
                                             ORDER BY track_index)");
+    prepareStatement(&m_setFileMark, "UPDATE files SET mark = 1 WHERE id = ?");
 
     prepareStatement(&m_updateFileMeta,
                      R"(UPDATE files
@@ -106,24 +108,30 @@ void SqliteStorage::open()
                         WHERE files.artist_id = ?
                         GROUP BY files.album_id
                         ORDER BY albums.name)");
+
+    // mark
+    prepareStatement(&m_clearMark, "UPDATE files SET mark = 0");
+    prepareStatement(&m_deleteNonMarked, "DELETE FROM files WHERE mark = 0");
 }
 
 // =====================================================================================================================
 bool SqliteStorage::addFile(File& file)
 {
-    int r;
-
     thread::BlockLock bl(m_mutex);
 
     // first check whether the file already exists
-    bindText(m_getFileByPath, 1, file.m_path);
-    bindText(m_getFileByPath, 2, file.m_name);
-    r = sqlite3_step(m_getFileByPath);
-    sqlite3_reset(m_getFileByPath);
+    int id = getFileIdByPath(file.m_path, file.m_name);
 
     // the file was found ...
-    if (r == SQLITE_ROW)
+    if (id != -1)
+    {
+	// set mark on the file
+	sqlite3_bind_int(m_setFileMark, 1, id);
+	sqlite3_step(m_setFileMark);
+	sqlite3_reset(m_setFileMark);
+
 	return false;
+    }
 
     // add the new file
     bindText(m_newFile, 1, file.m_path);
@@ -135,6 +143,24 @@ bool SqliteStorage::addFile(File& file)
     file.m_id = sqlite3_last_insert_rowid(m_db);
 
     return true;
+}
+
+// =====================================================================================================================
+void SqliteStorage::clearMark()
+{
+    thread::BlockLock bl(m_mutex);
+
+    sqlite3_step(m_clearMark);
+    sqlite3_reset(m_clearMark);
+}
+
+// =====================================================================================================================
+void SqliteStorage::deleteNonMarked()
+{
+    thread::BlockLock bl(m_mutex);
+
+    sqlite3_step(m_deleteNonMarked);
+    sqlite3_reset(m_deleteNonMarked);
 }
 
 // =====================================================================================================================
@@ -444,4 +470,22 @@ std::string SqliteStorage::getText(sqlite3_stmt* stmt, int col)
 void SqliteStorage::bindText(sqlite3_stmt* stmt, int col, const std::string& s)
 {
     sqlite3_bind_text(stmt, col, s.c_str(), s.length(), NULL);
+}
+
+// =====================================================================================================================
+int SqliteStorage::getFileIdByPath(const std::string& path, const std::string& name)
+{
+    int id;
+
+    bindText(m_getFileByPath, 1, path);
+    bindText(m_getFileByPath, 2, name);
+
+    if (sqlite3_step(m_getFileByPath) == SQLITE_ROW)
+	id = sqlite3_column_int(m_getFileByPath, 0);
+    else
+	id = -1;
+
+    sqlite3_reset(m_getFileByPath);
+
+    return id;
 }

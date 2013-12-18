@@ -26,6 +26,13 @@ void Scanner::add(const std::string& path)
 {
     thread::BlockLock bl(m_mutex);
     m_paths.push_back(path);
+}
+
+// =====================================================================================================================
+void Scanner::scan()
+{
+    thread::BlockLock bl(m_mutex);
+    m_commands.push_back(SCAN);
     m_cond.signal();
 }
 
@@ -34,24 +41,49 @@ void Scanner::run()
 {
     while (1)
     {
-	std::string path;
-
 	m_mutex.lock();
 
-	while (m_paths.empty())
+	while (m_commands.empty())
 	    m_cond.wait(m_mutex);
 
-	path = m_paths.front();
-	m_paths.pop_front();
+	Command cmd = m_commands.front();
+	m_commands.pop_front();
 
 	m_mutex.unlock();
 
-	scanDirectory(path);
+	switch (cmd)
+	{
+	    case SCAN :
+		m_listener.scanningStarted();
+		scanDirectories();
+		m_listener.scanningFinished();
+		break;
+	}
     }
 }
 
 // =====================================================================================================================
-void Scanner::scanDirectory(const std::string& path)
+void Scanner::scanDirectories()
+{
+    std::deque<std::string> paths;
+
+    {
+	thread::BlockLock bl(m_mutex);
+	paths = m_paths;
+	m_paths.clear();
+    }
+
+    while (!paths.empty())
+    {
+	std::string path = paths.front();
+	paths.pop_front();
+
+	scanDirectory(path, paths);
+    }
+}
+
+// =====================================================================================================================
+void Scanner::scanDirectory(const std::string& path, std::deque<std::string>& paths)
 {
     std::cout << "Scanning directory: " << path << std::endl;
 
@@ -78,11 +110,7 @@ void Scanner::scanDirectory(const std::string& path)
 	    continue;
 
 	if (S_ISDIR(st.st_mode))
-	{
-	    thread::BlockLock bl(m_mutex);
-	    m_paths.push_back(p);
-	    // NOTE: no need to signal the condition here
-	}
+	    paths.push_back(p);
 	else if (isMediaFile(name))
 	    m_listener.musicFound(path, name);
     }

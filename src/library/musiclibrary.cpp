@@ -27,6 +27,23 @@ void MusicLibrary::scan()
     // scan all of the configured root directories
     for (const auto& r : m_roots)
 	m_scanner.add(r);
+
+    m_scanner.scan();
+}
+
+// =====================================================================================================================
+void MusicLibrary::scanningStarted()
+{
+    // Clear mark from all of the files before starting directory scanning. Mark will be put on existing files so we
+    // can delete the non-marked files at the end of the scanning to remove deleted files from the library.
+    m_storage.clearMark();
+}
+
+// =====================================================================================================================
+void MusicLibrary::scanningFinished()
+{
+    // Delete non-marked files from the library
+    m_storage.deleteNonMarked();
 }
 
 // =====================================================================================================================

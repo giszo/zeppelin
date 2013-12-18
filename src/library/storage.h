@@ -109,6 +109,11 @@ class Storage
 	 */
 	virtual bool addFile(File& file) = 0;
 
+	/// clears the mark flag from all files
+	virtual void clearMark() = 0;
+	/// deletes those files from the database having no mark
+	virtual void deleteNonMarked() = 0;
+
 	/// returns the file informations associated to the given ID
 	virtual std::shared_ptr<File> getFile(int id) = 0;
 	/// returns all of the files from the underlying storage

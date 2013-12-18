@@ -17,6 +17,9 @@ class ScannerListener
 	virtual ~ScannerListener()
 	{}
 
+	virtual void scanningStarted() = 0;
+	virtual void scanningFinished() = 0;
+
 	virtual void musicFound(const std::string& path, const std::string& name) = 0;
 };
 
@@ -27,14 +30,27 @@ class Scanner : public thread::Thread
 
 	void add(const std::string& path);
 
+	// starts directory scanning
+	void scan();
+
 	void run() override;
 
     private:
-	void scanDirectory(const std::string& path);
+	void scanDirectories();
+	void scanDirectory(const std::string& path, std::deque<std::string>& paths);
 
 	bool isMediaFile(const std::string& name);
 
     private:
+	enum Command
+	{
+	    SCAN
+	};
+
+	// command queue
+	std::deque<Command> m_commands;
+
+	// list of paths that will be scanned
 	std::deque<std::string> m_paths;
 
 	thread::Mutex m_mutex;

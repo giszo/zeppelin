@@ -19,6 +19,8 @@ class MusicLibrary : public ScannerListener
 
 	void scan();
 
+	void scanningStarted() override;
+	void scanningFinished() override;
 	void musicFound(const std::string& path, const std::string& name) override;
 
     private:
