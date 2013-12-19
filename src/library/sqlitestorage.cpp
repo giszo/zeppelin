@@ -20,8 +20,6 @@ SqliteStorage::~SqliteStorage()
 // =====================================================================================================================
 void SqliteStorage::open()
 {
-    std::string sql;
-
     if (sqlite3_open("library.db", &m_db) != SQLITE_OK)
 	throw StorageException("unable to open database");
 
@@ -195,12 +193,11 @@ std::shared_ptr<library::File> SqliteStorage::getFile(int id)
 // =====================================================================================================================
 std::vector<std::shared_ptr<library::File>> SqliteStorage::getFiles()
 {
-    int r;
     std::vector<std::shared_ptr<File>> files;
 
     thread::BlockLock bl(m_mutex);
 
-    while ((r = sqlite3_step(m_getFiles)) == SQLITE_ROW)
+    while (sqlite3_step(m_getFiles) == SQLITE_ROW)
     {
 	std::shared_ptr<File> file = std::make_shared<File>(
 	    sqlite3_column_int(m_getFiles, 0), // id
