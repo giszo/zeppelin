@@ -91,7 +91,10 @@ void Scanner::scanDirectory(const std::string& path, std::deque<std::string>& pa
     DIR* dir = opendir(path.c_str());
 
     if (!dir)
+    {
+	std::cout << "Unable to open directory: " << path << std::endl;
 	return;
+    }
 
     // iterate through directory entries
     struct dirent* ent;
@@ -116,6 +119,8 @@ void Scanner::scanDirectory(const std::string& path, std::deque<std::string>& pa
     }
 
     closedir(dir);
+
+    std::cout << "Scanning of " << path << " finished" << std::endl;
 }
 
 // =====================================================================================================================
