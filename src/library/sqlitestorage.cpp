@@ -94,7 +94,7 @@ void SqliteStorage::open()
 
     // albums
     prepareStatement(&m_addAlbum, "INSERT OR IGNORE INTO albums(artist_id, name) VALUES(?, ?)");
-    prepareStatement(&m_getAlbumIdByName, "SELECT id FROM albums WHERE artist_id = ? AND name = ?");
+    prepareStatement(&m_getAlbumIdByName, "SELECT id FROM albums WHERE artist_id IS ? AND name = ?");
     prepareStatement(&m_getAlbums,
                      R"(SELECT albums.id, albums.name, files.artist_id, COUNT(files.id), SUM(files.length)
                         FROM files LEFT JOIN albums ON albums.id = files.album_id
