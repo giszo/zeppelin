@@ -115,14 +115,17 @@ void Decoder::run()
 	    if (!input->decode(samples, count))
 	    {
 		// the end of the stream has been reached
-
 		std::cout << "decoder: end of stream" << std::endl;
 		m_fifo.addMarker();
 
-		m_ctrl.command(Controller::DECODER_FINISHED);
+		// remove the input of the decoder
+		{
+		    thread::BlockLock bl(m_mutex);
+		    m_input.reset();
+		}
 
-		thread::BlockLock bl(m_mutex);
-		m_input.reset();
+		// let the controller know that the decoder finished working
+		m_ctrl.command(Controller::DECODER_FINISHED);
 
 		break;
 	    }
