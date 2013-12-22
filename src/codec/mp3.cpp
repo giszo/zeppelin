@@ -86,13 +86,13 @@ codec::Metadata Mp3::getMetadata()
 
     if (id3_v2)
     {
-	if (id3_v2->artist)
+	if (id3_v2->artist && id3_v2->artist->p)
 	    info.m_artist = id3_v2->artist->p;
-	if (id3_v2->album)
+	if (id3_v2->album && id3_v2->album->p)
 	    info.m_album = id3_v2->album->p;
-	if (id3_v2->title)
+	if (id3_v2->title && id3_v2->title->p)
 	    info.m_title = id3_v2->title->p;
-	if (id3_v2->year)
+	if (id3_v2->year && id3_v2->year->p)
 	{
 	    try
 	    {
@@ -107,7 +107,7 @@ codec::Metadata Mp3::getMetadata()
 	{
 	    mpg123_text* t = &id3_v2->text[i];
 
-	    if (memcmp(t->id, "TRCK", 4) == 0)
+	    if ((memcmp(t->id, "TRCK", 4) == 0) && t->text.p)
 	    {
 		try
 		{
