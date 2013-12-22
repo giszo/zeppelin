@@ -59,6 +59,9 @@ class Controller
 
 	/// puts a new file onto the playback queue
 	void queue(const std::shared_ptr<library::File>& file);
+	/// puts a new album onto the playback queue
+	void queue(const std::shared_ptr<library::Album>& album,
+		   const std::vector<std::shared_ptr<library::File>>& files);
 
 	void play();
 	void pause();

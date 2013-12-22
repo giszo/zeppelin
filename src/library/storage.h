@@ -131,6 +131,8 @@ class Storage
 	/// returns the available artists from the database
 	virtual std::vector<std::shared_ptr<Artist>> getArtists() = 0;
 
+	/// returns the album associated to the given ID
+	virtual std::shared_ptr<Album> getAlbum(int id) = 0;
 	/// returns the available albums from the database (without artist filtering)
 	virtual std::vector<std::shared_ptr<Album>> getAlbums() = 0;
 	/// returns the available albums associated to the given artist

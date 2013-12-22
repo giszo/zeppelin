@@ -265,12 +265,15 @@ void Server::playerQueueFile(const Json::Value& request, Json::Value& response)
 // =====================================================================================================================
 void Server::playerQueueAlbum(const Json::Value& request, Json::Value& response)
 {
-    std::cout << "Queueing album: " << request["id"] << std::endl;
+    int albumId = request["id"].asInt();
 
-    auto files = m_library.getStorage().getFilesOfAlbum(request["id"].asInt());
+    std::cout << "Queueing album: " << albumId << std::endl;
 
-    for (const auto& file : files)
-	m_ctrl.queue(file);
+    // TODO: handle not found exception here!
+    auto album = m_library.getStorage().getAlbum(albumId);
+    auto files = m_library.getStorage().getFilesOfAlbum(albumId);
+
+    m_ctrl.queue(album, files);
 }
 
 // =====================================================================================================================
@@ -283,6 +286,21 @@ static inline void serializeQueueItem(Json::Value& parent, const std::shared_ptr
     {
 	case player::QueueItem::PLAYLIST :
 	    break;
+
+	case player::QueueItem::ALBUM :
+	{
+	    const player::Album& ai = static_cast<const player::Album&>(*item);
+	    const library::Album& album = ai.album();
+
+	    qi["id"] = album.m_id;
+	    qi["name"] = album.m_name;
+	    qi["files"] = Json::Value(Json::arrayValue);
+
+	    for (const auto& i : ai.items())
+		serializeQueueItem(qi["files"], i);
+
+	    break;
+	}
 
 	case player::QueueItem::FILE :
 	{

@@ -12,7 +12,8 @@ namespace player
 class QueueItem
 {
     public:
-	enum Type { PLAYLIST, FILE };
+	enum Type { PLAYLIST, ALBUM, FILE };
+	enum Position { FIRST, LAST };
 
 	virtual ~QueueItem() {}
 
@@ -25,8 +26,8 @@ class QueueItem
 
 	// Returns true if the iterator of the item is valid.
 	virtual bool isValid() const = 0;
-	// Resets the iterator to the beginning of the item.
-	virtual void reset() = 0;
+	// Resets the iterator to the given position of the item.
+	virtual void reset(Position position) = 0;
 	/**
 	 * Moves the iterator to the previous item.
 	 * @return true is returned if the iterator is still valid
@@ -47,6 +48,34 @@ class QueueItem
 	virtual std::vector<std::shared_ptr<QueueItem>> items() const = 0;
 };
 
+/**
+ * Base class for queue items that can contain other items.
+ */
+class ContainerQueueItem : public QueueItem
+{
+    public:
+	ContainerQueueItem();
+
+	void get(std::vector<int>& i) override;
+	void set(std::vector<int>& i) override;
+
+	bool isValid() const override;
+	void reset(Position position) override;
+	bool prev() override;
+	bool next() override;
+
+	const std::shared_ptr<library::File>& file() const override;
+
+	std::vector<std::shared_ptr<QueueItem>> items() const override;
+
+    protected:
+	// the index of the currently active item in the playlit
+	int m_index;
+
+	// playlit items
+	std::vector<std::shared_ptr<QueueItem>> m_items;
+};
+
 class File : public QueueItem
 {
     public:
@@ -58,7 +87,7 @@ class File : public QueueItem
 	void set(std::vector<int>&) override;
 
 	bool isValid() const override;
-	void reset() override;
+	void reset(Position position) override;
 	bool prev() override;
 	bool next() override;
 
@@ -72,35 +101,36 @@ class File : public QueueItem
 	std::shared_ptr<library::File> m_file;
 };
 
-class Playlist : public QueueItem
+class Album : public ContainerQueueItem
 {
     public:
-	Playlist();
-
-	void add(const std::shared_ptr<library::File>& f);
+	Album(const std::shared_ptr<library::Album>& album,
+	      const std::vector<std::shared_ptr<library::File>>& files);
 
 	Type type() const override;
 
-	void get(std::vector<int>& i) override;
-	void set(std::vector<int>& i) override;
-
-	bool isValid() const override;
-	void reset() override;
-	bool prev() override;
-	bool next() override;
-
-	const std::shared_ptr<library::File>& file() const override;
-
 	std::shared_ptr<QueueItem> clone() const override;
 
-	std::vector<std::shared_ptr<QueueItem>> items() const override;
+	const library::Album& album() const;
 
     private:
-	// the index of the currently active item in the playlit
-	int m_index;
+	// used for cloning
+	Album()
+	{}
 
-	// playlit items
-	std::vector<std::shared_ptr<QueueItem>> m_items;
+	std::shared_ptr<library::Album> m_album;
+};
+
+class Playlist : public ContainerQueueItem
+{
+    public:
+	void add(const std::shared_ptr<library::File>& f);
+	void add(const std::shared_ptr<library::Album>& album,
+		 const std::vector<std::shared_ptr<library::File>>& files);
+
+	Type type() const override;
+
+	std::shared_ptr<QueueItem> clone() const override;
 };
 
 }

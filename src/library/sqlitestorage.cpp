@@ -94,6 +94,7 @@ void SqliteStorage::open()
 
     // albums
     prepareStatement(&m_addAlbum, "INSERT OR IGNORE INTO albums(artist_id, name) VALUES(?, ?)");
+    prepareStatement(&m_getAlbum, "SELECT artist_id, name FROM albums WHERE id = ?");
     prepareStatement(&m_getAlbumIdByName, "SELECT id FROM albums WHERE artist_id IS ? AND name = ?");
     prepareStatement(&m_getAlbums,
                      R"(SELECT albums.id, albums.name, files.artist_id, COUNT(files.id), SUM(files.length)
@@ -386,6 +387,24 @@ std::vector<std::shared_ptr<library::Artist>> SqliteStorage::getArtists()
     sqlite3_reset(m_getArtists);
 
     return artists;
+}
+
+// =====================================================================================================================
+std::shared_ptr<library::Album> SqliteStorage::getAlbum(int id)
+{
+    thread::BlockLock bl(m_mutex);
+
+    sqlite3_bind_int(m_getAlbum, 1, id);
+
+    if (sqlite3_step(m_getAlbum) != SQLITE_ROW)
+	throw FileNotFoundException("album not found"); // TODO: use a new exception here!
+
+    return std::make_shared<Album>(
+	id,
+	getText(m_getAlbum, 1),
+	sqlite3_column_int(m_getAlbum, 0),
+	0,
+	0);
 }
 
 // =====================================================================================================================

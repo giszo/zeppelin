@@ -58,8 +58,19 @@ auto Controller::getStatus() -> Status
 void Controller::queue(const std::shared_ptr<library::File>& file)
 {
     thread::BlockLock bl(m_mutex);
+
     m_decoderQueue.add(file);
     m_playerQueue.add(file);
+}
+
+// =====================================================================================================================
+void Controller::queue(const std::shared_ptr<library::Album>& album,
+		      const std::vector<std::shared_ptr<library::File>>& files)
+{
+    thread::BlockLock bl(m_mutex);
+
+    m_decoderQueue.add(album, files);
+    m_playerQueue.add(album, files);
 }
 
 // =====================================================================================================================
@@ -175,8 +186,8 @@ void Controller::run()
 		// reset both decoder and player index to the start of the queue if we are in an undefined state
 		if (!m_decoderQueue.isValid())
 		{
-		    m_decoderQueue.reset();
-		    m_playerQueue.reset();
+		    m_decoderQueue.reset(QueueItem::FIRST);
+		    m_playerQueue.reset(QueueItem::FIRST);
 		}
 
 		// initialize the decoder if it has no input
