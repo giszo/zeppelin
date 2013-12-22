@@ -10,9 +10,7 @@ using player::Controller;
 // =====================================================================================================================
 Controller::Controller()
     : m_state(STOPPED),
-      m_decoderIndex(0),
       m_decoderInitialized(false),
-      m_playerIndex(0),
       m_fifo(4 * 1024 /* 4kB for now */),
       m_decoder(m_fifo, *this)
 {
@@ -34,10 +32,10 @@ Controller::Controller()
 }
 
 // =====================================================================================================================
-std::vector<std::shared_ptr<library::File>> Controller::getQueue()
+std::shared_ptr<player::Playlist> Controller::getQueue() const
 {
     thread::BlockLock bl(m_mutex);
-    return m_queue;
+    return std::static_pointer_cast<Playlist>(m_playerQueue.clone());
 }
 
 // =====================================================================================================================
@@ -47,8 +45,8 @@ auto Controller::getStatus() -> Status
 
     thread::BlockLock bl(m_mutex);
 
-    if (isPlayerIndexValid())
-	s.m_file = m_queue[m_playerIndex];
+    if (m_playerQueue.isValid())
+	s.m_file = m_playerQueue.file();
     s.m_state = m_state;
     s.m_position = m_player->getPosition();
     s.m_volume = m_volumeLevel;
@@ -60,7 +58,8 @@ auto Controller::getStatus() -> Status
 void Controller::queue(const std::shared_ptr<library::File>& file)
 {
     thread::BlockLock bl(m_mutex);
-    m_queue.push_back(file);
+    m_decoderQueue.add(file);
+    m_playerQueue.add(file);
 }
 
 // =====================================================================================================================
@@ -99,9 +98,9 @@ void Controller::next()
 }
 
 // =====================================================================================================================
-void Controller::goTo(int index)
+void Controller::goTo(const std::vector<int>& index)
 {
-    std::cout << "controller: goto " << index << std::endl;
+    std::cout << "controller: goto" << std::endl;
     thread::BlockLock bl(m_mutex);
     m_commands.push_back(std::make_shared<GoTo>(index));
     m_cond.signal();
@@ -165,10 +164,7 @@ void Controller::run()
 	std::shared_ptr<CmdBase> cmd = m_commands.front();
 	m_commands.pop_front();
 
-	std::cout << "controller: cmd=" << cmd->m_cmd << std::endl;
-	std::cout << "controller: state=" << m_state <<
-	    ", decoderIndex=" << m_decoderIndex <<
-	    ", playerIndex=" << m_playerIndex << std::endl;
+	std::cout << "controller: cmd=" << cmd->m_cmd << ", state=" << m_state << std::endl;
 
 	switch (cmd->m_cmd)
 	{
@@ -177,10 +173,10 @@ void Controller::run()
 		    break;
 
 		// reset both decoder and player index to the start of the queue if we are in an undefined state
-		if (!isDecoderIndexValid())
+		if (!m_decoderQueue.isValid())
 		{
-		    m_decoderIndex = 0;
-		    m_playerIndex = 0;
+		    m_decoderQueue.reset();
+		    m_playerQueue.reset();
 		}
 
 		// initialize the decoder if it has no input
@@ -210,6 +206,7 @@ void Controller::run()
 	    case PREV :
 	    case NEXT :
 	    case GOTO :
+	    {
 		if (m_state == PLAYING || m_state == PAUSED)
 		{
 		    m_decoder.stopDecoding();
@@ -218,20 +215,22 @@ void Controller::run()
 
 		if (cmd->m_cmd == PREV)
 		{
-		    if (m_playerIndex > 0) --m_playerIndex;
+		    m_playerQueue.prev();
 		}
 		else if (cmd->m_cmd == NEXT)
 		{
-		    if (!m_queue.empty() && (m_playerIndex < static_cast<int>(m_queue.size() - 1))) ++m_playerIndex;
+		    m_playerQueue.next();
 		}
 		else if (cmd->m_cmd == GOTO)
 		{
-		    const GoTo& g = static_cast<GoTo&>(*cmd);
-		    if (g.m_index >= 0 && g.m_index < static_cast<int>(m_queue.size())) m_playerIndex = g.m_index;
+		    GoTo& g = static_cast<GoTo&>(*cmd);
+		    m_playerQueue.set(g.m_index);
 		}
 
 		// set the decoder to the same position
-		m_decoderIndex = m_playerIndex;
+		std::vector<int> it;
+		m_playerQueue.get(it);
+		m_decoderQueue.set(it);
 
 		// load the file into the decoder
 		setDecoderInput();
@@ -243,8 +242,10 @@ void Controller::run()
 		}
 
 		break;
+	    }
 
 	    case STOP :
+	    {
 		if (m_state != PLAYING && m_state != PAUSED)
 		    break;
 
@@ -253,17 +254,20 @@ void Controller::run()
 		m_player->stopPlayback();
 
 		// reset the decoder index to the currently played song
-		m_decoderIndex = m_playerIndex;
+		std::vector<int> it;
+		m_playerQueue.get(it);
+		m_decoderQueue.set(it);
 		m_decoderInitialized = false;
 		m_decoder.setInput(nullptr);
 
 		m_state = STOPPED;
 
 		break;
+	    }
 
 	    case DECODER_FINISHED :
 		// jump to the next file
-		++m_decoderIndex;
+		m_decoderQueue.next();
 
 		setDecoderInput();
 
@@ -276,9 +280,9 @@ void Controller::run()
 		std::cout << "song finished" << std::endl;
 
 		// step to the next song
-		++m_playerIndex;
+		m_playerQueue.next();
 
-		if (!isPlayerIndexValid())
+		if (!m_playerQueue.isValid())
 		    m_state = STOPPED;
 
 		break;
@@ -289,23 +293,11 @@ void Controller::run()
 }
 
 // =====================================================================================================================
-bool Controller::isDecoderIndexValid() const
-{
-    return (m_decoderIndex >= 0 && m_decoderIndex < static_cast<int>(m_queue.size()));
-}
-
-// =====================================================================================================================
-bool Controller::isPlayerIndexValid() const
-{
-    return (m_playerIndex >= 0 && m_playerIndex < static_cast<int>(m_queue.size()));
-}
-
-// =====================================================================================================================
 void Controller::setDecoderInput()
 {
-    while (m_decoderIndex < static_cast<int>(m_queue.size()))
+    while (m_decoderQueue.isValid())
     {
-	const library::File& file = *m_queue[m_decoderIndex];
+	const library::File& file = *m_decoderQueue.file();
 
 	// open the file
 	std::shared_ptr<codec::BaseCodec> input = codec::BaseCodec::openFile(file.m_path + "/" + file.m_name);
@@ -313,7 +305,7 @@ void Controller::setDecoderInput()
 	// try the next one if we were unable to open
 	if (!input)
 	{
-	    ++m_decoderIndex;
+	    m_decoderQueue.next();
 	    continue;
 	}
 

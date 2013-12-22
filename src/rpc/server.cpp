@@ -114,7 +114,7 @@ Server::Server(library::MusicLibrary& library,
 					    jsonrpc::PARAMS_BY_NAME,
 					    jsonrpc::JSON_NULL,
 					    "index",
-					    jsonrpc::JSON_INTEGER,
+					    jsonrpc::JSON_ARRAY,
 					    NULL),
 		     &Server::playerGoto);
     bindAndAddMethod(new jsonrpc::Procedure("player_set_volume",
@@ -274,23 +274,42 @@ void Server::playerQueueAlbum(const Json::Value& request, Json::Value& response)
 }
 
 // =====================================================================================================================
+static inline void serializeQueueItem(Json::Value& parent, const std::shared_ptr<player::QueueItem>& item)
+{
+    Json::Value qi(Json::objectValue);
+    qi["type"] = item->type();
+
+    switch (item->type())
+    {
+	case player::QueueItem::PLAYLIST :
+	    break;
+
+	case player::QueueItem::FILE :
+	{
+	    auto file = item->file();
+
+	    qi["id"] = file->m_id;
+	    qi["path"] = file->m_path;
+	    qi["name"] = file->m_name;
+	    qi["title"] = file->m_title;
+	    qi["length"] = file->m_length;
+
+	    break;
+	}
+    }
+
+    parent.append(qi);
+}
+
+// =====================================================================================================================
 void Server::playerQueueGet(const Json::Value& request, Json::Value& response)
 {
     auto queue = m_ctrl.getQueue();
 
     response = Json::Value(Json::arrayValue);
 
-    for (const auto& f : queue)
-    {
-	Json::Value file(Json::objectValue);
-	file["id"] = f->m_id;
-	file["path"] = f->m_path;
-	file["name"] = f->m_name;
-	file["title"] = f->m_title;
-	file["length"] = f->m_length;
-
-	response.append(file);
-    }
+    for (const auto& item : queue->items())
+	serializeQueueItem(response, item);
 }
 
 // =====================================================================================================================
@@ -339,7 +358,14 @@ void Server::playerNext(const Json::Value& request, Json::Value& response)
 // =====================================================================================================================
 void Server::playerGoto(const Json::Value& request, Json::Value& response)
 {
-    m_ctrl.goTo(request["index"].asInt());
+    Json::Value index = request["index"];
+
+    std::vector<int> i;
+
+    for (Json::UInt j = 0; j < index.size(); ++j)
+	i.push_back(index[j].asInt());
+
+    m_ctrl.goTo(i);
 }
 
 // =====================================================================================================================

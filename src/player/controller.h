@@ -4,12 +4,10 @@
 #include "decoder.h"
 #include "player.h"
 #include "fifo.h"
+#include "queue.h"
 
-#include <library/musiclibrary.h>
 #include <thread/condition.h>
 #include <filter/volume.h>
-
-#include <vector>
 
 namespace player
 {
@@ -54,7 +52,7 @@ class Controller
 	Controller();
 
 	/// returns the current play queue
-	std::vector<std::shared_ptr<library::File>> getQueue();
+	std::shared_ptr<Playlist> getQueue() const;
 
 	/// returns the current status of the player
 	Status getStatus();
@@ -67,7 +65,7 @@ class Controller
 	void stop();
 	void prev();
 	void next();
-	void goTo(int index);
+	void goTo(const std::vector<int>& index);
 
 	/// sets the volume level (level must be between 0 and 100)
 	void setVolume(int level);
@@ -82,25 +80,16 @@ class Controller
 	void run();
 
     private:
-	bool isDecoderIndexValid() const;
-	bool isPlayerIndexValid() const;
-
 	void setDecoderInput();
 
     private:
-	/// queued files for playing
-	std::vector<std::shared_ptr<library::File>> m_queue;
-
 	/// the state of the player
 	State m_state;
 
-	/// the index of the currently decoded file from the queue
-	int m_decoderIndex;
-	/// true when the decoder has the current file as input
+	Playlist m_decoderQueue;
 	bool m_decoderInitialized;
 
-	/// the index of the currently played file from the queue
-	int m_playerIndex;
+	Playlist m_playerQueue;
 
 	struct CmdBase
 	{
@@ -110,8 +99,8 @@ class Controller
 
 	struct GoTo : public CmdBase
 	{
-	    GoTo(int index) : CmdBase(GOTO), m_index(index) {}
-	    int m_index;
+	    GoTo(const std::vector<int>& index) : CmdBase(GOTO), m_index(index) {}
+	    std::vector<int> m_index;
 	};
 
 	/// controller commands

@@ -28,6 +28,7 @@ sources = [
     "player/decoder.cpp",
     "player/controller.cpp",
     "player/fifo.cpp",
+    "player/queue.cpp",
     "thread/thread.cpp",
     "utils/stringutils.cpp",
     "config/parser.cpp",
@@ -55,7 +56,8 @@ Default(zep)
 # testing
 
 tests = [
-    "fifo.cpp"
+    "fifo.cpp",
+    "queue.cpp"
 ]
 
 env.Program(
