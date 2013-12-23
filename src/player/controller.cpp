@@ -278,7 +278,12 @@ void Controller::run()
 
 	    case DECODER_FINISHED :
 		// jump to the next file
-		m_decoderQueue.next();
+		if (!m_decoderQueue.next())
+		{
+		    m_decoder.setInput(nullptr);
+		    m_decoderInitialized = false;
+		    break;
+		}
 
 		setDecoderInput();
 
