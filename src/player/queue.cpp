@@ -184,6 +184,7 @@ std::shared_ptr<QueueItem> Album::clone() const
     std::shared_ptr<Album> a(new Album());
 
     a->m_index = m_index;
+    a->m_album = m_album;
 
     for (const auto& item : m_items)
 	a->m_items.push_back(item->clone());
