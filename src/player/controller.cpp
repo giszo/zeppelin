@@ -296,9 +296,7 @@ void Controller::run()
 		std::cout << "song finished" << std::endl;
 
 		// step to the next song
-		m_playerQueue.next();
-
-		if (!m_playerQueue.isValid())
+		if (!m_playerQueue.next())
 		    m_state = STOPPED;
 
 		break;
