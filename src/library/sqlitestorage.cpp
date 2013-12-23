@@ -392,6 +392,8 @@ std::vector<std::shared_ptr<library::Artist>> SqliteStorage::getArtists()
 // =====================================================================================================================
 std::shared_ptr<library::Album> SqliteStorage::getAlbum(int id)
 {
+    std::shared_ptr<Album> album;
+
     thread::BlockLock bl(m_mutex);
 
     sqlite3_bind_int(m_getAlbum, 1, id);
@@ -399,12 +401,16 @@ std::shared_ptr<library::Album> SqliteStorage::getAlbum(int id)
     if (sqlite3_step(m_getAlbum) != SQLITE_ROW)
 	throw FileNotFoundException("album not found"); // TODO: use a new exception here!
 
-    return std::make_shared<Album>(
+    album = std::make_shared<Album>(
 	id,
 	getText(m_getAlbum, 1),
 	sqlite3_column_int(m_getAlbum, 0),
 	0,
 	0);
+
+    sqlite3_reset(m_getAlbum);
+
+    return album;
 }
 
 // =====================================================================================================================
