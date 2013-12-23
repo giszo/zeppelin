@@ -3,14 +3,16 @@
 env = Environment()
 
 env["CPPFLAGS"] = ["-O2", "-Wall", "-Werror", "-Wshadow", "-std=c++11"]
-env["CPPPATH"] = ["../libjson-rpc-cpp-lib/include", "src"]
-env["LIBPATH"] = ["../libjson-rpc-cpp-lib/lib"]
-env["LINKFLAGS"] = ["-pthread"]
+env["CPPPATH"] = [Dir("../libjson-rpc-cpp-lib/include"), Dir("src")]
+env["LIBPATH"] = [Dir("../libjson-rpc-cpp-lib/lib")]
+env["LINKFLAGS"] = ["-pthread", "-rdynamic"]
 
 env["CXXCOMSTR"] = "Compiling $SOURCE"
 env["ARCOMSTR"] = "Creating $TARGET"
 env["RANLIBCOMSTR"] = "Indexing $TARGET"
 env["LINKCOMSTR"] = "Linking $TARGET"
+
+env["PLUGINS"] = []
 
 ########################################################################################################################
 # application library
@@ -23,7 +25,6 @@ sources = [
     "library/scanner.cpp",
     "library/metaparser.cpp",
     "library/sqlitestorage.cpp",
-    "rpc/server.cpp",
     "player/player.cpp",
     "player/decoder.cpp",
     "player/controller.cpp",
@@ -32,7 +33,8 @@ sources = [
     "thread/thread.cpp",
     "utils/stringutils.cpp",
     "config/parser.cpp",
-    "filter/volume.cpp"
+    "filter/volume.cpp",
+    "plugin/pluginmanager.cpp"
 ]
 
 zep_lib = env.StaticLibrary(
@@ -43,14 +45,21 @@ zep_lib = env.StaticLibrary(
 ########################################################################################################################
 # main application
 
+# TODO: jsonrpc dependency should be removed because the core application is not using the RPC part of it, just the
+#       json parser for the configuration
 zep = env.Program(
     "zeppelin",
     source = ["src/main.cpp"] + zep_lib,
-    LIBS = ["asound", "mpg123", "sqlite3", "jsonrpc"]
+    LIBS = ["asound", "mpg123", "sqlite3", "jsonrpc", "dl"]
 )
 
+########################################################################################################################
+# plugins
+
+SConscript(dirs = ["plugins"], exports = ["env"])
+
 # define the defualt target
-Default(zep)
+Default([zep] + env["PLUGINS"])
 
 ########################################################################################################################
 # testing

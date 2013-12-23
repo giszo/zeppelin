@@ -1,21 +1,26 @@
-#ifndef RPC_SERVER_H_INCLUDED
-#define RPC_SERVER_H_INCLUDED
+#ifndef JSONRPCREMOTE_SERVER_H_INCLUDED
+#define JSONRPCREMOTE_SERVER_H_INCLUDED
 
 #include <library/musiclibrary.h>
 #include <player/controller.h>
 #include <config/config.h>
+#include <plugin/plugin.h>
 
 #include <jsonrpc/rpc.h>
 
-namespace rpc
-{
-
-class Server : public jsonrpc::AbstractServer<Server>
+class Server : public plugin::Plugin,
+	       public jsonrpc::AbstractServer<Server>
 {
     public:
-	Server(library::MusicLibrary& library,
-	       player::Controller& ctrl,
-	       config::RPC& config);
+	Server(int port,
+	       const std::shared_ptr<library::MusicLibrary>& library,
+	       const std::shared_ptr<player::Controller>& ctrl);
+
+	std::string getName() const override
+	{ return "jsonrpc-remote"; }
+
+	void start() override;
+	void stop() override;
 
     private:
 	void libraryScan(const Json::Value& request, Json::Value& response);
@@ -50,10 +55,10 @@ class Server : public jsonrpc::AbstractServer<Server>
 	void playerDecVolume(const Json::Value& request, Json::Value& response);
 
     private:
-	library::MusicLibrary& m_library;
-	player::Controller& m_ctrl;
-};
+	std::unique_ptr<jsonrpc::AbstractServer<Server>> m_server;
 
-}
+	std::shared_ptr<library::MusicLibrary> m_library;
+	std::shared_ptr<player::Controller> m_ctrl;
+};
 
 #endif

@@ -2,13 +2,11 @@
 
 #include <iostream>
 
-using rpc::Server;
-
 // =====================================================================================================================
-Server::Server(library::MusicLibrary& library,
-	       player::Controller& ctrl,
-	       config::RPC& config)
-    : AbstractServer<Server>(new jsonrpc::HttpServer(config.m_port, false, "", 3 /* use 3 worker threads */)),
+Server::Server(int port,
+	       const std::shared_ptr<library::MusicLibrary>& library,
+	       const std::shared_ptr<player::Controller>& ctrl)
+    : AbstractServer<Server>(new jsonrpc::HttpServer(port, false, "", 3 /* use 3 worker threads */)),
       m_library(library),
       m_ctrl(ctrl)
 {
@@ -17,7 +15,7 @@ Server::Server(library::MusicLibrary& library,
 					    jsonrpc::PARAMS_BY_NAME,
 					    jsonrpc::JSON_NULL,
 					    NULL),
-		     &Server::libraryScan);
+			       &Server::libraryScan);
 
     // library - artists
     bindAndAddMethod(new jsonrpc::Procedure("library_get_artists",
@@ -137,15 +135,26 @@ Server::Server(library::MusicLibrary& library,
 }
 
 // =====================================================================================================================
+void Server::start()
+{
+    StartListening();
+}
+
+// =====================================================================================================================
+void Server::stop()
+{
+}
+
+// =====================================================================================================================
 void Server::libraryScan(const Json::Value& request, Json::Value& response)
 {
-    m_library.scan();
+    m_library->scan();
 }
 
 // =====================================================================================================================
 void Server::libraryGetArtists(const Json::Value& request, Json::Value& response)
 {
-    auto artists = m_library.getStorage().getArtists();
+    auto artists = m_library->getStorage().getArtists();
 
     response = Json::Value(Json::arrayValue);
 
@@ -164,7 +173,7 @@ void Server::libraryGetArtists(const Json::Value& request, Json::Value& response
 // =====================================================================================================================
 void Server::libraryGetAlbums(const Json::Value& request, Json::Value& response)
 {
-    auto albums = m_library.getStorage().getAlbums();
+    auto albums = m_library->getStorage().getAlbums();
 
     response = Json::Value(Json::arrayValue);
 
@@ -184,7 +193,7 @@ void Server::libraryGetAlbums(const Json::Value& request, Json::Value& response)
 // =====================================================================================================================
 void Server::libraryGetAlbumsByArtist(const Json::Value& request, Json::Value& response)
 {
-    auto albums = m_library.getStorage().getAlbumsByArtist(request["artist_id"].asInt());
+    auto albums = m_library->getStorage().getAlbumsByArtist(request["artist_id"].asInt());
 
     response = Json::Value(Json::arrayValue);
 
@@ -203,7 +212,7 @@ void Server::libraryGetAlbumsByArtist(const Json::Value& request, Json::Value& r
 // =====================================================================================================================
 void Server::libraryGetFilesOfArtist(const Json::Value& request, Json::Value& response)
 {
-    auto files = m_library.getStorage().getFilesOfArtist(request["artist_id"].asInt());
+    auto files = m_library->getStorage().getFilesOfArtist(request["artist_id"].asInt());
 
     response = Json::Value(Json::arrayValue);
 
@@ -224,7 +233,7 @@ void Server::libraryGetFilesOfArtist(const Json::Value& request, Json::Value& re
 // =====================================================================================================================
 void Server::libraryGetFilesOfAlbum(const Json::Value& request, Json::Value& response)
 {
-    auto files = m_library.getStorage().getFilesOfAlbum(request["album_id"].asInt());
+    auto files = m_library->getStorage().getFilesOfAlbum(request["album_id"].asInt());
 
     response = Json::Value(Json::arrayValue);
 
@@ -249,7 +258,7 @@ void Server::playerQueueFile(const Json::Value& request, Json::Value& response)
 
     try
     {
-	file = m_library.getStorage().getFile(request["id"].asInt());
+	file = m_library->getStorage().getFile(request["id"].asInt());
     }
     catch (const library::FileNotFoundException& e)
     {
@@ -259,7 +268,7 @@ void Server::playerQueueFile(const Json::Value& request, Json::Value& response)
 
     std::cout << "Queueing file: " << file->m_path << "/" << file->m_name << std::endl;
 
-    m_ctrl.queue(file);
+    m_ctrl->queue(file);
 }
 
 // =====================================================================================================================
@@ -270,10 +279,10 @@ void Server::playerQueueAlbum(const Json::Value& request, Json::Value& response)
     std::cout << "Queueing album: " << albumId << std::endl;
 
     // TODO: handle not found exception here!
-    auto album = m_library.getStorage().getAlbum(albumId);
-    auto files = m_library.getStorage().getFilesOfAlbum(albumId);
+    auto album = m_library->getStorage().getAlbum(albumId);
+    auto files = m_library->getStorage().getFilesOfAlbum(albumId);
 
-    m_ctrl.queue(album, files);
+    m_ctrl->queue(album, files);
 }
 
 // =====================================================================================================================
@@ -322,7 +331,7 @@ static inline void serializeQueueItem(Json::Value& parent, const std::shared_ptr
 // =====================================================================================================================
 void Server::playerQueueGet(const Json::Value& request, Json::Value& response)
 {
-    auto queue = m_ctrl.getQueue();
+    auto queue = m_ctrl->getQueue();
 
     response = Json::Value(Json::arrayValue);
 
@@ -333,7 +342,7 @@ void Server::playerQueueGet(const Json::Value& request, Json::Value& response)
 // =====================================================================================================================
 void Server::playerStatus(const Json::Value& request, Json::Value& response)
 {
-    player::Status s = m_ctrl.getStatus();
+    player::Status s = m_ctrl->getStatus();
 
     response = Json::Value(Json::objectValue);
 
@@ -346,31 +355,31 @@ void Server::playerStatus(const Json::Value& request, Json::Value& response)
 // =====================================================================================================================
 void Server::playerPlay(const Json::Value& request, Json::Value& response)
 {
-    m_ctrl.play();
+    m_ctrl->play();
 }
 
 // =====================================================================================================================
 void Server::playerPause(const Json::Value& request, Json::Value& response)
 {
-    m_ctrl.pause();
+    m_ctrl->pause();
 }
 
 // =====================================================================================================================
 void Server::playerStop(const Json::Value& request, Json::Value& response)
 {
-    m_ctrl.stop();
+    m_ctrl->stop();
 }
 
 // =====================================================================================================================
 void Server::playerPrev(const Json::Value& request, Json::Value& response)
 {
-    m_ctrl.prev();
+    m_ctrl->prev();
 }
 
 // =====================================================================================================================
 void Server::playerNext(const Json::Value& request, Json::Value& response)
 {
-    m_ctrl.next();
+    m_ctrl->next();
 }
 
 // =====================================================================================================================
@@ -383,23 +392,23 @@ void Server::playerGoto(const Json::Value& request, Json::Value& response)
     for (Json::UInt j = 0; j < index.size(); ++j)
 	i.push_back(index[j].asInt());
 
-    m_ctrl.goTo(i);
+    m_ctrl->goTo(i);
 }
 
 // =====================================================================================================================
 void Server::playerSetVolume(const Json::Value& request, Json::Value& response)
 {
-    m_ctrl.setVolume(request["level"].asInt());
+    m_ctrl->setVolume(request["level"].asInt());
 }
 
 // =====================================================================================================================
 void Server::playerIncVolume(const Json::Value& request, Json::Value& response)
 {
-    m_ctrl.incVolume();
+    m_ctrl->incVolume();
 }
 
 // =====================================================================================================================
 void Server::playerDecVolume(const Json::Value& request, Json::Value& response)
 {
-    m_ctrl.decVolume();
+    m_ctrl->decVolume();
 }

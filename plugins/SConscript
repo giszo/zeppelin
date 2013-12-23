@@ -1,0 +1,5 @@
+# -*- python -*-
+
+Import("env")
+
+SConscript(dirs = ["jsonrpc-remote"], exports = ["env"])

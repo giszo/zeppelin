@@ -2,9 +2,9 @@
 #include <codec/mp3.h>
 #include <library/musiclibrary.h>
 #include <library/sqlitestorage.h>
-#include <rpc/server.h>
 #include <player/controller.h>
 #include <config/parser.h>
+#include <plugin/pluginmanager.h>
 
 #include <iostream>
 
@@ -47,17 +47,17 @@ int main(int argc, char** argv)
 	return 1;
     }
 
-    library::MusicLibrary lib(storage, config.m_library);
+    std::shared_ptr<library::MusicLibrary> lib = std::make_shared<library::MusicLibrary>(storage, config.m_library);
 
     // create the main part of our wonderful player :)
-    player::Controller ctrl;
+    std::shared_ptr<player::Controller> ctrl = std::make_shared<player::Controller>();
 
-    // start the RPC server
-    rpc::Server server(lib, ctrl, config.m_rpc);
-    server.StartListening();
+    // initialize the plugin manager
+    plugin::PluginManager pm(lib, ctrl);
+    pm.loadAll(config);
 
     // run the main loop of the player
-    ctrl.run();
+    ctrl->run();
 
     mpg123_exit();
 

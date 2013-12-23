@@ -1,4 +1,5 @@
 *.o
+*.os
 *.pyc
 
 /.sconsign.dblite
@@ -6,6 +7,8 @@
 /zeppelin
 /libzeppelin.a
 /unit_test
+
+/plugins/jsonrpc-remote/libjsonrpc-remote.so
 
 /cli/__pycache__
 

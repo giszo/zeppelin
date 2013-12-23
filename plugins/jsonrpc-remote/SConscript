@@ -1,0 +1,10 @@
+# -*- python -*-
+
+Import("env")
+
+plugin = env.SharedLibrary(
+    target = "jsonrpc-remote",
+    source = ["src/server.cpp", "src/plugin.cpp"]
+)
+
+env["PLUGINS"].append(plugin)

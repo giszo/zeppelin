@@ -1,16 +1,18 @@
 #ifndef CONFIG_CONFIG_H_INCLUDED
 #define CONFIG_CONFIG_H_INCLUDED
 
+#include <jsonrpc/json/value.h>
+
 #include <string>
 #include <vector>
 
 namespace config
 {
 
-struct RPC
+struct Plugin
 {
-    std::string m_address;
-    int m_port;
+    std::string m_root;
+    std::vector<std::string> m_list;
 };
 
 struct Library
@@ -20,8 +22,10 @@ struct Library
 
 struct Config
 {
-    RPC m_rpc;
+    Plugin m_plugin;
     Library m_library;
+
+    Json::Value m_raw;
 };
 
 }

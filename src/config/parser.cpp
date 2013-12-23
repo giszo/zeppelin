@@ -20,25 +20,25 @@ config::Config Parser::parse() const
     if (!f.is_open())
 	throw ConfigException("unable to open file");
 
-    Json::Value root;
+    Config cfg;
     Json::Reader reader;
 
-    if (!reader.parse(f, root))
+    if (!reader.parse(f, cfg.m_raw))
 	throw ConfigException("unable to parse config");
 
-    Config cfg;
+    Json::Value& root = cfg.m_raw;
 
-    // rpc section
-    if (!root.isMember("rpc"))
-	throw ConfigException("no RPC section");
+    // plugins section
+    if (!root.isMember("plugins"))
+	throw ConfigException("no plugins section");
 
-    Json::Value rpc = root["rpc"];
+    Json::Value plugins = root["plugins"];
+    Json::Value pluginList = plugins["list"];
 
-    if (!rpc.isMember("address") || !rpc.isMember("port"))
-	throw ConfigException("RPC section is incomplete");
+    cfg.m_plugin.m_root = plugins["root"].asString();
 
-    cfg.m_rpc.m_address = rpc["address"].asString();
-    cfg.m_rpc.m_port = rpc["port"].asInt();
+    for (Json::Value::ArrayIndex i = 0; i < pluginList.size(); ++i)
+	cfg.m_plugin.m_list.push_back(pluginList[i].asString());
 
     // library section
     if (!root.isMember("library"))

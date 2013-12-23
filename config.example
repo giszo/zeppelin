@@ -1,4 +1,8 @@
 {
+    "plugins" : {
+	"root" : "",
+	"list" : []
+    },
     "rpc" : {
         "address" : "",
         "port" : 8080
