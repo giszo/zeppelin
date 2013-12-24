@@ -238,6 +238,7 @@ void Controller::run()
 		{
 		    m_decoder.stopDecoding();
 		    m_player->stopPlayback();
+		    m_decoderInitialized = false;
 		}
 
 		if (cmd->m_cmd == PREV)
@@ -259,13 +260,23 @@ void Controller::run()
 		m_playerQueue.get(it);
 		m_decoderQueue.set(it);
 
-		// load the file into the decoder
-		setDecoderInput();
-
-		if (m_decoderInitialized && m_state == PLAYING)
+		// resume playback if it was running before
+		if (m_state == PLAYING)
 		{
-		    m_decoder.startDecoding();
-		    m_player->startPlayback();
+		    // load the new input into the decoder
+		    setDecoderInput();
+
+		    if (m_decoderInitialized)
+		    {
+			// decoder was initialized succesfully, start playing
+			m_decoder.startDecoding();
+			m_player->startPlayback();
+		    }
+		    else
+		    {
+			// unable to initialize the decoder
+			m_state = STOPPED;
+		    }
 		}
 
 		break;
