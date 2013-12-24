@@ -32,6 +32,44 @@ void ContainerQueueItem::set(std::vector<int>& i)
 }
 
 // =====================================================================================================================
+void ContainerQueueItem::remove(std::vector<int>& i)
+{
+    if (i.empty())
+	return;
+
+    int idx = i[0];
+    i.erase(i.begin());
+
+    if (idx < 0 || static_cast<size_t>(idx) >= m_items.size())
+	return;
+
+    if (i.empty())
+    {
+	m_items.erase(m_items.begin() + idx);
+
+	if (idx < m_index)
+	    --m_index;
+
+	if (isValid())
+	    m_items[m_index]->reset(FIRST);
+    }
+    else
+    {
+	QueueItem& item = *m_items[idx];
+
+	item.remove(i);
+
+	if (!item.isValid())
+	{
+	    ++m_index;
+
+	    if (isValid())
+		m_items[m_index]->reset(FIRST);
+	}
+    }
+}
+
+// =====================================================================================================================
 bool ContainerQueueItem::isValid() const
 {
     return m_index >= 0 && m_index < static_cast<int>(m_items.size());
@@ -119,6 +157,11 @@ void File::get(std::vector<int>&)
 
 // =====================================================================================================================
 void File::set(std::vector<int>&)
+{
+}
+
+// =====================================================================================================================
+void File::remove(std::vector<int>&)
 {
 }
 

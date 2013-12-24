@@ -24,6 +24,9 @@ class QueueItem
 	// Loads the iterator value from the end of the given list
 	virtual void set(std::vector<int>&) = 0;
 
+	// Removes the selected item from the tree
+	virtual void remove(std::vector<int>&) = 0;
+
 	// Returns true if the iterator of the item is valid.
 	virtual bool isValid() const = 0;
 	// Resets the iterator to the given position of the item.
@@ -59,6 +62,8 @@ class ContainerQueueItem : public QueueItem
 	void get(std::vector<int>& i) override;
 	void set(std::vector<int>& i) override;
 
+	void remove(std::vector<int>& i) override;
+
 	bool isValid() const override;
 	void reset(Position position) override;
 	bool prev() override;
@@ -85,6 +90,8 @@ class File : public QueueItem
 
 	void get(std::vector<int>&) override;
 	void set(std::vector<int>&) override;
+
+	void remove(std::vector<int>&) override;
 
 	bool isValid() const override;
 	void reset(Position position) override;

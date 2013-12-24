@@ -43,6 +43,7 @@ class Controller
 	    PREV,
 	    NEXT,
 	    GOTO,
+	    REMOVE,
 	    // sent by the player thread once all samples of the current track have been written to the output
 	    SONG_FINISHED,
 	    // sent by the decoder thread when the decoding of the current file has been finished
@@ -62,6 +63,8 @@ class Controller
 	/// puts a new album onto the playback queue
 	void queue(const std::shared_ptr<library::Album>& album,
 		   const std::vector<std::shared_ptr<library::File>>& files);
+	/// removes the referenced part of the queue
+	void remove(const std::vector<int>& index);
 
 	void play();
 	void pause();
@@ -103,6 +106,12 @@ class Controller
 	struct GoTo : public CmdBase
 	{
 	    GoTo(const std::vector<int>& index) : CmdBase(GOTO), m_index(index) {}
+	    std::vector<int> m_index;
+	};
+
+	struct Remove : public CmdBase
+	{
+	    Remove(const std::vector<int>& index) : CmdBase(REMOVE), m_index(index) {}
 	    std::vector<int> m_index;
 	};
 

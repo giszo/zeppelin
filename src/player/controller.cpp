@@ -4,6 +4,7 @@
 #include <thread/blocklock.h>
 
 #include <iostream>
+#include <sstream>
 
 using player::Controller;
 
@@ -74,6 +75,18 @@ void Controller::queue(const std::shared_ptr<library::Album>& album,
 }
 
 // =====================================================================================================================
+void Controller::remove(const std::vector<int>& index)
+{
+    std::ostringstream ss;
+    for (int i : index)
+	ss << "," << i;
+    std::cout << "controller: remove " << ss.str().substr(1) << std::endl;
+    thread::BlockLock bl(m_mutex);
+    m_commands.push_back(std::make_shared<Remove>(index));
+    m_cond.signal();
+}
+
+// =====================================================================================================================
 void Controller::play()
 {
     std::cout << "controller: play" << std::endl;
@@ -111,7 +124,10 @@ void Controller::next()
 // =====================================================================================================================
 void Controller::goTo(const std::vector<int>& index)
 {
-    std::cout << "controller: goto" << std::endl;
+    std::ostringstream ss;
+    for (int i : index)
+	ss << "," << i;
+    std::cout << "controller: goto " << ss.str().substr(1) << std::endl;
     thread::BlockLock bl(m_mutex);
     m_commands.push_back(std::make_shared<GoTo>(index));
     m_cond.signal();
@@ -250,6 +266,69 @@ void Controller::run()
 		{
 		    m_decoder.startDecoding();
 		    m_player->startPlayback();
+		}
+
+		break;
+	    }
+
+	    case REMOVE :
+	    {
+		bool removingCurrent = false;
+		Remove& rem = static_cast<Remove&>(*cmd);
+
+		// check whether we want to delete a subtree that contains the currently played song
+		if (m_playerQueue.isValid())
+		{
+		    std::vector<int> it;
+		    m_playerQueue.get(it);
+
+		    removingCurrent = true;
+		    assert(rem.m_index.size() <= it.size());
+
+		    for (size_t i = 0; i < rem.m_index.size(); ++i)
+		    {
+			if (rem.m_index[i] != it[i])
+			{
+			    removingCurrent = false;
+			    break;
+			}
+		    }
+		}
+
+		if (removingCurrent)
+		{
+		    if (m_state == PLAYING || m_state == PAUSED)
+		    {
+			// stop the decoder and the player because we are removing the currently played song
+			m_decoder.stopDecoding();
+			m_player->stopPlayback();
+		    }
+
+		    m_decoder.setInput(nullptr);
+		    m_decoderInitialized = false;
+		}
+
+		// remove the selected subtree from the queue
+		std::vector<int> index = rem.m_index;
+		m_decoderQueue.remove(index);
+		index = rem.m_index;
+		m_playerQueue.remove(index);
+
+		if (removingCurrent)
+		{
+		    // re-initialize the decoder
+		    setDecoderInput();
+
+		    if (m_state == PLAYING)
+		    {
+			if (m_decoderInitialized)
+			{
+			    m_decoder.startDecoding();
+			    m_player->startPlayback();
+			}
+			else
+			    m_state = STOPPED;
+		    }
 		}
 
 		break;

@@ -74,6 +74,13 @@ Server::Server(int port,
 					    jsonrpc::JSON_ARRAY,
 					    NULL),
 		     &Server::playerQueueGet);
+    bindAndAddMethod(new jsonrpc::Procedure("player_queue_remove",
+					    jsonrpc::PARAMS_BY_NAME,
+					    jsonrpc::JSON_NULL,
+					    "index",
+					    jsonrpc::JSON_ARRAY,
+					    NULL),
+		     &Server::playerQueueRemove);
 
     // player status
     bindAndAddMethod(new jsonrpc::Procedure("player_status",
@@ -337,6 +344,19 @@ void Server::playerQueueGet(const Json::Value& request, Json::Value& response)
 
     for (const auto& item : queue->items())
 	serializeQueueItem(response, item);
+}
+
+// =====================================================================================================================
+void Server::playerQueueRemove(const Json::Value& request, Json::Value& response)
+{
+    Json::Value index = request["index"];
+
+    std::vector<int> i;
+
+    for (Json::UInt j = 0; j < index.size(); ++j)
+	i.push_back(index[j].asInt());
+
+    m_ctrl->remove(i);
 }
 
 // =====================================================================================================================

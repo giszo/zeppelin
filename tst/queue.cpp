@@ -112,3 +112,103 @@ BOOST_AUTO_TEST_CASE(TestPlaylist)
     BOOST_CHECK(p.isValid());
     BOOST_CHECK_EQUAL(p.file()->m_name, "1.mp3");
 }
+
+BOOST_AUTO_TEST_CASE(TestFileDeletionBeforeActive)
+{
+    player::Playlist p;
+    std::vector<int> iter;
+
+    p.add(std::make_shared<library::File>(1, "tst", "a.mp3"));
+    p.add(std::make_shared<library::File>(2, "tst", "b.mp3"));
+    p.add(std::make_shared<library::File>(3, "tst", "c.mp3"));
+
+    // go to the second song
+    p.reset(player::QueueItem::FIRST);
+    p.next();
+
+    // validate the iterator
+    p.get(iter);
+    BOOST_REQUIRE_EQUAL(iter.size(), 1);
+    BOOST_CHECK_EQUAL(iter[0], 1);
+
+    // remove the first song
+    iter.clear();
+    iter.push_back(0);
+    p.remove(iter);
+
+    // validate the iterator again
+    iter.clear();
+    p.get(iter);
+    BOOST_REQUIRE_EQUAL(iter.size(), 1);
+    BOOST_CHECK_EQUAL(iter[0], 0);
+    BOOST_CHECK_EQUAL(p.file()->m_name, "b.mp3");
+}
+
+BOOST_AUTO_TEST_CASE(TestActiveFileDeletionInsideAlbum)
+{
+    player::Playlist p;
+    std::vector<int> iter;
+
+    p.add(std::make_shared<library::Album>(42, "Album", 42, 0, 0), {
+	std::make_shared<library::File>(1, "album", "1.mp3"),
+	std::make_shared<library::File>(2, "album", "2.mp3"),
+	std::make_shared<library::File>(3, "album", "3.mp3")
+    });
+
+    // go to the second song of the album
+    p.reset(player::QueueItem::FIRST);
+    p.next();
+
+    // validate the iterator
+    p.get(iter);
+    BOOST_REQUIRE_EQUAL(iter.size(), 2);
+    BOOST_CHECK_EQUAL(iter[0], 0);
+    BOOST_CHECK_EQUAL(iter[1], 1);
+
+    // remove the current file
+    p.remove(iter);
+
+    // validate the iterator now
+    iter.clear();
+    p.get(iter);
+    BOOST_REQUIRE_EQUAL(iter.size(), 2);
+    BOOST_CHECK_EQUAL(iter[0], 0);
+    BOOST_CHECK_EQUAL(iter[1], 1);
+    BOOST_CHECK_EQUAL(p.file()->m_name, "3.mp3");
+}
+
+BOOST_AUTO_TEST_CASE(TestActiveFileDeletionAtTheEndOfAlbum)
+{
+    player::Playlist p;
+    std::vector<int> iter;
+
+    p.add(std::make_shared<library::Album>(42, "Album", 42, 0, 0), {
+	std::make_shared<library::File>(1, "album", "1.mp3"),
+	std::make_shared<library::File>(2, "album", "2.mp3")
+    });
+    p.add(std::make_shared<library::Album>(57, "Album2", 57, 0, 0), {
+	std::make_shared<library::File>(3, "album", "a.mp3"),
+	std::make_shared<library::File>(4, "album", "b.mp3")
+    });
+
+    // go to the second song of the first album
+    p.reset(player::QueueItem::FIRST);
+    p.next();
+
+    // validate the iterator
+    p.get(iter);
+    BOOST_REQUIRE_EQUAL(iter.size(), 2);
+    BOOST_CHECK_EQUAL(iter[0], 0);
+    BOOST_CHECK_EQUAL(iter[1], 1);
+
+    // remove the current file
+    p.remove(iter);
+
+    // validate the iterator now
+    iter.clear();
+    p.get(iter);
+    BOOST_REQUIRE_EQUAL(iter.size(), 2);
+    BOOST_CHECK_EQUAL(iter[0], 1);
+    BOOST_CHECK_EQUAL(iter[1], 0);
+    BOOST_CHECK_EQUAL(p.file()->m_name, "a.mp3");
+}
