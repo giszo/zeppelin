@@ -9,8 +9,9 @@ using codec::CodecException;
 using utils::StringUtils;
 
 // =====================================================================================================================
-Mp3::Mp3()
-    : m_handle(NULL),
+Mp3::Mp3(const std::string& file)
+    : BaseCodec(file),
+      m_handle(NULL),
       m_rate(0),
       m_channels(0),
       m_format(0)
@@ -25,14 +26,14 @@ Mp3::~Mp3()
 }
 
 // =====================================================================================================================
-void Mp3::open(const std::string& file)
+void Mp3::open()
 {
     m_handle = mpg123_new(NULL, NULL);
 
     if (!m_handle)
 	throw CodecException("unable to create handle");
 
-    if (mpg123_open(m_handle, file.c_str()) != 0)
+    if (mpg123_open(m_handle, m_file.c_str()) != 0)
 	throw CodecException("unable to open file");
 
     // issue the first mpg123_decode_frame() call, it will detect the file format only, no samples will be decoded
@@ -60,15 +61,21 @@ int Mp3::getChannels()
 }
 
 // =====================================================================================================================
-codec::Metadata Mp3::getMetadata()
+codec::Metadata Mp3::readMetadata()
 {
     Metadata info;
 
-    info.m_rate = m_rate;
-    info.m_channels = m_channels;
+    if (!m_handle)
+	throw CodecException("unable to create handle");
+
+    if (mpg123_open(m_handle, m_file.c_str()) != 0)
+	throw CodecException("unable to open file");
 
     if (mpg123_scan(m_handle) != MPG123_OK)
 	throw CodecException("unable to scan media");
+
+    mpg123_getformat(m_handle, &m_rate, &info.m_channels, &m_format);
+    info.m_rate = m_rate;
 
     off_t samples = mpg123_length(m_handle);
 

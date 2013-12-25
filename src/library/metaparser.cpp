@@ -58,7 +58,7 @@ void MetaParser::parse(File& file)
 {
     std::cout << "Parsing meta information of " << file.m_path << "/" << file.m_name << std::endl;
 
-    std::shared_ptr<codec::BaseCodec> codec = codec::BaseCodec::openFile(file.m_path + "/" + file.m_name);
+    std::shared_ptr<codec::BaseCodec> codec = codec::BaseCodec::create(file.m_path + "/" + file.m_name);
 
     if (!codec)
 	return;
@@ -67,10 +67,11 @@ void MetaParser::parse(File& file)
 
     try
     {
-	meta = codec->getMetadata();
+	meta = codec->readMetadata();
     }
     catch (const codec::CodecException& e)
     {
+	std::cout << "metaparser: " << e.what() << std::endl;
 	return;
     }
 

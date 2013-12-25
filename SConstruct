@@ -21,6 +21,7 @@ sources = [
     "output/alsa.cpp",
     "codec/basecodec.cpp",
     "codec/mp3.cpp",
+    "codec/flac.cpp",
     "library/musiclibrary.cpp",
     "library/scanner.cpp",
     "library/metaparser.cpp",
@@ -50,7 +51,7 @@ zep_lib = env.StaticLibrary(
 zep = env.Program(
     "zeppelin",
     source = ["src/main.cpp"] + zep_lib,
-    LIBS = ["asound", "mpg123", "sqlite3", "jsonrpc", "dl"]
+    LIBS = ["asound", "mpg123", "FLAC", "sqlite3", "jsonrpc", "dl"]
 )
 
 ########################################################################################################################

@@ -1,29 +1,20 @@
 #include "basecodec.h"
 #include "mp3.h"
+#include "flac.h"
 
 #include <utils/stringutils.h>
 
 using codec::BaseCodec;
 
 // =====================================================================================================================
-std::shared_ptr<BaseCodec> BaseCodec::openFile(const std::string& file)
+std::shared_ptr<BaseCodec> BaseCodec::create(const std::string& file)
 {
     std::shared_ptr<BaseCodec> codec;
 
     if (utils::StringUtils::endsWith(file, ".mp3"))
-	codec.reset(new Mp3());
+	return std::make_shared<Mp3>(file);
+    else if (utils::StringUtils::endsWith(file, ".flac"))
+	return std::make_shared<Flac>(file);
 
-    if (!codec)
-	return nullptr;
-
-    try
-    {
-	codec->open(file);
-    }
-    catch (const CodecException& e)
-    {
-	return nullptr;
-    }
-
-    return codec;
+    return nullptr;
 }

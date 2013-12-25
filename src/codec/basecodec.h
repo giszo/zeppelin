@@ -42,19 +42,21 @@ struct Metadata
 
 class BaseCodec
 {
+    protected:
+	BaseCodec(const std::string& file)
+	    : m_file(file)
+	{}
+
     public:
 	virtual ~BaseCodec()
 	{}
 
-	virtual void open(const std::string& file) = 0;
+	virtual void open() = 0;
 
 	/// returns the sampling rate of the media stream
 	virtual int getRate() = 0;
 	/// returns the number of channels in the media stream
 	virtual int getChannels() = 0;
-
-	/// returns informations about the media
-	virtual Metadata getMetadata() = 0;
 
 	/**
 	 * Decodes the next part of the media stream.
@@ -62,7 +64,13 @@ class BaseCodec
 	 */
 	virtual bool decode(int16_t*& samples, size_t& count) = 0;
 
-	static std::shared_ptr<BaseCodec> openFile(const std::string& file);
+	/// returns informations about the media
+	virtual Metadata readMetadata() = 0;
+
+	static std::shared_ptr<BaseCodec> create(const std::string& file);
+
+    protected:
+	std::string m_file;
 };
 
 }
