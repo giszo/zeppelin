@@ -5,6 +5,7 @@
 
 #include <deque>
 #include <memory>
+#include <functional>
 
 #include <stdint.h>
 
@@ -15,6 +16,8 @@ class Fifo
 {
     public:
 	enum Type { NONE, SAMPLES, MARKER };
+
+	typedef std::function<void ()> NotifyCallback;
 
 	Fifo(size_t bufferSize);
 
@@ -27,6 +30,8 @@ class Fifo
 	size_t readSamples(void* buffer, size_t size);
 
 	void reset();
+
+	void setNotifyCallback(size_t mark, const NotifyCallback& cb);
 
     private:
 	struct Item
@@ -58,6 +63,10 @@ class Fifo
 
 	/// size used for allocating new buffers to store samples
 	size_t m_bufferSize;
+
+	// if set to non-zero notify callback will be called once the number of bytes in the fifo goes below this limit
+	size_t m_notifySize;
+	NotifyCallback m_notifyCb;
 
 	thread::Mutex m_mutex;
 };

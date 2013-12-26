@@ -2,7 +2,7 @@
 
 env = Environment()
 
-env["CPPFLAGS"] = ["-O2", "-Wall", "-Werror", "-Wshadow", "-std=c++11"]
+env["CPPFLAGS"] = ["-O2", "-Wall", "-Werror", "-Wshadow", "-std=c++11", "-pthread"]
 env["CPPPATH"] = [Dir("../libjson-rpc-cpp-lib/include"), Dir("src")]
 env["LIBPATH"] = [Dir("../libjson-rpc-cpp-lib/lib")]
 env["LINKFLAGS"] = ["-pthread", "-rdynamic"]

@@ -4,9 +4,18 @@
 
 using player::Fifo;
 
+static bool s_notified = false;
+
+static void notifyCallback()
+{
+    s_notified = true;
+}
+
 BOOST_AUTO_TEST_CASE(TestFifo)
 {
     Fifo fifo(3);
+    fifo.setNotifyCallback(3, std::bind(&notifyCallback));
+
     int16_t tst1[] = {1, 2};
     int16_t tst2[] = {3};
 
@@ -38,6 +47,7 @@ BOOST_AUTO_TEST_CASE(TestFifo)
     BOOST_REQUIRE_EQUAL(fifo.readSamples(&tst4, sizeof(tst4)), sizeof(tst4));
     BOOST_CHECK_EQUAL(tst4, 2);
     BOOST_CHECK_EQUAL(fifo.getBytes(), 2);
+    BOOST_CHECK(s_notified);
 
     // try to read samples again while we should have a marker at the front of the fifo
     int16_t tst5;

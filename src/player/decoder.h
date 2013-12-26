@@ -5,6 +5,7 @@
 
 #include <thread/thread.h>
 #include <thread/mutex.h>
+#include <thread/condition.h>
 #include <codec/basecodec.h>
 #include <filter/basefilter.h>
 
@@ -20,7 +21,7 @@ class Controller;
 class Decoder : public thread::Thread
 {
     public:
-	Decoder(Fifo& fifo, Controller& ctrl);
+	Decoder(size_t bufferSize, Fifo& fifo, Controller& ctrl);
 
 	void addFilter(const std::shared_ptr<filter::BaseFilter>& filter);
 
@@ -28,6 +29,8 @@ class Decoder : public thread::Thread
 
 	void startDecoding();
 	void stopDecoding();
+
+	void notify();
 
     private:
 	void run() override;
@@ -39,7 +42,8 @@ class Decoder : public thread::Thread
 	{
 	    INPUT,
 	    START,
-	    STOP
+	    STOP,
+	    NOTIFY
 	};
 
 	struct CmdBase
@@ -56,6 +60,9 @@ class Decoder : public thread::Thread
 
 	std::deque<std::shared_ptr<CmdBase>> m_commands;
 
+	// the minimum size of the buffer until the decoder should fill it
+	size_t m_bufferSize;
+
 	/// samples will be put into this container
 	Fifo& m_fifo;
 
@@ -65,6 +72,7 @@ class Decoder : public thread::Thread
 	std::vector<std::shared_ptr<filter::BaseFilter>> m_filters;
 
 	thread::Mutex m_mutex;
+	thread::Condition m_cond;
 
 	Controller& m_ctrl;
 };

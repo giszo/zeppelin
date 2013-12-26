@@ -8,8 +8,9 @@
 using player::Decoder;
 
 // =====================================================================================================================
-Decoder::Decoder(Fifo& fifo, Controller& ctrl)
-    : m_fifo(fifo),
+Decoder::Decoder(size_t bufferSize, Fifo& fifo, Controller& ctrl)
+    : m_bufferSize(bufferSize),
+      m_fifo(fifo),
       m_ctrl(ctrl)
 {
 }
@@ -25,6 +26,7 @@ void Decoder::setInput(const std::shared_ptr<codec::BaseCodec>& input)
 {
     thread::BlockLock bl(m_mutex);
     m_commands.push_back(std::make_shared<Input>(input));
+    m_cond.signal();
 }
 
 // =====================================================================================================================
@@ -32,6 +34,7 @@ void Decoder::startDecoding()
 {
     thread::BlockLock bl(m_mutex);
     m_commands.push_back(std::make_shared<CmdBase>(START));
+    m_cond.signal();
 }
 
 // =====================================================================================================================
@@ -39,19 +42,29 @@ void Decoder::stopDecoding()
 {
     thread::BlockLock bl(m_mutex);
     m_commands.push_back(std::make_shared<CmdBase>(STOP));
+    m_cond.signal();
+}
+
+// =====================================================================================================================
+void Decoder::notify()
+{
+    thread::BlockLock bl(m_mutex);
+    m_commands.push_back(std::make_shared<CmdBase>(NOTIFY));
+    m_cond.signal();
 }
 
 // =====================================================================================================================
 void Decoder::run()
 {
-    // TODO: this magic number should be a parameter of the decoder
-    size_t minBufSize = 2 * sizeof(int16_t) * 44100;
-
     bool working = false;
 
     while (1)
     {
 	m_mutex.lock();
+
+	// wait until we have some command to process
+	while (m_commands.empty())
+	    m_cond.wait(m_mutex);
 
 	while (!m_commands.empty())
 	{
@@ -81,6 +94,10 @@ void Decoder::run()
 		    m_fifo.reset();
 		    working = false;
 		    break;
+
+		case NOTIFY :
+		    // do nothing here, this command is sent to wake up the decoder
+		    break;
 	    }
 	}
 
@@ -88,23 +105,15 @@ void Decoder::run()
 
 	// do nothing if we are not working
 	if (!working || !m_input)
-	{
-	    thread::Thread::sleep(100 * 1000);
 	    continue;
-	}
 
-	// calculate the minimum size of the data we must put into the buffer
-	size_t minSize;
 	size_t fifoSize = m_fifo.getBytes();
 
-	if (fifoSize < minBufSize)
-	    minSize = minBufSize - fifoSize;
-	else
-	{
-	    // the buffer is fine for now, do nothing ...
-	    thread::Thread::sleep(100 * 1000);
+	if (fifoSize >= m_bufferSize)
 	    continue;
-	}
+
+	// calculate the minimum size of the data we must put into the buffer
+	size_t minSize = m_bufferSize - fifoSize;
 
 	while (1)
 	{

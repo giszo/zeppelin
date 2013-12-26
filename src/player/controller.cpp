@@ -13,7 +13,7 @@ Controller::Controller(const config::Config& config)
     : m_state(STOPPED),
       m_decoderInitialized(false),
       m_fifo(4 * 1024 /* 4kB for now */),
-      m_decoder(m_fifo, *this)
+      m_decoder(10 * 44100 * sizeof(int16_t) * 2 /* 10 seconds of samples */, m_fifo, *this)
 {
     // prepare the output
     std::shared_ptr<output::BaseOutput> output = std::make_shared<output::AlsaOutput>(config);
@@ -26,6 +26,9 @@ Controller::Controller(const config::Config& config)
     m_volumeAdj.reset(new filter::Volume());
     setVolume(100 /* max */);
     m_decoder.addFilter(m_volumeAdj);
+
+    // register fifo notification to the decoder
+    m_fifo.setNotifyCallback(5 * 44100 * sizeof(int16_t) * 2, std::bind(&Decoder::notify, &m_decoder));
 
     // start decoder and player threads
     m_decoder.start();

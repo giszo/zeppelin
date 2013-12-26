@@ -10,7 +10,8 @@ using player::Fifo;
 // =====================================================================================================================
 Fifo::Fifo(size_t bufferSize)
     : m_bytesInFifo(0),
-      m_bufferSize(bufferSize)
+      m_bufferSize(bufferSize),
+      m_notifySize(0)
 {
 }
 
@@ -118,6 +119,10 @@ size_t Fifo::readSamples(void* buffer, size_t size)
 
     m_bytesInFifo -= r;
 
+    // check whether we need to notify someone ...
+    if (m_notifySize > 0 && m_bytesInFifo < m_notifySize)
+	m_notifyCb();
+
     return r;
 }
 
@@ -137,4 +142,11 @@ void Fifo::reset()
     }
 
     m_bytesInFifo = 0;
+}
+
+// =====================================================================================================================
+void Fifo::setNotifyCallback(size_t mark, const NotifyCallback& cb)
+{
+    m_notifySize = mark;
+    m_notifyCb = cb;
 }
