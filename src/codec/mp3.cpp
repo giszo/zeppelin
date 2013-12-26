@@ -65,6 +65,8 @@ codec::Metadata Mp3::readMetadata()
 {
     Metadata info;
 
+    m_handle = mpg123_new(NULL, NULL);
+
     if (!m_handle)
 	throw CodecException("unable to create handle");
 
