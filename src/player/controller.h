@@ -50,7 +50,7 @@ class Controller
 	    DECODER_FINISHED
 	};
 
-	Controller();
+	Controller(const config::Config& config);
 
 	/// returns the current play queue
 	std::shared_ptr<Playlist> getQueue() const;

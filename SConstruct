@@ -18,6 +18,7 @@ env["PLUGINS"] = []
 # application library
 
 sources = [
+    "output/baseoutput.cpp",
     "output/alsa.cpp",
     "codec/basecodec.cpp",
     "codec/mp3.cpp",

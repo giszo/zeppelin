@@ -7,8 +7,9 @@ using output::AlsaOutput;
 using output::OutputException;
 
 // =====================================================================================================================
-AlsaOutput::AlsaOutput()
-    : m_handle(NULL),
+AlsaOutput::AlsaOutput(const config::Config& config)
+    : BaseOutput(config, "alsa"),
+      m_handle(NULL),
       m_rate(0),
       m_channels(0)
 {
@@ -62,6 +63,17 @@ void AlsaOutput::setup(int rate, int channels)
     snd_pcm_hw_params_set_format(m_handle, params, SND_PCM_FORMAT_S16_LE);
     snd_pcm_hw_params_set_channels(m_handle, params, channels);
     snd_pcm_hw_params_set_rate(m_handle, params, rate, 0);
+
+    if (hasConfig())
+    {
+	const Json::Value& cfg = getConfig();
+
+	if (cfg.isMember("buffer_max"))
+	{
+	    snd_pcm_uframes_t frames = cfg["buffer_max"].asInt();
+	    snd_pcm_hw_params_set_buffer_size_max(m_handle, params, &frames);
+	}
+    }
 
     if (snd_pcm_hw_params(m_handle, params) != 0)
 	throw OutputException("unable to set HW parameters");

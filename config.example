@@ -9,5 +9,14 @@
     },
     "library" : {
         "root" : [""]
+    },
+
+    # audio output configurations
+    "output" : {
+        # ALSA
+        "alsa" : {
+	    # maximum hardware buffer size in frames (optional)
+	    "buffer_max" : 0
+        }
     }
 }

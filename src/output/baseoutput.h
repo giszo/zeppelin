@@ -1,6 +1,8 @@
 #ifndef OUTPUT_BASEOUTPUT_H_INCLUDED
 #define OUTPUT_BASEOUTPUT_H_INCLUDED
 
+#include <config/config.h>
+
 #include <stdexcept>
 
 namespace output
@@ -17,6 +19,8 @@ class OutputException : public std::runtime_error
 class BaseOutput
 {
     public:
+	BaseOutput(const config::Config& config, const std::string& name);
+
 	virtual ~BaseOutput()
 	{}
 
@@ -31,6 +35,17 @@ class BaseOutput
 	virtual void drop() = 0;
 
 	virtual void write(const int16_t* samples, size_t count) = 0;
+
+	// returns true in case of configuratio was set for this output
+	bool hasConfig() const;
+	/**
+	 * Returns the configuration structure of the output.
+	 * DO NOT call it without checking whether configuration is set with hasConfig()!
+	 */
+	const Json::Value& getConfig() const;
+
+    private:
+	const Json::Value* m_config;
 };
 
 }

@@ -50,7 +50,7 @@ int main(int argc, char** argv)
     std::shared_ptr<library::MusicLibrary> lib = std::make_shared<library::MusicLibrary>(storage, config.m_library);
 
     // create the main part of our wonderful player :)
-    std::shared_ptr<player::Controller> ctrl = std::make_shared<player::Controller>();
+    std::shared_ptr<player::Controller> ctrl = std::make_shared<player::Controller>(config);
 
     // initialize the plugin manager
     plugin::PluginManager pm(lib, ctrl);

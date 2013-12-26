@@ -9,14 +9,14 @@
 using player::Controller;
 
 // =====================================================================================================================
-Controller::Controller()
+Controller::Controller(const config::Config& config)
     : m_state(STOPPED),
       m_decoderInitialized(false),
       m_fifo(4 * 1024 /* 4kB for now */),
       m_decoder(m_fifo, *this)
 {
     // prepare the output
-    std::shared_ptr<output::BaseOutput> output = std::make_shared<output::AlsaOutput>();
+    std::shared_ptr<output::BaseOutput> output = std::make_shared<output::AlsaOutput>(config);
     output->setup(44100, 2);
 
     // prepare player thread

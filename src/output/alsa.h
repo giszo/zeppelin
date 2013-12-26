@@ -11,7 +11,7 @@ namespace output
 class AlsaOutput : public BaseOutput
 {
     public:
-	AlsaOutput();
+	AlsaOutput(const config::Config& config);
 	virtual ~AlsaOutput();
 
 	int getRate() override;
