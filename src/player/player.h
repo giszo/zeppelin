@@ -5,6 +5,7 @@
 
 #include <output/baseoutput.h>
 #include <thread/thread.h>
+#include <thread/condition.h>
 
 #include <deque>
 #include <memory>
@@ -53,6 +54,7 @@ class Player : public thread::Thread
 	std::deque<Command> m_commands;
 
 	thread::Mutex m_mutex;
+	thread::Condition m_cond;
 
 	// true when the player is currently working
 	bool m_running;

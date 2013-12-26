@@ -33,6 +33,7 @@ sources = [
     "player/fifo.cpp",
     "player/queue.cpp",
     "thread/thread.cpp",
+    "thread/condition.cpp",
     "utils/stringutils.cpp",
     "config/parser.cpp",
     "filter/volume.cpp",

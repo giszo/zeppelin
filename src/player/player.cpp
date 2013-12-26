@@ -30,6 +30,7 @@ void Player::startPlayback()
 {
     thread::BlockLock bl(m_mutex);
     m_commands.push_back(START);
+    m_cond.signal();
 }
 
 // =====================================================================================================================
@@ -37,6 +38,7 @@ void Player::pausePlayback()
 {
     thread::BlockLock bl(m_mutex);
     m_commands.push_back(PAUSE);
+    m_cond.signal();
 }
 
 // =====================================================================================================================
@@ -44,6 +46,7 @@ void Player::stopPlayback()
 {
     thread::BlockLock bl(m_mutex);
     m_commands.push_back(STOP);
+    m_cond.signal();
 }
 
 // =====================================================================================================================
@@ -57,19 +60,13 @@ void Player::run()
 
 	// do nothing if the player is stopped
 	if (!m_running)
-	{
-	    Thread::sleep(100 * 1000);
 	    continue;
-	}
 
 	// get the next event from the fifo
 	auto event = m_fifo.getNextEvent();
 
 	if (event == Fifo::NONE)
-	{
-	    Thread::sleep(100 * 1000);
 	    continue;
-	}
 
 	// find out the available space on the output device for samples
 	size_t availOutput = m_output->getFreeSize() * sizeof(int16_t) * m_output->getChannels();
@@ -104,9 +101,6 @@ void Player::run()
 
 	    event = m_fifo.getNextEvent();
 	}
-
-	// now we can wait for a little because we put as much data into the output buffer as possible
-	Thread::sleep(100 * 1000);
     }
 }
 
@@ -114,6 +108,9 @@ void Player::run()
 void Player::processCommands()
 {
     thread::BlockLock bl(m_mutex);
+
+    // wait until we get a command or a timeout (100ms)
+    m_cond.timedWait(m_mutex, 100 * 1000);
 
     while (!m_commands.empty())
     {

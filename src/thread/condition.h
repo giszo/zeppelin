@@ -9,15 +9,17 @@ namespace thread
 class Condition
 {
     public:
-	Condition()
-	{ pthread_cond_init(&m_cond, NULL); }
-	~Condition()
-	{ pthread_cond_destroy(&m_cond); }
+	Condition();
+	~Condition();
 
-	void wait(Mutex& mutex)
-	{ pthread_cond_wait(&m_cond, mutex.get()); }
-	void signal()
-	{ pthread_cond_signal(&m_cond); }
+	void wait(Mutex& mutex);
+	/**
+	 * Waits for the given condition until the specified timeout.
+	 * @param timeOut the timeout in microseconds
+	 */
+	void timedWait(Mutex& mutex, int timeOut);
+
+	void signal();
 
     private:
 	pthread_cond_t m_cond;
