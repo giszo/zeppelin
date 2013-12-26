@@ -24,21 +24,21 @@ void Decoder::addFilter(const std::shared_ptr<filter::BaseFilter>& filter)
 void Decoder::setInput(const std::shared_ptr<codec::BaseCodec>& input)
 {
     thread::BlockLock bl(m_mutex);
-    m_input = input;
+    m_commands.push_back(std::make_shared<Input>(input));
 }
 
 // =====================================================================================================================
 void Decoder::startDecoding()
 {
     thread::BlockLock bl(m_mutex);
-    m_commands.push_back(START);
+    m_commands.push_back(std::make_shared<CmdBase>(START));
 }
 
 // =====================================================================================================================
 void Decoder::stopDecoding()
 {
     thread::BlockLock bl(m_mutex);
-    m_commands.push_back(STOP);
+    m_commands.push_back(std::make_shared<CmdBase>(STOP));
 }
 
 // =====================================================================================================================
@@ -51,19 +51,21 @@ void Decoder::run()
 
     while (1)
     {
-	std::shared_ptr<codec::BaseCodec> input;
-
 	m_mutex.lock();
 
 	while (!m_commands.empty())
 	{
-	    Command cmd = m_commands.front();
+	    std::shared_ptr<CmdBase> cmd = m_commands.front();
 	    m_commands.pop_front();
 
-	    std::cout << "decoder: cmd=" << cmd << std::endl;
+	    std::cout << "decoder: cmd=" << cmd->m_cmd << std::endl;
 
-	    switch (cmd)
+	    switch (cmd->m_cmd)
 	    {
+		case INPUT :
+		    m_input = static_cast<Input&>(*cmd).m_input;
+		    break;
+
 		case START :
 		    if (!m_input)
 		    {
@@ -82,13 +84,10 @@ void Decoder::run()
 	    }
 	}
 
-	if (working)
-	    input = m_input;
-
 	m_mutex.unlock();
 
 	// do nothing if we are not working
-	if (!input)
+	if (!working || !m_input)
 	{
 	    thread::Thread::sleep(100 * 1000);
 	    continue;
@@ -112,17 +111,14 @@ void Decoder::run()
 	    int16_t* samples;
 	    size_t count;
 
-	    if (!input->decode(samples, count))
+	    if (!m_input->decode(samples, count))
 	    {
 		// the end of the stream has been reached
 		std::cout << "decoder: end of stream" << std::endl;
 		m_fifo.addMarker();
 
 		// remove the input of the decoder
-		{
-		    thread::BlockLock bl(m_mutex);
-		    m_input.reset();
-		}
+		m_input.reset();
 
 		// let the controller know that the decoder finished working
 		m_ctrl.command(Controller::DECODER_FINISHED);
@@ -133,7 +129,7 @@ void Decoder::run()
 	    // perform filters on the decoded samples
 	    runFilters(samples, count);
 
-	    size_t size = count * sizeof(int16_t) * input->getChannels();
+	    size_t size = count * sizeof(int16_t) * m_input->getChannels();
 
 	    m_fifo.addSamples(samples, size);
 

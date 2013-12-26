@@ -37,11 +37,24 @@ class Decoder : public thread::Thread
     private:
 	enum Command
 	{
+	    INPUT,
 	    START,
 	    STOP
 	};
 
-	std::deque<Command> m_commands;
+	struct CmdBase
+	{
+	    CmdBase(Command cmd) : m_cmd(cmd) {}
+	    Command m_cmd;
+	};
+
+	struct Input : public CmdBase
+	{
+	    Input(const std::shared_ptr<codec::BaseCodec>& input) : CmdBase(INPUT), m_input(input) {}
+	    std::shared_ptr<codec::BaseCodec> m_input;
+	};
+
+	std::deque<std::shared_ptr<CmdBase>> m_commands;
 
 	/// samples will be put into this container
 	Fifo& m_fifo;
