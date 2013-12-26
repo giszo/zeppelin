@@ -212,3 +212,24 @@ BOOST_AUTO_TEST_CASE(TestActiveFileDeletionAtTheEndOfAlbum)
     BOOST_CHECK_EQUAL(iter[1], 0);
     BOOST_CHECK_EQUAL(p.file()->m_name, "a.mp3");
 }
+
+BOOST_AUTO_TEST_CASE(TestInvalidationAfterDeleteActive)
+{
+    player::Playlist p;
+    std::vector<int> iter;
+
+    p.add(std::make_shared<library::File>(1, "tst", "a.mp3"));
+
+    BOOST_CHECK(!p.isValid());
+    p.reset(player::QueueItem::FIRST);
+    BOOST_CHECK(p.isValid());
+
+    iter.push_back(0);
+    p.remove(iter);
+    BOOST_CHECK(!p.isValid());
+
+    // queue should be still invalid after adding a new item
+    p.add(std::make_shared<library::File>(2, "tst", "b.mp3"));
+
+    BOOST_CHECK(!p.isValid());
+}

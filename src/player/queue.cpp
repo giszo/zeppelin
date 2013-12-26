@@ -52,6 +52,12 @@ void ContainerQueueItem::remove(std::vector<int>& i)
 
 	if (isValid())
 	    m_items[m_index]->reset(FIRST);
+	else
+	{
+	    // Reset the index to -1 if the item is invalid to prevent making it "valid" once a new item is added to
+	    // this position. That new item would be valid without calling reset() on it.
+	    m_index = -1;
+	}
     }
     else
     {
@@ -61,6 +67,7 @@ void ContainerQueueItem::remove(std::vector<int>& i)
 
 	if (!item.isValid())
 	{
+	    // the item we removed from got invalidated with the remove, so step to the next one ...
 	    ++m_index;
 
 	    if (isValid())
