@@ -52,7 +52,7 @@ int AlsaOutput::getFreeSize()
 // =====================================================================================================================
 void AlsaOutput::setup(int rate, int channels)
 {
-    if (snd_pcm_open(&m_handle, "default", SND_PCM_STREAM_PLAYBACK, 0) != 0)
+    if (snd_pcm_open(&m_handle, getPcmName().c_str(), SND_PCM_STREAM_PLAYBACK, 0) != 0)
 	throw OutputException("unable to open PCM device");
 
     snd_pcm_hw_params_t* params;
@@ -123,4 +123,18 @@ void AlsaOutput::handleError(int error)
     }
     else
 	throw OutputException(utils::MakeString() << "unable to write samples: " << error);
+}
+
+// =====================================================================================================================
+std::string AlsaOutput::getPcmName() const
+{
+    if (!hasConfig())
+	return "default";
+
+    const Json::Value& cfg = getConfig();
+
+    if (!cfg.isMember("pcm"))
+	return "default";
+
+    return cfg["pcm"].asString();
 }

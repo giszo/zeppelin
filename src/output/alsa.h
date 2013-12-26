@@ -28,6 +28,8 @@ class AlsaOutput : public BaseOutput
     private:
 	void handleError(int error);
 
+	std::string getPcmName() const;
+
     private:
 	snd_pcm_t* m_handle;
 
