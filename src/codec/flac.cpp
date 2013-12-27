@@ -16,6 +16,7 @@ Flac::Flac(const std::string& file)
       m_rate(0),
       m_channels(0),
       m_bps(0),
+      m_scale(0),
       m_error(false)
 {
 }
@@ -64,11 +65,14 @@ void Flac::open()
 	throw CodecException("unsupported channels");
     }
 
-    if (m_bps != 16)
+    if (m_bps > 32)
     {
-	std::cout << "flac: currently 16bit samples are supported only!" << std::endl;
-	throw CodecException("unsupported BPS");
+	std::cout << "flac: BPS not supported above 32 bits" << std::endl;
+	throw CodecException("unsupported bps");
     }
+
+    // calculate value used for scaling samples
+    m_scale = (1 << (m_bps - 1)) - 1;
 }
 
 // =====================================================================================================================
@@ -164,9 +168,9 @@ bool Flac::decode(float*& samples, size_t& count)
 }
 
 // =====================================================================================================================
-static inline void convertSample(const FLAC__int32 in, float& out)
+static inline void convertSample(const FLAC__int32 in, float& out, unsigned scale)
 {
-    out = (float)in / 32767.0f;
+    out = (float)in / scale;
 
     if (out > 1.0f)
 	out = 1.0f;
@@ -186,10 +190,8 @@ FLAC__StreamDecoderWriteStatus Flac::writeCallback(const FLAC__Frame* frame,
     // create an interleaved buffer of samples
     for (size_t i = 0; i < frame->header.blocksize; ++i)
     {
-	convertSample(buffer[0][i], m_samples[idx]);
-	++idx;
-	convertSample(buffer[1][i], m_samples[idx]);
-	++idx;
+	convertSample(buffer[0][i], m_samples[idx++], m_scale);
+	convertSample(buffer[1][i], m_samples[idx++], m_scale);
     }
 
     return FLAC__STREAM_DECODER_WRITE_STATUS_CONTINUE;

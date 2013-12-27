@@ -55,6 +55,9 @@ class Flac : public BaseCodec
 	int m_channels;
 	int m_bps;
 
+	// value used for scaling samples to the -1.0 ... 1.0 range
+	unsigned m_scale;
+
 	bool m_error;
 	std::vector<float> m_samples;
 
