@@ -54,7 +54,7 @@ void AlsaOutput::setup(int rate, int channels)
     snd_pcm_hw_params_alloca(&params);
     snd_pcm_hw_params_any(m_handle, params);
     snd_pcm_hw_params_set_access(m_handle, params, SND_PCM_ACCESS_RW_INTERLEAVED);
-    snd_pcm_hw_params_set_format(m_handle, params, SND_PCM_FORMAT_FLOAT);
+    snd_pcm_hw_params_set_format(m_handle, params, SND_PCM_FORMAT_S16);
     snd_pcm_hw_params_set_channels(m_handle, params, channels);
     snd_pcm_hw_params_set_rate(m_handle, params, rate, 0);
 
@@ -86,7 +86,13 @@ void AlsaOutput::drop()
 // =====================================================================================================================
 void AlsaOutput::write(const float* samples, size_t count)
 {
-    const float* data = samples;
+    int16_t ss[count * m_channels];
+
+    // convert float samples to signed 16bit integer
+    for (size_t i = 0; i < count * m_channels; ++i)
+	ss[i] = samples[i] * 32767;
+
+    const int16_t* data = ss;
 
     while (count > 0)
     {
