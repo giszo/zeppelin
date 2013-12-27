@@ -1,18 +1,17 @@
 #include "resample.h"
 
 #include <cmath>
+#include <iostream>
 
 using filter::Resample;
 
 // =====================================================================================================================
-Resample::Resample(int srcRate, int dstRate)
-    : m_srcRate(srcRate),
-      m_dstRate(dstRate)
+Resample::Resample(int srcRate, int dstRate, const config::Config& config)
+    : BaseFilter(config, "resample"),
+      m_srcRate(srcRate),
+      m_dstRate(dstRate),
+      m_src(NULL)
 {
-    int error;
-
-    // TODO: resampling type should be configurable!
-    m_src = src_new(SRC_SINC_BEST_QUALITY, 2, &error);
 }
 
 // =====================================================================================================================
@@ -25,6 +24,11 @@ Resample::~Resample()
 // =====================================================================================================================
 void Resample::init()
 {
+    int error;
+
+    // TODO: remove hardcoded channel count
+    m_src = src_new(getQuality(), 2, &error);
+
     if (!m_src)
 	throw FilterException("m_src is not present");
 
@@ -52,4 +56,30 @@ void Resample::run(float*& samples, size_t& count, const player::Format& format)
 
     samples = &m_samples[0];
     count = m_data.output_frames_gen;
+}
+
+// =====================================================================================================================
+int Resample::getQuality() const
+{
+    // use the best quality if there is no configuration
+    if (!hasConfig())
+	return SRC_SINC_BEST_QUALITY;
+
+    const Json::Value& cfg = getConfig();
+
+    if (!cfg.isMember("quality"))
+	return SRC_SINC_BEST_QUALITY;
+
+    const std::string& quality = cfg["quality"].asString();
+
+    if (quality == "best")
+	return SRC_SINC_BEST_QUALITY;
+    else if (quality == "medium")
+	return SRC_SINC_MEDIUM_QUALITY;
+    else if (quality == "fastest")
+	return SRC_SINC_FASTEST;
+
+    std::cout << "resample: invalid quality: '" << quality << "'" << std::endl;
+
+    return SRC_SINC_BEST_QUALITY;
 }

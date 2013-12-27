@@ -13,11 +13,14 @@ namespace filter
 class Resample : public BaseFilter
 {
     public:
-	Resample(int srcRate, int dstRate);
+	Resample(int srcRate, int dstRate, const config::Config& config);
 	virtual ~Resample();
 
 	void init() override;
 	void run(float*& samples, size_t& count, const player::Format& format) override;
+
+    private:
+	int getQuality() const;
 
     private:
 	// source sampling rate

@@ -2,6 +2,7 @@
 #define FILTER_BASEFILTER_H_INCLUDED
 
 #include <player/format.h>
+#include <config/config.h>
 
 #include <stdexcept>
 
@@ -21,6 +22,8 @@ class FilterException : public std::runtime_error
 class BaseFilter
 {
     public:
+	BaseFilter(const config::Config& config, const std::string& name);
+
 	virtual ~BaseFilter()
 	{}
 
@@ -31,6 +34,18 @@ class BaseFilter
 	virtual void init() = 0;
 
 	virtual void run(float*& samples, size_t& count, const player::Format& format) = 0;
+
+    protected:
+	// returns true in case of configuratio was set for this output
+	bool hasConfig() const;
+	/**
+	 * Returns the configuration structure of the output.
+	 * DO NOT call it without checking whether configuration is set with hasConfig()!
+	 */
+	const Json::Value& getConfig() const;
+
+    private:
+	const Json::Value* m_config;
 };
 
 }

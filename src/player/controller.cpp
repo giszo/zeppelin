@@ -21,11 +21,11 @@ Controller::Controller(const config::Config& config)
     Format fmt = output->getFormat();
 
     // prepare decoder
-    m_decoder.reset(new Decoder(fmt.sizeOfSeconds(10 /* 10 seconds of samples */), fmt, m_fifo, *this));
+    m_decoder.reset(new Decoder(fmt.sizeOfSeconds(10 /* 10 seconds of samples */), fmt, m_fifo, *this, config));
     m_fifo.setNotifyCallback(fmt.sizeOfSeconds(5 /* 5 second limit */), std::bind(&Decoder::notify, m_decoder.get()));
 
     // prepare decoder - volume filter
-    m_volumeAdj.reset(new filter::Volume());
+    m_volumeAdj.reset(new filter::Volume(config));
     m_volumeAdj->init();
     setVolume(100 /* max */);
     m_decoder->addFilter(m_volumeAdj);

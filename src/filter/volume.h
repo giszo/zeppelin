@@ -11,7 +11,7 @@ namespace filter
 class Volume : public BaseFilter
 {
     public:
-	Volume();
+	Volume(const config::Config& config);
 
 	void setLevel(float level);
 

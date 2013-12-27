@@ -21,7 +21,11 @@ class Controller;
 class Decoder : public thread::Thread
 {
     public:
-	Decoder(size_t bufferSize, const Format& outputFormat, Fifo& fifo, Controller& ctrl);
+	Decoder(size_t bufferSize,
+		const Format& outputFormat,
+		Fifo& fifo,
+		Controller& ctrl,
+		const config::Config& config);
 
 	void addFilter(const std::shared_ptr<filter::BaseFilter>& filter);
 
@@ -85,6 +89,7 @@ class Decoder : public thread::Thread
 	thread::Condition m_cond;
 
 	Controller& m_ctrl;
+	const config::Config& m_config;
 };
 
 }

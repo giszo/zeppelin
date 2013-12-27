@@ -37,6 +37,7 @@ class BaseOutput
 
 	virtual void write(const float* samples, size_t count) = 0;
 
+    protected:
 	// returns true in case of configuratio was set for this output
 	bool hasConfig() const;
 	/**

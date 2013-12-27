@@ -9,13 +9,18 @@
 using player::Decoder;
 
 // =====================================================================================================================
-Decoder::Decoder(size_t bufferSize, const Format& outputFormat, Fifo& fifo, Controller& ctrl)
+Decoder::Decoder(size_t bufferSize,
+		 const Format& outputFormat,
+		 Fifo& fifo,
+		 Controller& ctrl,
+		 const config::Config& config)
     : m_bufferSize(bufferSize),
       m_fifo(fifo),
       m_format(0, 0),
       m_outputFormat(outputFormat),
       m_resampling(false),
-      m_ctrl(ctrl)
+      m_ctrl(ctrl),
+      m_config(config)
 {
 }
 
@@ -212,7 +217,7 @@ void Decoder::turnOnResampling()
 	std::endl;
 
     std::shared_ptr<filter::BaseFilter> resampler =
-	std::make_shared<filter::Resample>(m_format.getRate(), m_outputFormat.getRate());
+	std::make_shared<filter::Resample>(m_format.getRate(), m_outputFormat.getRate(), m_config);
 
     try
     {

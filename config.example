@@ -11,6 +11,15 @@
         "root" : [""]
     },
 
+    # filter configurations
+    "filter" : {
+        "resample" : {
+	    # resampling quality (optional)
+	    # values: best, medium, fastest
+	    "quality" : ""
+        }
+    },
+
     # audio output configurations
     "output" : {
         # ALSA

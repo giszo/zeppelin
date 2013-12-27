@@ -6,8 +6,9 @@
 using filter::Volume;
 
 // =====================================================================================================================
-Volume::Volume()
-    : m_level(1.0)
+Volume::Volume(const config::Config& config)
+    : BaseFilter(config, "volume"),
+      m_level(1.0)
 {
 }
 

@@ -37,6 +37,7 @@ sources = [
     "thread/condition.cpp",
     "utils/stringutils.cpp",
     "config/parser.cpp",
+    "filter/basefilter.cpp",
     "filter/volume.cpp",
     "filter/resample.cpp",
     "plugin/pluginmanager.cpp"
