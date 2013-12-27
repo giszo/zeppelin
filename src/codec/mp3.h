@@ -25,6 +25,10 @@ class Mp3 : public BaseCodec
 	Metadata readMetadata() override;
 
     private:
+	// creates the mpg123 handle for the given file
+	void create();
+
+    private:
 	mpg123_handle* m_handle;
 
 	long m_rate;

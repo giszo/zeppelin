@@ -29,13 +29,8 @@ Mp3::~Mp3()
 // =====================================================================================================================
 void Mp3::open()
 {
-    m_handle = mpg123_new(NULL, NULL);
-
-    if (!m_handle)
-	throw CodecException("unable to create handle");
-
-    if (mpg123_open(m_handle, m_file.c_str()) != 0)
-	throw CodecException("unable to open file");
+    // create handle
+    create();
 
     // issue the first mpg123_decode_frame() call, it will detect the file format only, no samples will be decoded
 
@@ -73,13 +68,8 @@ codec::Metadata Mp3::readMetadata()
 {
     Metadata info;
 
-    m_handle = mpg123_new(NULL, NULL);
-
-    if (!m_handle)
-	throw CodecException("unable to create handle");
-
-    if (mpg123_open(m_handle, m_file.c_str()) != 0)
-	throw CodecException("unable to open file");
+    // create handle
+    create();
 
     if (mpg123_scan(m_handle) != MPG123_OK)
 	throw CodecException("unable to scan media");
@@ -183,4 +173,19 @@ bool Mp3::decode(float*& samples, size_t& count)
     samples = &m_samples[0];
 
     return true;
+}
+
+// =====================================================================================================================
+void Mp3::create()
+{
+    m_handle = mpg123_new(NULL, NULL);
+
+    if (!m_handle)
+	throw CodecException("unable to create handle");
+
+    // turn the fancy error messages of mpg123 off
+    mpg123_param(m_handle, MPG123_ADD_FLAGS, MPG123_QUIET, 0);
+
+    if (mpg123_open(m_handle, m_file.c_str()) != 0)
+	throw CodecException("unable to open file");
 }
