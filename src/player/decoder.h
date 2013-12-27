@@ -21,7 +21,7 @@ class Controller;
 class Decoder : public thread::Thread
 {
     public:
-	Decoder(size_t bufferSize, Fifo& fifo, Controller& ctrl);
+	Decoder(size_t bufferSize, const Format& outputFormat, Fifo& fifo, Controller& ctrl);
 
 	void addFilter(const std::shared_ptr<filter::BaseFilter>& filter);
 
@@ -35,7 +35,9 @@ class Decoder : public thread::Thread
     private:
 	void run() override;
 
-	void runFilters(float* samples, size_t count, const Format& format);
+	void runFilters(float*& samples, size_t& count, const Format& format);
+
+	void turnOnResampling();
 
     private:
 	enum Command
@@ -70,6 +72,11 @@ class Decoder : public thread::Thread
 
 	// format of the current input
 	Format m_format;
+	// format of the output device
+	Format m_outputFormat;
+
+	// true when resampling is turned on because input and output sampling rate differs
+	bool m_resampling;
 
 	/// filter chain that will be executed in the decoded samples
 	std::vector<std::shared_ptr<filter::BaseFilter>> m_filters;

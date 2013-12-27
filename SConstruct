@@ -38,6 +38,7 @@ sources = [
     "utils/stringutils.cpp",
     "config/parser.cpp",
     "filter/volume.cpp",
+    "filter/resample.cpp",
     "plugin/pluginmanager.cpp"
 ]
 
@@ -54,7 +55,7 @@ zep_lib = env.StaticLibrary(
 zep = env.Program(
     "zeppelin",
     source = ["src/main.cpp"] + zep_lib,
-    LIBS = ["asound", "mpg123", "FLAC", "sqlite3", "jsonrpc", "dl"]
+    LIBS = ["asound", "mpg123", "FLAC", "samplerate", "sqlite3", "jsonrpc", "dl"]
 )
 
 ########################################################################################################################

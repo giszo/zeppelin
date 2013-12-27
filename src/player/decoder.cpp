@@ -2,16 +2,19 @@
 #include "controller.h"
 
 #include <thread/blocklock.h>
+#include <filter/resample.h>
 
 #include <iostream>
 
 using player::Decoder;
 
 // =====================================================================================================================
-Decoder::Decoder(size_t bufferSize, Fifo& fifo, Controller& ctrl)
+Decoder::Decoder(size_t bufferSize, const Format& outputFormat, Fifo& fifo, Controller& ctrl)
     : m_bufferSize(bufferSize),
       m_fifo(fifo),
       m_format(0, 0),
+      m_outputFormat(outputFormat),
+      m_resampling(false),
       m_ctrl(ctrl)
 {
 }
@@ -77,10 +80,25 @@ void Decoder::run()
 	    switch (cmd->m_cmd)
 	    {
 		case INPUT :
+		    // before changing input check whether we performed resampling for the previous file because in that
+		    // case the resampler must be removed from the filters
+		    if (m_resampling)
+		    {
+			// here we assume that the resampler is the last filter, it is true for now ... :)
+			m_filters.pop_back();
+			m_resampling = false;
+		    }
+
 		    m_input = static_cast<Input&>(*cmd).m_input;
 
 		    if (m_input)
+		    {
 			m_format = m_input->getFormat();
+
+			// check whether we need to perform resampling
+			if (m_format.getRate() != m_outputFormat.getRate())
+			    turnOnResampling();
+		    }
 
 		    break;
 
@@ -156,10 +174,20 @@ void Decoder::run()
 }
 
 // =====================================================================================================================
-void Decoder::runFilters(float* samples, size_t count, const Format& format)
+void Decoder::runFilters(float*& samples, size_t& count, const Format& format)
 {
+    // process all filters
     for (const auto& filter : m_filters)
-	filter->run(samples, count, format);
+    {
+	try
+	{
+	    filter->run(samples, count, format);
+	}
+	catch (const filter::FilterException& e)
+	{
+	    std::cout << "decoder: filter error: " << e.what() << std::endl;
+	}
+    }
 
     // make sure samples are still in the valid -1.0 ... 1.0 range
     for (size_t i = 0; i < count * format.getChannels(); ++i)
@@ -170,5 +198,30 @@ void Decoder::runFilters(float* samples, size_t count, const Format& format)
 	    s = 1.0f;
 	else if (s < -1.0f)
 	    s = -1.0f;
+    }
+}
+
+// =====================================================================================================================
+void Decoder::turnOnResampling()
+{
+    std::cout << "decoder: turning on resampling (src=" <<
+	m_format.getRate() <<
+	", dst=" <<
+	m_outputFormat.getRate() <<
+	")" <<
+	std::endl;
+
+    std::shared_ptr<filter::BaseFilter> resampler =
+	std::make_shared<filter::Resample>(m_format.getRate(), m_outputFormat.getRate());
+
+    try
+    {
+	resampler->init();
+	m_filters.push_back(resampler);
+	m_resampling = true;
+    }
+    catch (const filter::FilterException& e)
+    {
+	std::cout << "decoder: unable to initialize resampler: " << e.what() << std::endl;
     }
 }
