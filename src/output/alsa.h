@@ -14,8 +14,7 @@ class AlsaOutput : public BaseOutput
 	AlsaOutput(const config::Config& config);
 	virtual ~AlsaOutput();
 
-	int getRate() override;
-	int getChannels() override;
+	player::Format getFormat() const override;
 
 	int getFreeSize() override;
 
@@ -23,7 +22,7 @@ class AlsaOutput : public BaseOutput
 
 	void drop() override;
 
-	void write(const int16_t* samples, size_t count) override;
+	void write(const float* samples, size_t count) override;
 
     private:
 	void handleError(int error);

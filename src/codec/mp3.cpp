@@ -1,8 +1,9 @@
 #include "mp3.h"
 
-#include <cstring>
-
 #include "utils/stringutils.h"
+
+#include <cstring>
+#include <iostream>
 
 using codec::Mp3;
 using codec::CodecException;
@@ -46,18 +47,24 @@ void Mp3::open()
 	throw CodecException("unable to detect file format");
 
     mpg123_getformat(m_handle, &m_rate, &m_channels, &m_format);
+
+    if (m_channels != 2)
+    {
+	std::cout << "flac: currently 2 channels are supported only!" << std::endl;
+	throw CodecException("unsupported channels");
+    }
+
+    if (m_format != MPG123_ENC_SIGNED_16)
+    {
+	std::cout << "flac: currently 16bit samples are supported only!" << std::endl;
+	throw CodecException("unsupported BPS");
+    }
 }
 
 // =====================================================================================================================
-int Mp3::getRate()
+player::Format Mp3::getFormat() const
 {
-    return m_rate;
-}
-
-// =====================================================================================================================
-int Mp3::getChannels()
-{
-    return m_channels;
+    return player::Format(m_rate, m_channels);
 }
 
 // =====================================================================================================================
@@ -133,7 +140,7 @@ codec::Metadata Mp3::readMetadata()
 }
 
 // =====================================================================================================================
-bool Mp3::decode(int16_t*& samples, size_t& count)
+bool Mp3::decode(float*& samples, size_t& count)
 {
     off_t frame;
     unsigned char* data;
@@ -154,8 +161,23 @@ bool Mp3::decode(int16_t*& samples, size_t& count)
     if ((bytes % (m_channels * sizeof(int16_t))) != 0)
 	throw CodecException("invalid number of decoded bytes");
 
-    samples = reinterpret_cast<int16_t*>(data);
+    int16_t* p = reinterpret_cast<int16_t*>(data);
     count = bytes / (m_channels * sizeof(int16_t));
+
+    // convert samples
+    m_samples.resize(count * m_channels);
+
+    for (size_t i = 0; i < m_samples.size(); ++i)
+    {
+	m_samples[i] = (float)p[i] / 32767.0f;
+
+	if (m_samples[i] > 1.0f)
+	    m_samples[i] = 1.0f;
+	else if (m_samples[i] < -1.0f)
+	    m_samples[i] = -1.0f;
+    }
+
+    samples = &m_samples[0];
 
     return true;
 }

@@ -1,6 +1,8 @@
 #ifndef CODEC_BASECODEC_H_INCLUDED
 #define CODEC_BASECODEC_H_INCLUDED
 
+#include <player/format.h>
+
 #include <string>
 #include <stdexcept>
 #include <memory>
@@ -53,16 +55,14 @@ class BaseCodec
 
 	virtual void open() = 0;
 
-	/// returns the sampling rate of the media stream
-	virtual int getRate() = 0;
-	/// returns the number of channels in the media stream
-	virtual int getChannels() = 0;
+	// returns the format (sampling rate, channels, etc.) of the input
+	virtual player::Format getFormat() const = 0;
 
 	/**
 	 * Decodes the next part of the media stream.
 	 * @return false is returned at the end of the stream
 	 */
-	virtual bool decode(int16_t*& samples, size_t& count) = 0;
+	virtual bool decode(float*& samples, size_t& count) = 0;
 
 	/// returns informations about the media
 	virtual Metadata readMetadata() = 0;

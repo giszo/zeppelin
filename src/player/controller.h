@@ -122,7 +122,7 @@ class Controller
 	Fifo m_fifo;
 
 	/// input decoder thread filling the sample buffer
-	Decoder m_decoder;
+	std::unique_ptr<Decoder> m_decoder;
 
 	/// player thread putting decoded samples to the output device
 	std::unique_ptr<Player> m_player;

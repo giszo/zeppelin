@@ -18,10 +18,10 @@ void Volume::setLevel(float level)
 }
 
 // =====================================================================================================================
-void Volume::run(float* samples, size_t count)
+void Volume::run(float* samples, size_t count, const player::Format& format)
 {
     float level = m_level;
 
-    for (size_t i = 0; i < count * 2; ++i)
+    for (size_t i = 0; i < count * format.getChannels(); ++i)
 	samples[i] *= level;
 }

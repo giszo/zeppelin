@@ -48,6 +48,9 @@ class Player : public thread::Thread
 	// the output device instance
 	std::shared_ptr<output::BaseOutput> m_output;
 
+	// the format of the output device
+	Format m_format;
+
 	// number of played samples
 	std::atomic_uint m_position;
 

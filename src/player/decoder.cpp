@@ -11,6 +11,7 @@ using player::Decoder;
 Decoder::Decoder(size_t bufferSize, Fifo& fifo, Controller& ctrl)
     : m_bufferSize(bufferSize),
       m_fifo(fifo),
+      m_format(0, 0),
       m_ctrl(ctrl)
 {
 }
@@ -77,6 +78,10 @@ void Decoder::run()
 	    {
 		case INPUT :
 		    m_input = static_cast<Input&>(*cmd).m_input;
+
+		    if (m_input)
+			m_format = m_input->getFormat();
+
 		    break;
 
 		case START :
@@ -117,7 +122,7 @@ void Decoder::run()
 
 	while (1)
 	{
-	    int16_t* samples;
+	    float* samples;
 	    size_t count;
 
 	    if (!m_input->decode(samples, count))
@@ -136,9 +141,9 @@ void Decoder::run()
 	    }
 
 	    // perform filters on the decoded samples
-	    runFilters(samples, count);
+	    runFilters(samples, count, m_format);
 
-	    size_t size = count * sizeof(int16_t) * m_input->getChannels();
+	    size_t size = m_format.sizeOfSamples(count);
 
 	    m_fifo.addSamples(samples, size);
 
@@ -151,18 +156,19 @@ void Decoder::run()
 }
 
 // =====================================================================================================================
-void Decoder::runFilters(int16_t* samples, size_t count)
+void Decoder::runFilters(float* samples, size_t count, const Format& format)
 {
-    float s[count * 2];
-
-    // convert sample values to float
-    for (size_t i = 0; i < count * 2; ++i)
-	s[i] = (float)samples[i];
-
     for (const auto& filter : m_filters)
-	filter->run(s, count);
+	filter->run(samples, count, format);
 
-    // convert the float samples back to the original buffer
-    for (size_t i = 0; i < count * 2; ++i)
-	samples[i] = (int16_t)s[i];
+    // make sure samples are still in the valid -1.0 ... 1.0 range
+    for (size_t i = 0; i < count * format.getChannels(); ++i)
+    {
+	float& s = samples[i];
+
+	if (s > 1.0f)
+	    s = 1.0f;
+	else if (s < -1.0f)
+	    s = -1.0f;
+    }
 }

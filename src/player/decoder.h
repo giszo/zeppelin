@@ -35,7 +35,7 @@ class Decoder : public thread::Thread
     private:
 	void run() override;
 
-	void runFilters(int16_t* samples, size_t count);
+	void runFilters(float* samples, size_t count, const Format& format);
 
     private:
 	enum Command
@@ -67,6 +67,9 @@ class Decoder : public thread::Thread
 	Fifo& m_fifo;
 
 	std::shared_ptr<codec::BaseCodec> m_input;
+
+	// format of the current input
+	Format m_format;
 
 	/// filter chain that will be executed in the decoded samples
 	std::vector<std::shared_ptr<filter::BaseFilter>> m_filters;

@@ -15,7 +15,7 @@ class Volume : public BaseFilter
 
 	void setLevel(float level);
 
-	void run(float* samples, size_t count) override;
+	void run(float* samples, size_t count, const player::Format& format) override;
 
     private:
 	std::atomic<float> m_level;

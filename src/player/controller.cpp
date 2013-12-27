@@ -12,26 +12,28 @@ using player::Controller;
 Controller::Controller(const config::Config& config)
     : m_state(STOPPED),
       m_decoderInitialized(false),
-      m_fifo(4 * 1024 /* 4kB for now */),
-      m_decoder(10 * 44100 * sizeof(int16_t) * 2 /* 10 seconds of samples */, m_fifo, *this)
+      m_fifo(4 * 1024 /* 4kB for now */)
 {
     // prepare the output
     std::shared_ptr<output::BaseOutput> output = std::make_shared<output::AlsaOutput>(config);
     output->setup(44100, 2);
 
-    // prepare player thread
-    m_player.reset(new Player(output, m_fifo, *this));
+    Format fmt = output->getFormat();
 
-    // create and register volume adjuster filter
+    // prepare decoder
+    m_decoder.reset(new Decoder(fmt.sizeOfSeconds(10 /* 10 seconds of samples */), m_fifo, *this));
+    m_fifo.setNotifyCallback(fmt.sizeOfSeconds(5 /* 5 second limit */), std::bind(&Decoder::notify, m_decoder.get()));
+
+    // prepare decoder - volume filter
     m_volumeAdj.reset(new filter::Volume());
     setVolume(100 /* max */);
-    m_decoder.addFilter(m_volumeAdj);
+    m_decoder->addFilter(m_volumeAdj);
 
-    // register fifo notification to the decoder
-    m_fifo.setNotifyCallback(5 * 44100 * sizeof(int16_t) * 2, std::bind(&Decoder::notify, &m_decoder));
+    // prepare player
+    m_player.reset(new Player(output, m_fifo, *this));
 
     // start decoder and player threads
-    m_decoder.start();
+    m_decoder->start();
     m_player->start();
 }
 
@@ -215,7 +217,7 @@ void Controller::run()
 
 		if (m_decoderInitialized)
 		{
-		    m_decoder.startDecoding();
+		    m_decoder->startDecoding();
 		    m_player->startPlayback();
 
 		    m_state = PLAYING;
@@ -239,7 +241,7 @@ void Controller::run()
 	    {
 		if (m_state == PLAYING || m_state == PAUSED)
 		{
-		    m_decoder.stopDecoding();
+		    m_decoder->stopDecoding();
 		    m_player->stopPlayback();
 		    m_decoderInitialized = false;
 		}
@@ -272,7 +274,7 @@ void Controller::run()
 		    if (m_decoderInitialized)
 		    {
 			// decoder was initialized succesfully, start playing
-			m_decoder.startDecoding();
+			m_decoder->startDecoding();
 			m_player->startPlayback();
 		    }
 		    else
@@ -314,11 +316,11 @@ void Controller::run()
 		    if (m_state == PLAYING || m_state == PAUSED)
 		    {
 			// stop the decoder and the player because we are removing the currently played song
-			m_decoder.stopDecoding();
+			m_decoder->stopDecoding();
 			m_player->stopPlayback();
 		    }
 
-		    m_decoder.setInput(nullptr);
+		    m_decoder->setInput(nullptr);
 		    m_decoderInitialized = false;
 		}
 
@@ -337,7 +339,7 @@ void Controller::run()
 		    {
 			if (m_decoderInitialized)
 			{
-			    m_decoder.startDecoding();
+			    m_decoder->startDecoding();
 			    m_player->startPlayback();
 			}
 			else
@@ -354,7 +356,7 @@ void Controller::run()
 		    break;
 
 		// stop both the decoder and the player threads
-		m_decoder.stopDecoding();
+		m_decoder->stopDecoding();
 		m_player->stopPlayback();
 
 		// reset the decoder index to the currently played song
@@ -362,7 +364,7 @@ void Controller::run()
 		m_playerQueue.get(it);
 		m_decoderQueue.set(it);
 		m_decoderInitialized = false;
-		m_decoder.setInput(nullptr);
+		m_decoder->setInput(nullptr);
 
 		m_state = STOPPED;
 
@@ -373,7 +375,7 @@ void Controller::run()
 		// jump to the next file
 		if (!m_decoderQueue.next())
 		{
-		    m_decoder.setInput(nullptr);
+		    m_decoder->setInput(nullptr);
 		    m_decoderInitialized = false;
 		    break;
 		}
@@ -381,7 +383,7 @@ void Controller::run()
 		setDecoderInput();
 
 		if (m_decoderInitialized)
-		    m_decoder.startDecoding();
+		    m_decoder->startDecoding();
 
 		break;
 
@@ -428,12 +430,12 @@ void Controller::setDecoderInput()
 
 	std::cout << "Playing file: " << file.m_path << "/" << file.m_name << std::endl;
 
-	m_decoder.setInput(input);
+	m_decoder->setInput(input);
 	m_decoderInitialized = true;
 
 	return;
     }
 
-    m_decoder.setInput(nullptr);
+    m_decoder->setInput(nullptr);
     m_decoderInitialized = false;
 }

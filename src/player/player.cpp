@@ -13,6 +13,7 @@ using player::Player;
 Player::Player(const std::shared_ptr<output::BaseOutput>& output, Fifo& fifo, Controller& ctrl)
     : m_fifo(fifo),
       m_output(output),
+      m_format(output->getFormat()),
       m_position(0),
       m_running(false),
       m_ctrl(ctrl)
@@ -22,7 +23,7 @@ Player::Player(const std::shared_ptr<output::BaseOutput>& output, Fifo& fifo, Co
 // =====================================================================================================================
 unsigned Player::getPosition() const
 {
-    return m_position / m_output->getRate();
+    return m_position / m_format.getRate();
 }
 
 // =====================================================================================================================
@@ -52,7 +53,7 @@ void Player::stopPlayback()
 // =====================================================================================================================
 void Player::run()
 {
-    uint8_t buffer[2 /* channels */ * sizeof(int16_t) /* sample size */ * 10000 /* maximum samples per round */];
+    //uint8_t buffer[2 /* channels */ * sizeof(int16_t) /* sample size */ * 10000 /* maximum samples per round */];
 
     while (1)
     {
@@ -69,7 +70,7 @@ void Player::run()
 	    continue;
 
 	// find out the available space on the output device for samples
-	size_t availOutput = m_output->getFreeSize() * sizeof(int16_t) * m_output->getChannels();
+	int availSamples = m_output->getFreeSize();
 
 	// try to flush the fifo until it is empty ...
 	while (event != Fifo::NONE)
@@ -78,12 +79,12 @@ void Player::run()
 	    {
 		case Fifo::SAMPLES :
 		{
-		    size_t size = std::min(availOutput, sizeof(buffer));
-		    size_t res = m_fifo.readSamples(buffer, size);
-		    size_t samples = res / (m_output->getChannels() * sizeof(int16_t));
-		    m_output->write(reinterpret_cast<int16_t*>(buffer), samples);
+		    float buffer[availSamples * m_format.getChannels()];
+		    size_t res = m_fifo.readSamples(buffer, sizeof(buffer));
+		    size_t samples = m_format.numOfSamples(res);
+		    m_output->write(buffer, samples);
 		    m_position += samples;
-		    availOutput -= res;
+		    availSamples -= samples;
 		    break;
 		}
 
@@ -93,10 +94,11 @@ void Player::run()
 		    break;
 
 		case Fifo::NONE :
+		    // this should be never reached because NONE terminates the loop
 		    break;
 	    }
 
-	    if (availOutput == 0)
+	    if (availSamples == 0)
 		break;
 
 	    event = m_fifo.getNextEvent();

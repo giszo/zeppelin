@@ -2,6 +2,7 @@
 #define OUTPUT_BASEOUTPUT_H_INCLUDED
 
 #include <config/config.h>
+#include <player/format.h>
 
 #include <stdexcept>
 
@@ -24,8 +25,8 @@ class BaseOutput
 	virtual ~BaseOutput()
 	{}
 
-	virtual int getRate() = 0;
-	virtual int getChannels() = 0;
+	// returns the format (sampling rate, channels, etc.) of the output
+	virtual player::Format getFormat() const = 0;
 
 	/// returns the number of available space for free samples on the device
 	virtual int getFreeSize() = 0;
@@ -34,7 +35,7 @@ class BaseOutput
 
 	virtual void drop() = 0;
 
-	virtual void write(const int16_t* samples, size_t count) = 0;
+	virtual void write(const float* samples, size_t count) = 0;
 
 	// returns true in case of configuratio was set for this output
 	bool hasConfig() const;

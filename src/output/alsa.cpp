@@ -22,15 +22,9 @@ AlsaOutput::~AlsaOutput()
 }
 
 // =====================================================================================================================
-int AlsaOutput::getRate()
+player::Format AlsaOutput::getFormat() const
 {
-    return m_rate;
-}
-
-// =====================================================================================================================
-int AlsaOutput::getChannels()
-{
-    return m_channels;
+    return player::Format(m_rate, m_channels);
 }
 
 // =====================================================================================================================
@@ -60,7 +54,7 @@ void AlsaOutput::setup(int rate, int channels)
     snd_pcm_hw_params_alloca(&params);
     snd_pcm_hw_params_any(m_handle, params);
     snd_pcm_hw_params_set_access(m_handle, params, SND_PCM_ACCESS_RW_INTERLEAVED);
-    snd_pcm_hw_params_set_format(m_handle, params, SND_PCM_FORMAT_S16_LE);
+    snd_pcm_hw_params_set_format(m_handle, params, SND_PCM_FORMAT_FLOAT);
     snd_pcm_hw_params_set_channels(m_handle, params, channels);
     snd_pcm_hw_params_set_rate(m_handle, params, rate, 0);
 
@@ -90,16 +84,21 @@ void AlsaOutput::drop()
 }
 
 // =====================================================================================================================
-void AlsaOutput::write(const int16_t* samples, size_t count)
+void AlsaOutput::write(const float* samples, size_t count)
 {
+    const float* data = samples;
+
     while (count > 0)
     {
-	snd_pcm_sframes_t ret = snd_pcm_writei(m_handle, samples, count);
+	snd_pcm_sframes_t ret = snd_pcm_writei(m_handle, data, count);
 
 	if (ret < 0)
 	    handleError(ret);
 	else
+	{
+	    data += ret * m_channels;
 	    count -= ret;
+	}
     }
 }
 

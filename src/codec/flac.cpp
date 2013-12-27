@@ -72,15 +72,9 @@ void Flac::open()
 }
 
 // =====================================================================================================================
-int Flac::getRate()
+player::Format Flac::getFormat() const
 {
-    return m_rate;
-}
-
-// =====================================================================================================================
-int Flac::getChannels()
-{
-    return m_channels;
+    return player::Format(m_rate, m_channels);
 }
 
 // =====================================================================================================================
@@ -137,7 +131,7 @@ codec::Metadata Flac::readMetadata()
 }
 
 // =====================================================================================================================
-bool Flac::decode(int16_t*& samples, size_t& count)
+bool Flac::decode(float*& samples, size_t& count)
 {
     FLAC__StreamDecoderState state = FLAC__stream_decoder_get_state(m_decoder);
 
@@ -170,6 +164,17 @@ bool Flac::decode(int16_t*& samples, size_t& count)
 }
 
 // =====================================================================================================================
+static inline void convertSample(const FLAC__int32 in, float& out)
+{
+    out = (float)in / 32767.0f;
+
+    if (out > 1.0f)
+	out = 1.0f;
+    else if (out < -1.0f)
+	out = -1.0f;
+}
+
+// =====================================================================================================================
 FLAC__StreamDecoderWriteStatus Flac::writeCallback(const FLAC__Frame* frame,
 						   const FLAC__int32* const buffer[])
 {
@@ -181,8 +186,10 @@ FLAC__StreamDecoderWriteStatus Flac::writeCallback(const FLAC__Frame* frame,
     // create an interleaved buffer of samples
     for (size_t i = 0; i < frame->header.blocksize; ++i)
     {
-	m_samples[idx++] = buffer[0][i];
-	m_samples[idx++] = buffer[1][i];
+	convertSample(buffer[0][i], m_samples[idx]);
+	++idx;
+	convertSample(buffer[1][i], m_samples[idx]);
+	++idx;
     }
 
     return FLAC__STREAM_DECODER_WRITE_STATUS_CONTINUE;

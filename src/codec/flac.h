@@ -19,10 +19,9 @@ class Flac : public BaseCodec
 
 	void open() override;
 
-	int getRate() override;
-	int getChannels() override;
+	player::Format getFormat() const override;
 
-	bool decode(int16_t*& samples, size_t& count) override;
+	bool decode(float*& samples, size_t& count) override;
 
 	Metadata readMetadata() override;
 
@@ -57,7 +56,7 @@ class Flac : public BaseCodec
 	int m_bps;
 
 	bool m_error;
-	std::vector<int16_t> m_samples;
+	std::vector<float> m_samples;
 
 	Metadata m_metadata;
 };

@@ -32,6 +32,7 @@ sources = [
     "player/controller.cpp",
     "player/fifo.cpp",
     "player/queue.cpp",
+    "player/format.cpp",
     "thread/thread.cpp",
     "thread/condition.cpp",
     "utils/stringutils.cpp",
@@ -69,7 +70,8 @@ Default([zep] + env["PLUGINS"])
 
 tests = [
     "fifo.cpp",
-    "queue.cpp"
+    "queue.cpp",
+    "format.cpp"
 ]
 
 env.Program(

@@ -5,6 +5,8 @@
 
 #include <mpg123.h>
 
+#include <vector>
+
 namespace codec
 {
 
@@ -16,10 +18,9 @@ class Mp3 : public BaseCodec
 
 	void open() override;
 
-	int getRate() override;
-	int getChannels() override;
+	player::Format getFormat() const override;
 
-	bool decode(int16_t*& samples, size_t& count) override;
+	bool decode(float*& samples, size_t& count) override;
 
 	Metadata readMetadata() override;
 
@@ -29,6 +30,8 @@ class Mp3 : public BaseCodec
 	long m_rate;
 	int m_channels;
 	int m_format;
+
+	std::vector<float> m_samples;
 };
 
 }
