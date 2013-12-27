@@ -46,7 +46,8 @@ void Mp3::open()
     if (mpg123_decode_frame(m_handle, &frame, &data, &size) != MPG123_NEW_FORMAT)
 	throw CodecException("unable to detect file format");
 
-    mpg123_getformat(m_handle, &m_rate, &m_channels, &m_format);
+    if (mpg123_getformat(m_handle, &m_rate, &m_channels, &m_format) != 0)
+	throw CodecException("unable to get file format");
 
     if (m_channels != 2)
     {
@@ -83,7 +84,9 @@ codec::Metadata Mp3::readMetadata()
     if (mpg123_scan(m_handle) != MPG123_OK)
 	throw CodecException("unable to scan media");
 
-    mpg123_getformat(m_handle, &m_rate, &info.m_channels, &m_format);
+    if (mpg123_getformat(m_handle, &m_rate, &info.m_channels, NULL) != MPG123_OK)
+	throw CodecException("unable to get file format");
+
     info.m_rate = m_rate;
 
     off_t samples = mpg123_length(m_handle);
