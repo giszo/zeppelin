@@ -28,6 +28,9 @@ class Mp3 : public BaseCodec
 	// creates the mpg123 handle for the given file
 	void create();
 
+	void processID3v1(Metadata& info, const mpg123_id3v1& id3);
+	void processID3v2(Metadata& info, const mpg123_id3v2& id3);
+
     private:
 	mpg123_handle* m_handle;
 

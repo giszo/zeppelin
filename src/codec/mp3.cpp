@@ -86,48 +86,16 @@ codec::Metadata Mp3::readMetadata()
 
     info.m_samples = samples;
 
-    // TODO: support ID3 v1
-
+    mpg123_id3v1* id3_v1;
     mpg123_id3v2* id3_v2;
 
-    if (mpg123_id3(m_handle, NULL, &id3_v2) != MPG123_OK)
+    if (mpg123_id3(m_handle, &id3_v1, &id3_v2) != MPG123_OK)
 	throw CodecException("unable to get id3");
 
     if (id3_v2)
-    {
-	if (id3_v2->artist && id3_v2->artist->p)
-	    info.m_artist = id3_v2->artist->p;
-	if (id3_v2->album && id3_v2->album->p)
-	    info.m_album = id3_v2->album->p;
-	if (id3_v2->title && id3_v2->title->p)
-	    info.m_title = id3_v2->title->p;
-	if (id3_v2->year && id3_v2->year->p)
-	{
-	    try
-	    {
-		info.m_year = StringUtils::toInt(id3_v2->year->p);
-	    }
-	    catch (const utils::NumberFormatException& e)
-	    {
-	    }
-	}
-
-	for (size_t i = 0; i < id3_v2->texts; ++i)
-	{
-	    mpg123_text* t = &id3_v2->text[i];
-
-	    if ((memcmp(t->id, "TRCK", 4) == 0) && t->text.p)
-	    {
-		try
-		{
-		    info.m_trackIndex = StringUtils::toInt(t->text.p);
-		}
-		catch (const utils::NumberFormatException& e)
-		{
-		}
-	    }
-	}
-    }
+	processID3v2(info, *id3_v2);
+    if (id3_v1)
+	processID3v1(info, *id3_v1);
 
     return info;
 }
@@ -188,4 +156,70 @@ void Mp3::create()
 
     if (mpg123_open(m_handle, m_file.c_str()) != 0)
 	throw CodecException("unable to open file");
+}
+
+// =====================================================================================================================
+void Mp3::processID3v1(Metadata& info, const mpg123_id3v1& id3)
+{
+    if (info.m_artist.empty())
+	info.m_artist.append(id3.artist, 30);
+
+    if (info.m_album.empty())
+	info.m_album.append(id3.album, 30);
+
+    if (info.m_title.empty())
+	info.m_title.append(id3.title, 30);
+
+    if (info.m_year == 0)
+    {
+	try
+	{
+	    info.m_year = StringUtils::toInt(std::string(id3.year, 4));
+	}
+	catch (const utils::NumberFormatException&)
+	{
+	}
+    }
+
+    // track index could be filled from ID3v1.1 data, but I had a lot of trouble with it, so it is skipped for now
+}
+
+// =====================================================================================================================
+void Mp3::processID3v2(Metadata& info, const mpg123_id3v2& id3)
+{
+    if (id3.artist && id3.artist->p)
+	info.m_artist = id3.artist->p;
+
+    if (id3.album && id3.album->p)
+	info.m_album = id3.album->p;
+
+    if (id3.title && id3.title->p)
+	info.m_title = id3.title->p;
+
+    if (id3.year && id3.year->p)
+    {
+	try
+	{
+	    info.m_year = StringUtils::toInt(id3.year->p);
+	}
+	catch (const utils::NumberFormatException&)
+	{
+	}
+    }
+
+    for (size_t i = 0; i < id3.texts; ++i)
+    {
+	const mpg123_text& t = id3.text[i];
+
+	if ((memcmp(t.id, "TRCK", 4) == 0) && t.text.p)
+	{
+	    try
+	    {
+		info.m_trackIndex = StringUtils::toInt(t.text.p);
+	    }
+	    catch (const utils::NumberFormatException&)
+	    {
+	    }
+	}
+    }
 }

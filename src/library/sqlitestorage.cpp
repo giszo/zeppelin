@@ -71,10 +71,12 @@ void SqliteStorage::open()
     prepareStatement(&m_getFilesWithoutMeta, "SELECT id, path, name FROM files WHERE length IS NULL");
     prepareStatement(&m_getFilesOfArtist,
                      "SELECT id, path, name, length, title, year, track_index FROM files WHERE artist_id IS ?");
+    // 'name' is used in ORDER BY to try to keep the order of tracks inside an album according to file naming because
+    // it may contain information about the index of the track
     prepareStatement(&m_getFilesOfAlbum, R"(SELECT id, path, name, length, title, year, track_index
                                             FROM files
                                             WHERE album_id = ?
-                                            ORDER BY track_index)");
+                                            ORDER BY track_index, name)");
     prepareStatement(&m_setFileMark, "UPDATE files SET mark = 1 WHERE id = ?");
 
     prepareStatement(&m_updateFileMeta,
