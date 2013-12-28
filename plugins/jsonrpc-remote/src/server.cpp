@@ -164,16 +164,19 @@ void Server::libraryGetArtists(const Json::Value& request, Json::Value& response
     auto artists = m_library->getStorage().getArtists();
 
     response = Json::Value(Json::arrayValue);
+    response.resize(artists.size());
 
-    for (const auto& a : artists)
+    for (size_t i = 0; i < artists.size(); ++i)
     {
+	const auto& a = artists[i];
+
 	Json::Value artist(Json::objectValue);
 	artist["id"] = a->m_id;
 	artist["name"] = a->m_name;
 	artist["albums"] = a->m_albums;
 	artist["songs"] = a->m_songs;
 
-	response.append(artist);
+	response[i].swap(artist);
     }
 }
 
@@ -183,9 +186,12 @@ void Server::libraryGetAlbums(const Json::Value& request, Json::Value& response)
     auto albums = m_library->getStorage().getAlbums();
 
     response = Json::Value(Json::arrayValue);
+    response.resize(albums.size());
 
-    for (const auto& a : albums)
+    for (size_t i = 0; i < albums.size(); ++i)
     {
+	const auto& a = albums[i];
+
 	Json::Value album(Json::objectValue);
 	album["id"] = a->m_id;
 	album["name"] = a->m_name;
@@ -193,7 +199,7 @@ void Server::libraryGetAlbums(const Json::Value& request, Json::Value& response)
 	album["songs"] = a->m_songs;
 	album["length"] = a->m_length;
 
-	response.append(album);
+	response[i].swap(album);
     }
 }
 
@@ -203,16 +209,19 @@ void Server::libraryGetAlbumsByArtist(const Json::Value& request, Json::Value& r
     auto albums = m_library->getStorage().getAlbumsByArtist(request["artist_id"].asInt());
 
     response = Json::Value(Json::arrayValue);
+    response.resize(albums.size());
 
-    for (const auto& a : albums)
+    for (size_t i = 0; i < albums.size(); ++i)
     {
+	const auto& a = albums[i];
+
 	Json::Value album(Json::objectValue);
 	album["id"] = a->m_id;
 	album["name"] = a->m_name;
 	album["songs"] = a->m_songs;
 	album["length"] = a->m_length;
 
-	response.append(album);
+	response[i].swap(album);
     }
 }
 
@@ -222,9 +231,12 @@ void Server::libraryGetFilesOfArtist(const Json::Value& request, Json::Value& re
     auto files = m_library->getStorage().getFilesOfArtist(request["artist_id"].asInt());
 
     response = Json::Value(Json::arrayValue);
+    response.resize(files.size());
 
-    for (const auto& f : files)
+    for (size_t i = 0; i < files.size(); ++i)
     {
+	const auto& f = files[i];
+
 	Json::Value file(Json::objectValue);
 	file["id"] = f->m_id;
 	file["path"] = f->m_path;
@@ -233,7 +245,7 @@ void Server::libraryGetFilesOfArtist(const Json::Value& request, Json::Value& re
 	file["title"] = f->m_title;
 	file["year"] = f->m_year;
 
-	response.append(file);
+	response[i].swap(file);
     }
 }
 
@@ -243,9 +255,12 @@ void Server::libraryGetFilesOfAlbum(const Json::Value& request, Json::Value& res
     auto files = m_library->getStorage().getFilesOfAlbum(request["album_id"].asInt());
 
     response = Json::Value(Json::arrayValue);
+    response.resize(files.size());
 
-    for (const auto& f : files)
+    for (size_t i = 0; i < files.size(); ++i)
     {
+	const auto& f = files[i];
+
 	Json::Value file(Json::objectValue);
 	file["id"] = f->m_id;
 	file["path"] = f->m_path;
@@ -254,7 +269,7 @@ void Server::libraryGetFilesOfAlbum(const Json::Value& request, Json::Value& res
 	file["title"] = f->m_title;
 	file["year"] = f->m_year;
 
-	response.append(file);
+	response[i].swap(file);
     }
 }
 
