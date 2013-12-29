@@ -1,6 +1,6 @@
 #include "server.h"
 
-#include <iostream>
+#include <logger.h>
 
 // =====================================================================================================================
 extern "C"
@@ -13,7 +13,7 @@ plugin::Plugin* plugin_create(const config::Config& config,
 
     if (!root.isMember("rpc"))
     {
-	std::cout << "jsonrpc-remote: no RPC section in config" << std::endl;
+	LOG("jsonrpc-remote: no RPC section in config");
 	return NULL;
     }
 
@@ -21,7 +21,7 @@ plugin::Plugin* plugin_create(const config::Config& config,
 
     if (!rpc.isMember("address") || !rpc.isMember("port"))
     {
-	std::cout << "jsonrpc-remote: no address and/or port" << std::endl;
+	LOG("jsonrpc-remote: no address and/or port");
 	return NULL;
     }
 

@@ -1,9 +1,9 @@
 #include "flac.h"
 
 #include <utils/stringutils.h>
+#include <logger.h>
 
 #include <cstring>
-#include <iostream>
 
 using codec::Flac;
 
@@ -61,13 +61,13 @@ void Flac::open()
 
     if (m_channels != 2)
     {
-	std::cout << "flac: currently 2 channels are supported only!" << std::endl;
+	LOG("flac: currently 2 channels are supported only!");
 	throw CodecException("unsupported channels");
     }
 
     if (m_bps > 32)
     {
-	std::cout << "flac: BPS not supported above 32 bits" << std::endl;
+	LOG("flac: BPS not supported above 32 bits");
 	throw CodecException("unsupported bps");
     }
 
@@ -217,7 +217,7 @@ void Flac::metadataCallback(const FLAC__StreamMetadata* metadata)
 // =====================================================================================================================
 void Flac::errorCallback(FLAC__StreamDecoderErrorStatus status)
 {
-    std::cout << "flac: error=" << status << std::endl;
+    LOG("flac: error=" << status);
     m_error = true;
 }
 

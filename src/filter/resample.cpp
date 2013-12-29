@@ -1,7 +1,8 @@
 #include "resample.h"
 
+#include <logger.h>
+
 #include <cmath>
-#include <iostream>
 
 using filter::Resample;
 
@@ -79,7 +80,7 @@ int Resample::getQuality() const
     else if (quality == "fastest")
 	return SRC_SINC_FASTEST;
 
-    std::cout << "resample: invalid quality: '" << quality << "'" << std::endl;
+    LOG("resample: invalid quality: " << quality);
 
     return SRC_SINC_BEST_QUALITY;
 }

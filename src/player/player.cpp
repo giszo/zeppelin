@@ -4,8 +4,7 @@
 #include <output/alsa.h>
 #include <codec/mp3.h>
 #include <thread/blocklock.h>
-
-#include <iostream>
+#include <logger.h>
 
 using player::Player;
 
@@ -123,19 +122,22 @@ void Player::processCommands()
 	Command cmd = m_commands.front();
 	m_commands.pop_front();
 
-	std::cout << "player: cmd=" << cmd << std::endl;
-
 	switch (cmd)
 	{
 	    case START :
+		LOG("player: start");
 		m_running = true;
 		break;
 
 	    case STOP :
+		LOG("player: stop");
 		m_position = 0;
-		// NOTE: there is no break here intentionally!
+		m_running = false;
+		m_output->drop();
+		break;
 
 	    case PAUSE :
+		LOG("player: pause");
 		m_running = false;
 		m_output->drop();
 		break;

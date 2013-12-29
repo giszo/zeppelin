@@ -2,8 +2,7 @@
 
 #include <thread/blocklock.h>
 #include <utils/stringutils.h>
-
-#include <iostream>
+#include <logger.h>
 
 #include <dirent.h>
 #include <sys/types.h>
@@ -86,14 +85,14 @@ void Scanner::scanDirectories()
 // =====================================================================================================================
 void Scanner::scanDirectory(const std::string& path, std::deque<std::string>& paths)
 {
-    std::cout << "Scanning directory: " << path << std::endl;
+    LOG("Scanning directory: " << path);
 
     // open the directory
     DIR* dir = opendir(path.c_str());
 
     if (!dir)
     {
-	std::cout << "Unable to open directory: " << path << std::endl;
+	LOG("Unable to open directory: " << path);
 	return;
     }
 
@@ -121,7 +120,7 @@ void Scanner::scanDirectory(const std::string& path, std::deque<std::string>& pa
 
     closedir(dir);
 
-    std::cout << "Scanning of " << path << " finished" << std::endl;
+    LOG("Scanning of " << path << " finished");
 }
 
 // =====================================================================================================================

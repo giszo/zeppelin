@@ -3,8 +3,7 @@
 
 #include <thread/blocklock.h>
 #include <filter/resample.h>
-
-#include <iostream>
+#include <logger.h>
 
 using player::Decoder;
 
@@ -87,7 +86,7 @@ void Decoder::run()
 	    switch (cmd->m_cmd)
 	    {
 		case INPUT :
-		    std::cout << "decoder: input" << std::endl;
+		    LOG("decoder: input");
 
 		    // before changing input check whether we performed resampling for the previous file because in that
 		    // case the resampler must be removed from the filters
@@ -112,11 +111,11 @@ void Decoder::run()
 		    break;
 
 		case START :
-		    std::cout << "decoder: start" << std::endl;
+		    LOG("decoder: start");
 
 		    if (!m_input)
 		    {
-			std::cerr << "decoder: unable to start working without input!" << std::endl;
+			LOG("decoder: unable to start working without input!");
 			break;
 		    }
 
@@ -125,7 +124,7 @@ void Decoder::run()
 		    break;
 
 		case STOP :
-		    std::cout << "decoder: stop" << std::endl;
+		    LOG("decoder: stop");
 		    m_fifo.reset();
 		    working = false;
 		    break;
@@ -160,7 +159,7 @@ void Decoder::run()
 	    if (!m_input->decode(samples, count))
 	    {
 		// the end of the stream has been reached
-		std::cout << "decoder: end of stream" << std::endl;
+		LOG("decoder: end of stream");
 		m_fifo.addMarker();
 
 		// remove the input of the decoder
@@ -199,7 +198,7 @@ void Decoder::runFilters(float*& samples, size_t& count, const Format& format)
 	}
 	catch (const filter::FilterException& e)
 	{
-	    std::cout << "decoder: filter error: " << e.what() << std::endl;
+	    LOG("decoder: filter error: " << e.what());
 	}
     }
 
@@ -218,12 +217,11 @@ void Decoder::runFilters(float*& samples, size_t& count, const Format& format)
 // =====================================================================================================================
 void Decoder::turnOnResampling()
 {
-    std::cout << "decoder: turning on resampling (src=" <<
+    LOG("decoder: turning on resampling (src=" <<
 	m_format.getRate() <<
 	", dst=" <<
 	m_outputFormat.getRate() <<
-	")" <<
-	std::endl;
+	")");
 
     std::shared_ptr<filter::BaseFilter> resampler =
 	std::make_shared<filter::Resample>(m_format.getRate(), m_outputFormat.getRate(), m_config);
@@ -236,6 +234,6 @@ void Decoder::turnOnResampling()
     }
     catch (const filter::FilterException& e)
     {
-	std::cout << "decoder: unable to initialize resampler: " << e.what() << std::endl;
+	LOG("decoder: unable to initialize resampler: " << e.what());
     }
 }

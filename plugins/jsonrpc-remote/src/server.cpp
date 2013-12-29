@@ -1,6 +1,6 @@
 #include "server.h"
 
-#include <iostream>
+#include <logger.h>
 
 // =====================================================================================================================
 Server::Server(int port,
@@ -145,7 +145,7 @@ Server::Server(int port,
 void Server::start()
 {
     if (!StartListening())
-	std::cout << "jsonrpc-remote: unable to start listening!" << std::endl;
+	LOG("jsonrpc-remote: unable to start listening!");
 }
 
 // =====================================================================================================================
@@ -289,7 +289,7 @@ void Server::playerQueueFile(const Json::Value& request, Json::Value& response)
 	return;
     }
 
-    std::cout << "Queueing file: " << file->m_path << "/" << file->m_name << std::endl;
+    LOG("Queueing file: " << file->m_path << "/" << file->m_name);
 
     m_ctrl->queue(file);
 }
@@ -299,7 +299,7 @@ void Server::playerQueueAlbum(const Json::Value& request, Json::Value& response)
 {
     int albumId = request["id"].asInt();
 
-    std::cout << "Queueing album: " << albumId << std::endl;
+    LOG("Queueing album: " << albumId);
 
     // TODO: handle not found exception here!
     auto album = m_library->getStorage().getAlbum(albumId);

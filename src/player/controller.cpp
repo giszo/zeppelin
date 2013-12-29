@@ -2,8 +2,8 @@
 
 #include <output/alsa.h>
 #include <thread/blocklock.h>
+#include <logger.h>
 
-#include <iostream>
 #include <sstream>
 
 using player::Controller;
@@ -86,7 +86,7 @@ void Controller::remove(const std::vector<int>& index)
     std::ostringstream ss;
     for (int i : index)
 	ss << "," << i;
-    std::cout << "controller: remove " << ss.str().substr(1) << std::endl;
+    LOG("controller: remove " << ss.str().substr(1));
     thread::BlockLock bl(m_mutex);
     m_commands.push_back(std::make_shared<Remove>(index));
     m_cond.signal();
@@ -95,35 +95,35 @@ void Controller::remove(const std::vector<int>& index)
 // =====================================================================================================================
 void Controller::play()
 {
-    std::cout << "controller: play" << std::endl;
+    LOG("controller: play");
     command(PLAY);
 }
 
 // =====================================================================================================================
 void Controller::pause()
 {
-    std::cout << "controller: pause" << std::endl;
+    LOG("controller: pause");
     command(PAUSE);
 }
 
 // =====================================================================================================================
 void Controller::stop()
 {
-    std::cout << "controller: stop" << std::endl;
+    LOG("controller: stop");
     command(STOP);
 }
 
 // =====================================================================================================================
 void Controller::prev()
 {
-    std::cout << "controller: prev" << std::endl;
+    LOG("controller: prev");
     command(PREV);
 }
 
 // =====================================================================================================================
 void Controller::next()
 {
-    std::cout << "controller: next" << std::endl;
+    LOG("controller: next");
     command(NEXT);
 }
 
@@ -133,7 +133,7 @@ void Controller::goTo(const std::vector<int>& index)
     std::ostringstream ss;
     for (int i : index)
 	ss << "," << i;
-    std::cout << "controller: goto " << ss.str().substr(1) << std::endl;
+    LOG("controller: goto " << ss.str().substr(1));
     thread::BlockLock bl(m_mutex);
     m_commands.push_back(std::make_shared<GoTo>(index));
     m_cond.signal();
@@ -197,7 +197,7 @@ void Controller::run()
 	std::shared_ptr<CmdBase> cmd = m_commands.front();
 	m_commands.pop_front();
 
-	std::cout << "controller: cmd=" << cmd->m_cmd << ", state=" << m_state << std::endl;
+	LOG("controller: cmd=" << cmd->m_cmd << ", state=" << m_state);
 
 	switch (cmd->m_cmd)
 	{
@@ -364,6 +364,8 @@ void Controller::run()
 	    }
 
 	    case DECODER_FINISHED :
+		LOG("decoder finished");
+
 		// jump to the next file
 		if (!m_decoderQueue.next())
 		{
@@ -380,7 +382,7 @@ void Controller::run()
 		break;
 
 	    case SONG_FINISHED :
-		std::cout << "song finished" << std::endl;
+		LOG("song finished");
 
 		// step to the next song
 		if (!m_playerQueue.next())
@@ -428,7 +430,7 @@ void Controller::setDecoderInput()
 	    continue;
 	}
 
-	std::cout << "Playing file: " << file.m_path << "/" << file.m_name << std::endl;
+	LOG("Playing file: " << file.m_path << "/" << file.m_name);
 
 	m_decoder->setInput(input);
 	m_decoderInitialized = true;

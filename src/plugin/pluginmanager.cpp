@@ -2,7 +2,7 @@
 
 #include "pluginmanager.h"
 
-#include <iostream>
+#include <logger.h>
 
 #include <dlfcn.h>
 
@@ -21,7 +21,7 @@ void PluginManager::loadAll(const config::Config& config)
 {
     for (const auto& name : config.m_plugin.m_list)
     {
-	std::cout << "plugin: loading " << name << std::endl;
+	LOG("plugin: loading " << name);
 	load(config.m_plugin.m_root + "/lib" + name + ".so", config);
     }
 }
@@ -36,8 +36,7 @@ void PluginManager::load(const std::string& path, const config::Config& config)
 
     if (!p)
     {
-	std::cout << "plugin: unable to open " << path << std::endl;
-	std::cout << "error: " << dlerror() << std::endl;
+	LOG("plugin: unable to open " << path << "\n" << "error: " << dlerror());
 	return;
     }
 
@@ -46,7 +45,7 @@ void PluginManager::load(const std::string& path, const config::Config& config)
 
     if (!create)
     {
-	std::cout << "plugin: create method not found in " << path << std::endl;
+	LOG("plugin: create method not found in " << path);
 	dlclose(p);
 	return;
     }
@@ -55,7 +54,7 @@ void PluginManager::load(const std::string& path, const config::Config& config)
 
     if (!plugin)
     {
-	std::cout << "plugin: unable to create plugin for " << path << std::endl;
+	LOG("plugin: unable to create plugin for " << path);
 	dlclose(p);
 	return;
     }

@@ -1,6 +1,5 @@
 #include "volume.h"
 
-#include <iostream>
 #include <cmath>
 
 using filter::Volume;

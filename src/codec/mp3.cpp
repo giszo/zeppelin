@@ -1,9 +1,9 @@
 #include "mp3.h"
 
-#include "utils/stringutils.h"
+#include <utils/stringutils.h>
+#include <logger.h>
 
 #include <cstring>
-#include <iostream>
 
 using codec::Mp3;
 using codec::CodecException;
@@ -46,13 +46,13 @@ void Mp3::open()
 
     if (m_channels != 2)
     {
-	std::cout << "flac: currently 2 channels are supported only!" << std::endl;
+	LOG("mp3: currently 2 channels are supported only!");
 	throw CodecException("unsupported channels");
     }
 
     if (m_format != MPG123_ENC_SIGNED_16)
     {
-	std::cout << "flac: currently 16bit samples are supported only!" << std::endl;
+	LOG("mp3: currently 16bit samples are supported only!");
 	throw CodecException("unsupported BPS");
     }
 }

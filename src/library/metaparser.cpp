@@ -3,8 +3,7 @@
 
 #include <codec/basecodec.h>
 #include <thread/blocklock.h>
-
-#include <iostream>
+#include <logger.h>
 
 using library::MetaParser;
 
@@ -56,7 +55,7 @@ void MetaParser::run()
 // =====================================================================================================================
 void MetaParser::parse(File& file)
 {
-    std::cout << "Parsing meta information of " << file.m_path << "/" << file.m_name << std::endl;
+    LOG("Parsing meta information of " << file.m_path << "/" << file.m_name);
 
     std::shared_ptr<codec::BaseCodec> codec = codec::BaseCodec::create(file.m_path + "/" + file.m_name);
 
@@ -71,7 +70,7 @@ void MetaParser::parse(File& file)
     }
     catch (const codec::CodecException& e)
     {
-	std::cout << "metaparser: " << e.what() << std::endl;
+	LOG("metaparser: error: " << e.what());
 	return;
     }
 

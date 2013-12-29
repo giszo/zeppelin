@@ -3,7 +3,6 @@
 #include <thread/blocklock.h>
 
 #include <cstring>
-#include <iostream>
 
 using player::Fifo;
 
