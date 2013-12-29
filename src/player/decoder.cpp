@@ -84,11 +84,11 @@ void Decoder::run()
 	    std::shared_ptr<CmdBase> cmd = m_commands.front();
 	    m_commands.pop_front();
 
-	    std::cout << "decoder: cmd=" << cmd->m_cmd << std::endl;
-
 	    switch (cmd->m_cmd)
 	    {
 		case INPUT :
+		    std::cout << "decoder: input" << std::endl;
+
 		    // before changing input check whether we performed resampling for the previous file because in that
 		    // case the resampler must be removed from the filters
 		    if (m_resampling)
@@ -112,6 +112,8 @@ void Decoder::run()
 		    break;
 
 		case START :
+		    std::cout << "decoder: start" << std::endl;
+
 		    if (!m_input)
 		    {
 			std::cerr << "decoder: unable to start working without input!" << std::endl;
@@ -123,6 +125,7 @@ void Decoder::run()
 		    break;
 
 		case STOP :
+		    std::cout << "decoder: stop" << std::endl;
 		    m_fifo.reset();
 		    working = false;
 		    break;
