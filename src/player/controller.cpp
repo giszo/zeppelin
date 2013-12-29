@@ -410,22 +410,14 @@ void Controller::setDecoderInput()
 	const library::File& file = *m_decoderQueue.file();
 
 	// open the file
-	std::shared_ptr<codec::BaseCodec> input = codec::BaseCodec::create(file.m_path + "/" + file.m_name);
+	std::shared_ptr<codec::BaseCodec> input = openFile(file);
 
 	if (!input)
 	{
-	    m_decoderQueue.next();
-	    continue;
-	}
+	    // try the next one if we were unable to open
+	    if (!m_decoderQueue.next())
+		break;
 
-	// try the next one if we were unable to open
-	try
-	{
-	    input->open();
-	}
-	catch (const codec::CodecException& e)
-	{
-	    m_decoderQueue.next();
 	    continue;
 	}
 
@@ -439,4 +431,24 @@ void Controller::setDecoderInput()
 
     m_decoder->setInput(nullptr);
     m_decoderInitialized = false;
+}
+
+// =====================================================================================================================
+std::shared_ptr<codec::BaseCodec> Controller::openFile(const library::File& file)
+{
+    std::shared_ptr<codec::BaseCodec> input = codec::BaseCodec::create(file.m_path + "/" + file.m_name);
+
+    if (!input)
+	return nullptr;
+
+    try
+    {
+	input->open();
+    }
+    catch (const codec::CodecException& e)
+    {
+	return nullptr;
+    }
+
+    return input;
 }

@@ -88,6 +88,8 @@ class Controller
     private:
 	void setDecoderInput();
 
+	std::shared_ptr<codec::BaseCodec> openFile(const library::File& file);
+
     private:
 	/// the state of the player
 	State m_state;
