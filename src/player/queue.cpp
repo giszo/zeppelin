@@ -45,34 +45,46 @@ void ContainerQueueItem::remove(std::vector<int>& i)
 
     if (i.empty())
     {
+	// remove the item
 	m_items.erase(m_items.begin() + idx);
 
+	// decrement the index if we removed the item before it
 	if (idx < m_index)
 	    --m_index;
-
-	if (isValid())
-	    m_items[m_index]->reset(FIRST);
-	else
-	{
-	    // Reset the index to -1 if the item is invalid to prevent making it "valid" once a new item is added to
-	    // this position. That new item would be valid without calling reset() on it.
-	    m_index = -1;
-	}
     }
     else
     {
 	QueueItem& item = *m_items[idx];
 
+	// remove recursively
 	item.remove(i);
 
-	if (!item.isValid())
+	if (item.items().empty())
+	{
+	    // remove the empty item
+	    m_items.erase(m_items.begin() + idx);
+	}
+	else if (!item.isValid())
 	{
 	    // the item we removed from got invalidated with the remove, so step to the next one ...
 	    ++m_index;
-
-	    if (isValid())
-		m_items[m_index]->reset(FIRST);
 	}
+	else
+	{
+	    // here we return to avoid running the code at the end of the function
+	    return;
+	}
+    }
+
+    // at this point the item pointed by m_index is changed so we have to either reset the new item if the index is
+    // valid or invalidate the index properly
+    if (isValid())
+	m_items[m_index]->reset(FIRST);
+    else
+    {
+	// Reset the index to -1 if the item is invalid to prevent making it "valid" once a new item is added to
+	// this position. That new item would be valid without calling reset() on it.
+	m_index = -1;
     }
 }
 

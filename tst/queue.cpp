@@ -233,3 +233,22 @@ BOOST_AUTO_TEST_CASE(TestInvalidationAfterDeleteActive)
 
     BOOST_CHECK(!p.isValid());
 }
+
+BOOST_AUTO_TEST_CASE(TestRemovalOfEmptyAlbum)
+{
+    player::Playlist p;
+    std::vector<int> iter = {0, 0};
+
+    p.add(std::make_shared<library::Album>(42, "Album", 42, 0, 0), {
+	std::make_shared<library::File>(1, "album", "1.mp3")
+    });
+    p.reset(player::QueueItem::FIRST);
+
+    BOOST_CHECK(p.isValid());
+
+    // remove the only file from the album, the album should be removed automatically because it is empty
+    p.remove(iter);
+
+    BOOST_CHECK(!p.isValid());
+    BOOST_CHECK(p.items().empty());
+}
