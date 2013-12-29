@@ -86,6 +86,9 @@ class Controller
 	void run();
 
     private:
+	void startPlayback();
+	void stopPlayback();
+
 	void setDecoderInput();
 
 	std::shared_ptr<codec::BaseCodec> openFile(const library::File& file);

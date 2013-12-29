@@ -218,9 +218,7 @@ void Controller::run()
 
 		if (m_decoderInitialized)
 		{
-		    m_decoder->startDecoding();
-		    m_player->startPlayback();
-
+		    startPlayback();
 		    m_state = PLAYING;
 		}
 
@@ -242,8 +240,7 @@ void Controller::run()
 	    {
 		if (m_state == PLAYING || m_state == PAUSED)
 		{
-		    m_decoder->stopDecoding();
-		    m_player->stopPlayback();
+		    stopPlayback();
 		    m_decoderInitialized = false;
 		}
 
@@ -275,8 +272,7 @@ void Controller::run()
 		    if (m_decoderInitialized)
 		    {
 			// decoder was initialized succesfully, start playing
-			m_decoder->startDecoding();
-			m_player->startPlayback();
+			startPlayback();
 		    }
 		    else
 		    {
@@ -317,8 +313,7 @@ void Controller::run()
 		    if (m_state == PLAYING || m_state == PAUSED)
 		    {
 			// stop the decoder and the player because we are removing the currently played song
-			m_decoder->stopDecoding();
-			m_player->stopPlayback();
+			stopPlayback();
 		    }
 
 		    m_decoder->setInput(nullptr);
@@ -339,10 +334,7 @@ void Controller::run()
 		    if (m_state == PLAYING)
 		    {
 			if (m_decoderInitialized)
-			{
-			    m_decoder->startDecoding();
-			    m_player->startPlayback();
-			}
+			    startPlayback();
 			else
 			    m_state = STOPPED;
 		    }
@@ -357,8 +349,7 @@ void Controller::run()
 		    break;
 
 		// stop both the decoder and the player threads
-		m_decoder->stopDecoding();
-		m_player->stopPlayback();
+		stopPlayback();
 
 		// reset the decoder index to the currently played song
 		std::vector<int> it;
@@ -400,6 +391,22 @@ void Controller::run()
 
 	m_mutex.unlock();
     }
+}
+
+// =====================================================================================================================
+void Controller::startPlayback()
+{
+    m_decoder->startDecoding();
+    m_player->startPlayback();
+}
+
+// =====================================================================================================================
+void Controller::stopPlayback()
+{
+    // stop the player first because it could send NOTIFY messages to the decoder causing stopDecoding() to never
+    // return because the decoder would get new commans from the player again and again
+    m_player->stopPlayback();
+    m_decoder->stopDecoding();
 }
 
 // =====================================================================================================================

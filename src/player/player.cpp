@@ -48,6 +48,10 @@ void Player::stopPlayback()
     thread::BlockLock bl(m_mutex);
     m_commands.push_back(STOP);
     m_cond.signal();
+
+    // wait until all of the commands are processed, so the caller can make sure that playing is really stopped
+    while (!m_commands.empty())
+	m_emptyCond.wait(m_mutex);
 }
 
 // =====================================================================================================================
@@ -137,4 +141,6 @@ void Player::processCommands()
 		break;
 	}
     }
+
+    m_emptyCond.signal();
 }

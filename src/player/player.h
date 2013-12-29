@@ -58,6 +58,7 @@ class Player : public thread::Thread
 
 	thread::Mutex m_mutex;
 	thread::Condition m_cond;
+	thread::Condition m_emptyCond;
 
 	// true when the player is currently working
 	bool m_running;

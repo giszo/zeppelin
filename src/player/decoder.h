@@ -87,6 +87,7 @@ class Decoder : public thread::Thread
 
 	thread::Mutex m_mutex;
 	thread::Condition m_cond;
+	thread::Condition m_emptyCond;
 
 	Controller& m_ctrl;
 	const config::Config& m_config;

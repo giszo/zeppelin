@@ -52,6 +52,10 @@ void Decoder::stopDecoding()
     thread::BlockLock bl(m_mutex);
     m_commands.push_back(std::make_shared<CmdBase>(STOP));
     m_cond.signal();
+
+    // wait until all of the commands are processed, so the caller can make sure that decoding is really stopped
+    while (!m_commands.empty())
+	m_emptyCond.wait(m_mutex);
 }
 
 // =====================================================================================================================
@@ -128,6 +132,8 @@ void Decoder::run()
 		    break;
 	    }
 	}
+
+	m_emptyCond.signal();
 
 	m_mutex.unlock();
 
