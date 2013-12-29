@@ -23,6 +23,10 @@ void SqliteStorage::open()
     if (sqlite3_open("library.db", &m_db) != SQLITE_OK)
 	throw StorageException("unable to open database");
 
+    // turn synchronous mode off and store journal data in memory to speed-up SQLite
+    execute("PRAGMA synchronous = OFF");
+    execute("PRAGMA journal_mode = MEMORY");
+
     // create db tables
     execute(
 	R"(CREATE TABLE IF NOT EXISTS artists(
