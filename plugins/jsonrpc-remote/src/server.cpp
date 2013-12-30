@@ -245,7 +245,7 @@ void Server::libraryGetFilesOfArtist(const Json::Value& request, Json::Value& re
 	file["length"] = f->m_length;
 	file["title"] = f->m_title;
 	file["year"] = f->m_year;
-	file["type"] = f->m_type;
+	file["codec"] = f->m_type;
 	file["sampling_rate"] = f->m_samplingRate;
 
 	response[i].swap(file);
@@ -271,7 +271,7 @@ void Server::libraryGetFilesOfAlbum(const Json::Value& request, Json::Value& res
 	file["length"] = f->m_length;
 	file["title"] = f->m_title;
 	file["year"] = f->m_year;
-	file["type"] = f->m_type;
+	file["codec"] = f->m_type;
 	file["sampling_rate"] = f->m_samplingRate;
 
 	response[i].swap(file);
@@ -347,7 +347,7 @@ static inline void serializeQueueItem(Json::Value& parent, const std::shared_ptr
 	    qi["name"] = file->m_name;
 	    qi["title"] = file->m_title;
 	    qi["length"] = file->m_length;
-	    qi["type"] = file->m_type;
+	    qi["codec"] = file->m_type;
 	    qi["sampling_rate"] = file->m_samplingRate;
 
 	    break;
