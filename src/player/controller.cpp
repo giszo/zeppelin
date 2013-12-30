@@ -83,10 +83,6 @@ void Controller::queue(const std::shared_ptr<library::Album>& album,
 // =====================================================================================================================
 void Controller::remove(const std::vector<int>& index)
 {
-    std::ostringstream ss;
-    for (int i : index)
-	ss << "," << i;
-    LOG("controller: remove " << ss.str().substr(1));
     thread::BlockLock bl(m_mutex);
     m_commands.push_back(std::make_shared<Remove>(index));
     m_cond.signal();
@@ -95,45 +91,36 @@ void Controller::remove(const std::vector<int>& index)
 // =====================================================================================================================
 void Controller::play()
 {
-    LOG("controller: play");
     command(PLAY);
 }
 
 // =====================================================================================================================
 void Controller::pause()
 {
-    LOG("controller: pause");
     command(PAUSE);
 }
 
 // =====================================================================================================================
 void Controller::stop()
 {
-    LOG("controller: stop");
     command(STOP);
 }
 
 // =====================================================================================================================
 void Controller::prev()
 {
-    LOG("controller: prev");
     command(PREV);
 }
 
 // =====================================================================================================================
 void Controller::next()
 {
-    LOG("controller: next");
     command(NEXT);
 }
 
 // =====================================================================================================================
 void Controller::goTo(const std::vector<int>& index)
 {
-    std::ostringstream ss;
-    for (int i : index)
-	ss << "," << i;
-    LOG("controller: goto " << ss.str().substr(1));
     thread::BlockLock bl(m_mutex);
     m_commands.push_back(std::make_shared<GoTo>(index));
     m_cond.signal();
@@ -197,11 +184,11 @@ void Controller::run()
 	std::shared_ptr<CmdBase> cmd = m_commands.front();
 	m_commands.pop_front();
 
-	LOG("controller: cmd=" << cmd->m_cmd << ", state=" << m_state);
-
 	switch (cmd->m_cmd)
 	{
 	    case PLAY :
+		LOG("controller: play");
+
 		if (m_state == PLAYING)
 		    break;
 
@@ -225,6 +212,8 @@ void Controller::run()
 		break;
 
 	    case PAUSE :
+		LOG("controller: pause");
+
 		if (m_state != PLAYING)
 		    break;
 
@@ -238,6 +227,8 @@ void Controller::run()
 	    case NEXT :
 	    case GOTO :
 	    {
+		LOG("controller: prev/next/goto (" << cmd->m_cmd << ")");
+
 		if (m_state == PLAYING || m_state == PAUSED)
 		{
 		    stopPlayback();
@@ -288,6 +279,11 @@ void Controller::run()
 	    {
 		bool removingCurrent = false;
 		Remove& rem = static_cast<Remove&>(*cmd);
+
+		std::ostringstream ss;
+		for (int i : rem.m_index)
+		    ss << "," << i;
+		LOG("controller: remove " << ss.str().substr(1));
 
 		// check whether we want to delete a subtree that contains the currently played song
 		if (m_playerQueue.isValid())
@@ -345,6 +341,8 @@ void Controller::run()
 
 	    case STOP :
 	    {
+		LOG("controller: stop");
+
 		if (m_state != PLAYING && m_state != PAUSED)
 		    break;
 
@@ -364,7 +362,7 @@ void Controller::run()
 	    }
 
 	    case DECODER_FINISHED :
-		LOG("decoder finished");
+		LOG("controller: decoder finished");
 
 		// jump to the next file
 		if (!m_decoderQueue.next())
@@ -382,7 +380,7 @@ void Controller::run()
 		break;
 
 	    case SONG_FINISHED :
-		LOG("song finished");
+		LOG("controller: song finished");
 
 		// step to the next song
 		if (!m_playerQueue.next())
@@ -430,7 +428,7 @@ void Controller::setDecoderInput()
 	    continue;
 	}
 
-	LOG("Playing file: " << file.m_path << "/" << file.m_name);
+	LOG("controller: playing: " << file.m_path << "/" << file.m_name);
 
 	m_decoder->setInput(input);
 	m_decoderInitialized = true;
