@@ -159,16 +159,28 @@ void Mp3::create()
 }
 
 // =====================================================================================================================
+static inline void readID3v1Field(const char* field, size_t length, std::string& s)
+{
+    char buf[length + 1];
+
+    // copy the data into a temporary buffer to add a zero byte at the end of the text
+    memcpy(buf, field, length);
+    buf[length] = 0;
+
+    s = buf;
+}
+
+// =====================================================================================================================
 void Mp3::processID3v1(Metadata& info, const mpg123_id3v1& id3)
 {
     if (info.m_artist.empty())
-	info.m_artist.append(id3.artist, 30);
+	readID3v1Field(id3.artist, 30, info.m_artist);
 
     if (info.m_album.empty())
-	info.m_album.append(id3.album, 30);
+	readID3v1Field(id3.album, 30, info.m_album);
 
     if (info.m_title.empty())
-	info.m_title.append(id3.title, 30);
+	readID3v1Field(id3.title, 30, info.m_title);
 
     if (info.m_year == 0)
     {
