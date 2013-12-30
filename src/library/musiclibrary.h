@@ -21,7 +21,7 @@ class MusicLibrary : public ScannerListener
 
 	void scanningStarted() override;
 	void scanningFinished() override;
-	void musicFound(const std::string& path, const std::string& name) override;
+	void musicFound(const File& file) override;
 
     private:
 	/// configured root directories for searching music files

@@ -45,11 +45,11 @@ void MusicLibrary::scanningFinished()
 }
 
 // =====================================================================================================================
-void MusicLibrary::musicFound(const std::string& path, const std::string& name)
+void MusicLibrary::musicFound(const File& file)
 {
-    std::shared_ptr<File> file = std::make_shared<File>(-1, path, name);
+    std::shared_ptr<File> f(new File(file));
 
     // add the file into the library and start metadata parsing if it is a new one
-    if (m_storage.addFile(*file))
-	m_metaParser.add(file);
+    if (m_storage.addFile(*f))
+	m_metaParser.add(f);
 }

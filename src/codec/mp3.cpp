@@ -97,6 +97,8 @@ codec::Metadata Mp3::readMetadata()
     if (id3_v1)
 	processID3v1(info, *id3_v1);
 
+    info.m_type = MP3;
+
     return info;
 }
 

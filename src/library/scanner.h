@@ -11,6 +11,8 @@
 namespace library
 {
 
+struct File;
+
 class ScannerListener
 {
     public:
@@ -20,7 +22,7 @@ class ScannerListener
 	virtual void scanningStarted() = 0;
 	virtual void scanningFinished() = 0;
 
-	virtual void musicFound(const std::string& path, const std::string& name) = 0;
+	virtual void musicFound(const File& file) = 0;
 };
 
 class Scanner : public thread::Thread

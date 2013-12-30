@@ -1,6 +1,8 @@
 #ifndef CODEC_BASECODEC_H_INCLUDED
 #define CODEC_BASECODEC_H_INCLUDED
 
+#include "type.h"
+
 #include <player/format.h>
 
 #include <string>
@@ -21,12 +23,15 @@ class CodecException : public std::runtime_error
 struct Metadata
 {
     Metadata()
-	: m_rate(-1),
+	: m_type(UNKNOWN),
+	  m_rate(-1),
 	  m_channels(-1),
 	  m_samples(0),
 	  m_year(0),
 	  m_trackIndex(0)
     {}
+
+    Type m_type;
 
     /// sampling rate
     int m_rate;

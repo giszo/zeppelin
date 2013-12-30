@@ -1,6 +1,8 @@
 #ifndef LIBRARY_STORAGE_H_INCLUDED
 #define LIBRARY_STORAGE_H_INCLUDED
 
+#include <codec/type.h>
+
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -53,17 +55,21 @@ struct Album
 
 struct File
 {
-    File(int id, const std::string& path, const std::string& name)
+    File(int id, const std::string& path, const std::string& name, int64_t size)
 	: m_id(id),
 	  m_path(path),
 	  m_name(name),
+	  m_size(size),
 	  m_length(0),
 	  m_year(0),
-	  m_trackIndex(0)
+	  m_trackIndex(0),
+	  m_type(codec::UNKNOWN),
+	  m_samplingRate(0)
     {}
 
-    File(int id, const std::string& path, const std::string& name,
-	 int length, const std::string& artist, const std::string& album, const std::string& title, int year, int trackIndex)
+    File(int id, const std::string& path, const std::string& name, int64_t size,
+	 int length, const std::string& artist, const std::string& album, const std::string& title, int year, int trackIndex,
+	 codec::Type type, int samplingRate)
 	: m_id(id),
 	  m_path(path),
 	  m_name(name),
@@ -72,12 +78,16 @@ struct File
 	  m_album(album),
 	  m_title(title),
 	  m_year(year),
-	  m_trackIndex(trackIndex)
+	  m_trackIndex(trackIndex),
+	  m_type(type),
+	  m_samplingRate(samplingRate)
     {}
 
     int m_id;
     std::string m_path;
     std::string m_name;
+    // size of the file in bytes
+    int64_t m_size;
 
     /// the length of the music file in seconds
     int m_length;
@@ -87,6 +97,11 @@ struct File
     std::string m_title;
     int m_year;
     int m_trackIndex;
+
+    // the type of the file (mp3, flac, etc.)
+    codec::Type m_type;
+    // sampling rate of the file (44100Hz, 48000Hz, etc.)
+    int m_samplingRate;
 };
 
 class StorageException : public std::runtime_error
@@ -116,8 +131,6 @@ class Storage
 
 	/// returns the file informations associated to the given ID
 	virtual std::shared_ptr<File> getFile(int id) = 0;
-	/// returns all of the files from the underlying storage
-	virtual std::vector<std::shared_ptr<File>> getFiles() = 0;
 	/// returns the given amount of files at most from the library having no metadata yet
 	virtual std::vector<std::shared_ptr<File>> getFilesWithoutMetadata() = 0;
 	/// returns the files of the given artist

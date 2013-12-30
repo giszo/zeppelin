@@ -80,4 +80,6 @@ void MetaParser::parse(File& file)
     file.m_title = meta.m_title;
     file.m_year = meta.m_year;
     file.m_trackIndex = meta.m_trackIndex;
+    file.m_type = meta.m_type;
+    file.m_samplingRate = meta.m_rate;
 }

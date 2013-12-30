@@ -1,4 +1,5 @@
 #include "scanner.h"
+#include "storage.h"
 
 #include <thread/blocklock.h>
 #include <utils/stringutils.h>
@@ -115,7 +116,10 @@ void Scanner::scanDirectory(const std::string& path, std::deque<std::string>& pa
 	if (S_ISDIR(st.st_mode))
 	    paths.push_back(p);
 	else if (isMediaFile(name))
-	    m_listener.musicFound(path, name);
+	{
+	    File file(-1, path, name, st.st_size);
+	    m_listener.musicFound(file);
+	}
     }
 
     closedir(dir);

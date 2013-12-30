@@ -131,6 +131,8 @@ codec::Metadata Flac::readMetadata()
 	}
     } while (FLAC__metadata_simple_iterator_next(m_iterator));
 
+    m_metadata.m_type = FLAC;
+
     return m_metadata;
 }
 
