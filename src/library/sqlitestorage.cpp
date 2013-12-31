@@ -84,9 +84,13 @@ void SqliteStorage::open()
                         ORDER BY track_index, name)");
     prepareStatement(&m_setFileMark, "UPDATE files SET mark = 1 WHERE id = ?");
 
-    prepareStatement(&m_updateFileMeta,
+    prepareStatement(&m_setFileMeta,
                      R"(UPDATE files
                         SET artist_id = ?, album_id = ?, length = ?, title = ?, year = ?, track_index = ?, type = ?, sampling_rate = ?
+                        WHERE id = ?)");
+    prepareStatement(&m_updateFileMeta,
+                     R"(UPDATE files
+                        SET artist_id = ?, album_id = ?, title = ?, year = ?, track_index = ?
                         WHERE id = ?)");
 
     // artists
@@ -291,54 +295,43 @@ std::vector<std::shared_ptr<library::File>> SqliteStorage::getFilesOfAlbum(int a
 }
 
 // =====================================================================================================================
-void SqliteStorage::updateFileMetadata(const library::File& file)
+void SqliteStorage::setFileMetadata(const library::File& file)
 {
-    int artistId;
-    int albumId;
-
     thread::BlockLock bl(m_mutex);
 
-    // handle artist
-    if (file.m_artist.empty())
-	artistId = -1;
+    int artistId = getArtistId(file);
+    int albumId = getAlbumId(file, artistId);
+
+    if (artistId == -1)
+	sqlite3_bind_null(m_setFileMeta, 1);
     else
-    {
-	bindText(m_addArtist, 1, file.m_artist);
-	if (sqlite3_step(m_addArtist) != SQLITE_DONE)
-	    throw StorageException("unable to insert artist");
-	sqlite3_reset(m_addArtist);
-
-	bindText(m_getArtistIdByName, 1, file.m_artist);
-	if (sqlite3_step(m_getArtistIdByName) != SQLITE_ROW)
-	    throw StorageException("unable to get artist after inserting!");
-	artistId = sqlite3_column_int(m_getArtistIdByName, 0);
-	sqlite3_reset(m_getArtistIdByName);
-    }
-
-    // handle album
-    if (file.m_album.empty())
-	albumId = -1;
+	sqlite3_bind_int(m_setFileMeta, 1, artistId);
+    if (albumId == -1)
+	sqlite3_bind_null(m_setFileMeta, 2);
     else
-    {
-	if (artistId == -1)
-	    sqlite3_bind_null(m_addAlbum, 1);
-	else
-	    sqlite3_bind_int(m_addAlbum, 1, artistId);
-	bindText(m_addAlbum, 2, file.m_album);
-	if (sqlite3_step(m_addAlbum) != SQLITE_DONE)
-	    throw StorageException("unable to insert album");
-	sqlite3_reset(m_addAlbum);
+	sqlite3_bind_int(m_setFileMeta, 2, albumId);
+    sqlite3_bind_int(m_setFileMeta, 3, file.m_length);
+    bindText(m_setFileMeta, 4, file.m_title);
+    sqlite3_bind_int(m_setFileMeta, 5, file.m_year);
+    sqlite3_bind_int(m_setFileMeta, 6, file.m_trackIndex);
+    sqlite3_bind_int(m_setFileMeta, 7, file.m_type);
+    sqlite3_bind_int(m_setFileMeta, 8, file.m_samplingRate);
+    sqlite3_bind_int(m_setFileMeta, 9, file.m_id);
 
-	if (artistId == -1)
-	    sqlite3_bind_null(m_getAlbumIdByName, 1);
-	else
-	    sqlite3_bind_int(m_getAlbumIdByName, 1, artistId);
-	bindText(m_getAlbumIdByName, 2, file.m_album);
-	if (sqlite3_step(m_getAlbumIdByName) != SQLITE_ROW)
-	    throw StorageException("unable to get album after inserting!");
-	albumId = sqlite3_column_int(m_getAlbumIdByName, 0);
-	sqlite3_reset(m_getAlbumIdByName);
-    }
+    sqlite3_step(m_setFileMeta);
+    sqlite3_reset(m_setFileMeta);
+}
+
+// =====================================================================================================================
+void SqliteStorage::updateFileMetadata(const File& file)
+{
+    int artistId = getArtistId(file);
+    int albumId = getAlbumId(file, artistId);
+
+    prepareStatement(&m_updateFileMeta,
+                     R"(UPDATE files
+                        SET artist_id = ?, album_id = ?, title = ?, year = ?, track_index = ?
+                        WHERE id = ?)");
 
     if (artistId == -1)
 	sqlite3_bind_null(m_updateFileMeta, 1);
@@ -348,14 +341,10 @@ void SqliteStorage::updateFileMetadata(const library::File& file)
 	sqlite3_bind_null(m_updateFileMeta, 2);
     else
 	sqlite3_bind_int(m_updateFileMeta, 2, albumId);
-    sqlite3_bind_int(m_updateFileMeta, 3, file.m_length);
-    bindText(m_updateFileMeta, 4, file.m_title);
-    sqlite3_bind_int(m_updateFileMeta, 5, file.m_year);
-    sqlite3_bind_int(m_updateFileMeta, 6, file.m_trackIndex);
-    sqlite3_bind_int(m_updateFileMeta, 7, file.m_type);
-    sqlite3_bind_int(m_updateFileMeta, 8, file.m_samplingRate);
-    sqlite3_bind_int(m_updateFileMeta, 9, file.m_id);
-
+    bindText(m_updateFileMeta, 3, file.m_title);
+    sqlite3_bind_int(m_updateFileMeta, 4, file.m_year);
+    sqlite3_bind_int(m_updateFileMeta, 5, file.m_trackIndex);
+    sqlite3_bind_int(m_updateFileMeta, 6, file.m_id);
     sqlite3_step(m_updateFileMeta);
     sqlite3_reset(m_updateFileMeta);
 }
@@ -501,6 +490,58 @@ int SqliteStorage::getFileIdByPath(const std::string& path, const std::string& n
 	id = -1;
 
     sqlite3_reset(m_getFileByPath);
+
+    return id;
+}
+
+// =====================================================================================================================
+int SqliteStorage::getArtistId(const File& file)
+{
+    int id;
+
+    if (file.m_artist.empty())
+	return -1;
+
+    bindText(m_addArtist, 1, file.m_artist);
+    if (sqlite3_step(m_addArtist) != SQLITE_DONE)
+	throw StorageException("unable to insert artist");
+    sqlite3_reset(m_addArtist);
+
+    bindText(m_getArtistIdByName, 1, file.m_artist);
+    if (sqlite3_step(m_getArtistIdByName) != SQLITE_ROW)
+	throw StorageException("unable to get artist after inserting!");
+    id = sqlite3_column_int(m_getArtistIdByName, 0);
+    sqlite3_reset(m_getArtistIdByName);
+
+    return id;
+}
+
+// =====================================================================================================================
+int SqliteStorage::getAlbumId(const File& file, int artistId)
+{
+    int id;
+
+    if (file.m_album.empty())
+	return -1;
+
+    if (artistId == -1)
+	sqlite3_bind_null(m_addAlbum, 1);
+    else
+	sqlite3_bind_int(m_addAlbum, 1, artistId);
+    bindText(m_addAlbum, 2, file.m_album);
+    if (sqlite3_step(m_addAlbum) != SQLITE_DONE)
+	throw StorageException("unable to insert album");
+    sqlite3_reset(m_addAlbum);
+
+    if (artistId == -1)
+	sqlite3_bind_null(m_getAlbumIdByName, 1);
+    else
+	sqlite3_bind_int(m_getAlbumIdByName, 1, artistId);
+    bindText(m_getAlbumIdByName, 2, file.m_album);
+    if (sqlite3_step(m_getAlbumIdByName) != SQLITE_ROW)
+	throw StorageException("unable to get album after inserting!");
+    id = sqlite3_column_int(m_getAlbumIdByName, 0);
+    sqlite3_reset(m_getAlbumIdByName);
 
     return id;
 }

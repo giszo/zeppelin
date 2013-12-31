@@ -27,11 +27,12 @@ class SqliteStorage : public Storage
 	void deleteNonMarked() override;
 
 	std::shared_ptr<File> getFile(int id) override;
-	std::vector<std::shared_ptr<library::File>> getFilesWithoutMetadata() override;
+	std::vector<std::shared_ptr<File>> getFilesWithoutMetadata() override;
 	std::vector<std::shared_ptr<File>> getFilesOfArtist(int artistId) override;
 	std::vector<std::shared_ptr<File>> getFilesOfAlbum(int albumId) override;
 
-	void updateFileMetadata(const library::File& file) override;
+	void setFileMetadata(const File& file) override;
+	void updateFileMetadata(const File& file) override;
 
 	std::vector<std::shared_ptr<Artist>> getArtists() override;
 
@@ -48,6 +49,8 @@ class SqliteStorage : public Storage
 	void bindText(sqlite3_stmt* stmt, int col, const std::string& s);
 
 	int getFileIdByPath(const std::string& path, const std::string& name);
+	int getArtistId(const File& file);
+	int getAlbumId(const File& file, int artistId);
 
     private:
 	// the database to store the music library
@@ -62,6 +65,7 @@ class SqliteStorage : public Storage
 	sqlite3_stmt* m_getFilesOfAlbum;
 	sqlite3_stmt* m_setFileMark;
 
+	sqlite3_stmt* m_setFileMeta;
 	sqlite3_stmt* m_updateFileMeta;
 
 	/// artist handling

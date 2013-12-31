@@ -55,6 +55,16 @@ struct Album
 
 struct File
 {
+    File(int id)
+	: m_id(id),
+	  m_size(0),
+	  m_length(0),
+	  m_year(0),
+	  m_trackIndex(0),
+	  m_type(codec::UNKNOWN),
+	  m_samplingRate(0)
+    {}
+
     File(int id, const std::string& path, const std::string& name, int64_t size)
 	: m_id(id),
 	  m_path(path),
@@ -138,7 +148,9 @@ class Storage
 	/// returns the files of the given album
 	virtual std::vector<std::shared_ptr<File>> getFilesOfAlbum(int albumId) = 0;
 
-	/// updates the metadate of the given file.
+	// Sets all metadata related fields of the file including length, sampling rate, etc.
+	virtual void setFileMetadata(const File& file) = 0;
+	// Updates only those parts of the metadata that can be edited by the user (artist, album, etc.)
 	virtual void updateFileMetadata(const File& file) = 0;
 
 	/// returns the available artists from the database

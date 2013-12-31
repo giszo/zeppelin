@@ -48,7 +48,7 @@ void MetaParser::run()
 	m_mutex.unlock();
 
 	parse(*file);
-	m_library.getStorage().updateFileMetadata(*file);
+	m_library.getStorage().setFileMetadata(*file);
     }
 }
 

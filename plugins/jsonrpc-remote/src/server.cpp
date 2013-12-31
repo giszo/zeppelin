@@ -53,6 +53,17 @@ Server::Server(int port,
 					    jsonrpc::JSON_INTEGER,
 					    NULL),
 		     &Server::libraryGetFilesOfAlbum);
+    bindAndAddMethod(new jsonrpc::Procedure("library_update_metadata",
+					    jsonrpc::PARAMS_BY_NAME,
+					    jsonrpc::JSON_NULL,
+					    "id", jsonrpc::JSON_INTEGER,
+					    "artist", jsonrpc::JSON_STRING,
+					    "album", jsonrpc::JSON_STRING,
+					    "title", jsonrpc::JSON_STRING,
+					    "year", jsonrpc::JSON_INTEGER,
+					    "track_index", jsonrpc::JSON_INTEGER,
+					    NULL),
+		     &Server::libraryUpdateMetadata);
 
     // player queue
     bindAndAddMethod(new jsonrpc::Procedure("player_queue_file",
@@ -245,6 +256,7 @@ void Server::libraryGetFilesOfArtist(const Json::Value& request, Json::Value& re
 	file["length"] = f->m_length;
 	file["title"] = f->m_title;
 	file["year"] = f->m_year;
+	file["track_index"] = f->m_trackIndex;
 	file["codec"] = f->m_type;
 	file["sampling_rate"] = f->m_samplingRate;
 
@@ -271,11 +283,26 @@ void Server::libraryGetFilesOfAlbum(const Json::Value& request, Json::Value& res
 	file["length"] = f->m_length;
 	file["title"] = f->m_title;
 	file["year"] = f->m_year;
+	file["track_index"] = f->m_trackIndex;
 	file["codec"] = f->m_type;
 	file["sampling_rate"] = f->m_samplingRate;
 
 	response[i].swap(file);
     }
+}
+
+// =====================================================================================================================
+void Server::libraryUpdateMetadata(const Json::Value& request, Json::Value& response)
+{
+    library::File file(request["id"].asInt());
+
+    file.m_artist = request["artist"].asString();
+    file.m_album = request["album"].asString();
+    file.m_title = request["title"].asString();
+    file.m_year = request["year"].asInt();
+    file.m_trackIndex = request["track_index"].asInt();
+
+    m_library->getStorage().updateFileMetadata(file);
 }
 
 // =====================================================================================================================
