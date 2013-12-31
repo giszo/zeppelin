@@ -328,11 +328,6 @@ void SqliteStorage::updateFileMetadata(const File& file)
     int artistId = getArtistId(file);
     int albumId = getAlbumId(file, artistId);
 
-    prepareStatement(&m_updateFileMeta,
-                     R"(UPDATE files
-                        SET artist_id = ?, album_id = ?, title = ?, year = ?, track_index = ?
-                        WHERE id = ?)");
-
     if (artistId == -1)
 	sqlite3_bind_null(m_updateFileMeta, 1);
     else
