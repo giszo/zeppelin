@@ -1,7 +1,7 @@
 #ifndef CONFIG_CONFIG_H_INCLUDED
 #define CONFIG_CONFIG_H_INCLUDED
 
-#include <jsonrpc/json/value.h>
+#include <jsoncpp/json/value.h>
 
 #include <string>
 #include <vector>

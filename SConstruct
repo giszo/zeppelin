@@ -3,14 +3,15 @@
 env = Environment()
 
 env["CPPFLAGS"] = ["-O2", "-Wall", "-Werror", "-Wshadow", "-std=c++11", "-pthread"]
-env["CPPPATH"] = [Dir("../libjson-rpc-cpp-lib/include"), Dir("src")]
-env["LIBPATH"] = [Dir("../libjson-rpc-cpp-lib/lib")]
+env["CPPPATH"] = [Dir("src")]
 env["LINKFLAGS"] = ["-pthread", "-rdynamic"]
 
 env["CXXCOMSTR"] = "Compiling $SOURCE"
+env["SHCXXCOMSTR"] = "Compiling $SOURCE"
 env["ARCOMSTR"] = "Creating $TARGET"
 env["RANLIBCOMSTR"] = "Indexing $TARGET"
 env["LINKCOMSTR"] = "Linking $TARGET"
+env["SHLINKCOMSTR"] = "Linking $TARGET"
 
 env["PLUGINS"] = []
 
@@ -57,7 +58,7 @@ zep_lib = env.StaticLibrary(
 zep = env.Program(
     "zeppelin",
     source = ["src/main.cpp"] + zep_lib,
-    LIBS = ["asound", "mpg123", "FLAC", "samplerate", "sqlite3", "jsonrpc", "dl"]
+    LIBS = ["asound", "mpg123", "FLAC", "samplerate", "sqlite3", "jsoncpp", "dl"]
 )
 
 ########################################################################################################################
