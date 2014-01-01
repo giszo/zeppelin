@@ -68,6 +68,9 @@ void Decoder::notify()
 // =====================================================================================================================
 void Decoder::run()
 {
+    // true when the loop should wait for commands
+    bool wait = true;
+
     bool working = false;
 
     while (1)
@@ -75,8 +78,11 @@ void Decoder::run()
 	m_mutex.lock();
 
 	// wait until we have some command to process
-	while (m_commands.empty())
+	while (wait && m_commands.empty())
 	    m_cond.wait(m_mutex);
+
+	// reset wait to true here ...
+	wait = true;
 
 	while (!m_commands.empty())
 	{
@@ -151,37 +157,37 @@ void Decoder::run()
 	// calculate the minimum size of the data we must put into the buffer
 	size_t minSize = m_bufferSize - fifoSize;
 
-	while (1)
+	float* samples;
+	size_t count;
+
+	if (!m_input->decode(samples, count))
 	{
-	    float* samples;
-	    size_t count;
+	    // the end of the stream has been reached
+	    LOG("decoder: end of stream");
+	    m_fifo.addMarker();
 
-	    if (!m_input->decode(samples, count))
-	    {
-		// the end of the stream has been reached
-		LOG("decoder: end of stream");
-		m_fifo.addMarker();
+	    // remove the input of the decoder
+	    m_input.reset();
 
-		// remove the input of the decoder
-		m_input.reset();
+	    // let the controller know that the decoder finished working
+	    m_ctrl.command(Controller::DECODER_FINISHED);
 
-		// let the controller know that the decoder finished working
-		m_ctrl.command(Controller::DECODER_FINISHED);
+	    continue;
+	}
 
-		break;
-	    }
+	// perform filters on the decoded samples
+	runFilters(samples, count, m_format);
 
-	    // perform filters on the decoded samples
-	    runFilters(samples, count, m_format);
+	// calculate the size of the decoded samples
+	size_t size = m_format.sizeOfSamples(count);
 
-	    size_t size = m_format.sizeOfSamples(count);
+	// put them into the fifo
+	m_fifo.addSamples(samples, size);
 
-	    m_fifo.addSamples(samples, size);
-
-	    if (size < minSize)
-		minSize -= size;
-	    else
-		break;
+	if (size < minSize)
+	{
+	    // do not wait for a command in case of we did not fill the fifo in this round
+	    wait = false;
 	}
     }
 }
