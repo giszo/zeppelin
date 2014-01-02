@@ -127,6 +127,13 @@ void Controller::goTo(const std::vector<int>& index)
 }
 
 // =====================================================================================================================
+int Controller::getVolume() const
+{
+    thread::BlockLock bl(m_mutex);
+    return m_volumeLevel;
+}
+
+// =====================================================================================================================
 void Controller::setVolume(int level)
 {
     // make sure volume level is valid

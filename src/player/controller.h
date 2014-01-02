@@ -73,6 +73,8 @@ class Controller
 	void next();
 	void goTo(const std::vector<int>& index);
 
+	/// returns the current volume level
+	int getVolume() const;
 	/// sets the volume level (level must be between 0 and 100)
 	void setVolume(int level);
 	/// increases volume level

@@ -53,6 +53,7 @@ class Server : public plugin::Plugin,
 	void playerNext(const Json::Value& request, Json::Value& response);
 	void playerGoto(const Json::Value& request, Json::Value& response);
 
+	void playerGetVolume(const Json::Value& request, Json::Value& response);
 	void playerSetVolume(const Json::Value& request, Json::Value& response);
 	void playerIncVolume(const Json::Value& request, Json::Value& response);
 	void playerDecVolume(const Json::Value& request, Json::Value& response);

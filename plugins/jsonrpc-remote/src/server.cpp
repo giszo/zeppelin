@@ -133,6 +133,11 @@ Server::Server(int port,
 					    jsonrpc::JSON_ARRAY,
 					    NULL),
 		     &Server::playerGoto);
+    bindAndAddMethod(new jsonrpc::Procedure("player_get_volume",
+					    jsonrpc::PARAMS_BY_NAME,
+					    jsonrpc::JSON_INTEGER,
+					    NULL),
+		     &Server::playerGetVolume);
     bindAndAddMethod(new jsonrpc::Procedure("player_set_volume",
 					    jsonrpc::PARAMS_BY_NAME,
 					    jsonrpc::JSON_NULL,
@@ -462,6 +467,12 @@ void Server::playerGoto(const Json::Value& request, Json::Value& response)
 	i.push_back(index[j].asInt());
 
     m_ctrl->goTo(i);
+}
+
+// =====================================================================================================================
+void Server::playerGetVolume(const Json::Value& request, Json::Value& response)
+{
+    response = m_ctrl->getVolume();
 }
 
 // =====================================================================================================================
