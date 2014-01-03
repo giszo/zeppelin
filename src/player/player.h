@@ -11,6 +11,11 @@
 #include <memory>
 #include <atomic>
 
+namespace filter
+{
+class Volume;
+}
+
 namespace player
 {
 
@@ -21,6 +26,7 @@ class Player : public thread::Thread
     public:
 	Player(const std::shared_ptr<output::BaseOutput>& output,
 	       Fifo& fifo,
+	       filter::Volume& volFilter,
 	       Controller& ctrl);
 
 	unsigned getPosition() const;
@@ -62,6 +68,8 @@ class Player : public thread::Thread
 
 	// true when the player is currently working
 	bool m_running;
+
+	filter::Volume& m_volumeFilter;
 
 	Controller& m_ctrl;
 };

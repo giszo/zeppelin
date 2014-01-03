@@ -24,12 +24,6 @@ Decoder::Decoder(size_t bufferSize,
 }
 
 // =====================================================================================================================
-void Decoder::addFilter(const std::shared_ptr<filter::BaseFilter>& filter)
-{
-    m_filters.push_back(filter);
-}
-
-// =====================================================================================================================
 void Decoder::setInput(const std::shared_ptr<codec::BaseCodec>& input)
 {
     thread::BlockLock bl(m_mutex);

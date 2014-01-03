@@ -27,8 +27,6 @@ class Decoder : public thread::Thread
 		Controller& ctrl,
 		const config::Config& config);
 
-	void addFilter(const std::shared_ptr<filter::BaseFilter>& filter);
-
 	void setInput(const std::shared_ptr<codec::BaseCodec>& input);
 
 	void startDecoding();

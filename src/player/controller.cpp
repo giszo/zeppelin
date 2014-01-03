@@ -28,10 +28,9 @@ Controller::Controller(const config::Config& config)
     m_volumeAdj.reset(new filter::Volume(config));
     m_volumeAdj->init();
     setVolume(100 /* max */);
-    m_decoder->addFilter(m_volumeAdj);
 
     // prepare player
-    m_player.reset(new Player(output, m_fifo, *this));
+    m_player.reset(new Player(output, m_fifo, *m_volumeAdj, *this));
 
     // start decoder and player threads
     m_decoder->start();

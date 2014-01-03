@@ -3,18 +3,23 @@
 
 #include <output/alsa.h>
 #include <codec/mp3.h>
+#include <filter/volume.h>
 #include <thread/blocklock.h>
 #include <logger.h>
 
 using player::Player;
 
 // =====================================================================================================================
-Player::Player(const std::shared_ptr<output::BaseOutput>& output, Fifo& fifo, Controller& ctrl)
+Player::Player(const std::shared_ptr<output::BaseOutput>& output,
+	       Fifo& fifo,
+	       filter::Volume& volFilter,
+	       Controller& ctrl)
     : m_fifo(fifo),
       m_output(output),
       m_format(output->getFormat()),
       m_position(0),
       m_running(false),
+      m_volumeFilter(volFilter),
       m_ctrl(ctrl)
 {
 }
@@ -56,8 +61,6 @@ void Player::stopPlayback()
 // =====================================================================================================================
 void Player::run()
 {
-    //uint8_t buffer[2 /* channels */ * sizeof(int16_t) /* sample size */ * 10000 /* maximum samples per round */];
-
     while (1)
     {
 	processCommands();
@@ -83,11 +86,21 @@ void Player::run()
 		case Fifo::SAMPLES :
 		{
 		    float buffer[availSamples * m_format.getChannels()];
+
+		    // read samples from the fifo
 		    size_t res = m_fifo.readSamples(buffer, sizeof(buffer));
 		    size_t samples = m_format.numOfSamples(res);
-		    m_output->write(buffer, samples);
+
+		    // perform volume filter
+		    float* p = buffer;
+		    m_volumeFilter.run(p, samples, m_format);
+
+		    // play the data
+		    m_output->write(p, samples);
+
 		    m_position += samples;
 		    availSamples -= samples;
+
 		    break;
 		}
 
