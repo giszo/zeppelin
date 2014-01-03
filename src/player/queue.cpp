@@ -30,7 +30,7 @@ bool ContainerQueueItem::set(std::vector<int>& i)
     int idx = i.front();
     i.erase(i.begin());
 
-    if (idx < 0 || static_cast<size_t>(idx) >= m_items.size() || m_items[idx]->set(i))
+    if (idx < 0 || static_cast<size_t>(idx) >= m_items.size() || !m_items[idx]->set(i))
 	return false;
 
     m_index = idx;
