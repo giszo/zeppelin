@@ -30,7 +30,7 @@ bool ContainerQueueItem::set(std::vector<int>& i)
     int idx = i.front();
     i.erase(i.begin());
 
-    if (idx < 0 || static_cast<size_t>(idx) >= m_items.size() || m_items[m_index]->set(i))
+    if (idx < 0 || static_cast<size_t>(idx) >= m_items.size() || m_items[idx]->set(i))
 	return false;
 
     m_index = idx;
@@ -182,9 +182,10 @@ void File::get(std::vector<int>&)
 }
 
 // =====================================================================================================================
-bool File::set(std::vector<int>&)
+bool File::set(std::vector<int>& i)
 {
-    return false;
+    // make sure we are at the end of the index
+    return i.empty();
 }
 
 // =====================================================================================================================
