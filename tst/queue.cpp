@@ -15,12 +15,12 @@ BOOST_AUTO_TEST_CASE(TestPlaylist)
     BOOST_CHECK(!p.next());
 
     // queue 2 files and an album
-    p.add(std::make_shared<library::File>(1, "tst", "a.mp3"));
+    p.add(std::make_shared<library::File>(1, "tst", "a.mp3", 0));
     p.add(std::make_shared<library::Album>(57, "Album", 42, 0, 0), {
-	std::make_shared<library::File>(3, "album", "1.mp3"),
-	std::make_shared<library::File>(4, "album", "2.mp3")
+	std::make_shared<library::File>(3, "album", "1.mp3", 0),
+	std::make_shared<library::File>(4, "album", "2.mp3", 0)
     });
-    p.add(std::make_shared<library::File>(2, "tst", "b.mp3"));
+    p.add(std::make_shared<library::File>(2, "tst", "b.mp3", 0));
 
     // the playlist should be invalid still
     BOOST_CHECK(!p.isValid());
@@ -118,9 +118,9 @@ BOOST_AUTO_TEST_CASE(TestFileDeletionBeforeActive)
     player::Playlist p;
     std::vector<int> iter;
 
-    p.add(std::make_shared<library::File>(1, "tst", "a.mp3"));
-    p.add(std::make_shared<library::File>(2, "tst", "b.mp3"));
-    p.add(std::make_shared<library::File>(3, "tst", "c.mp3"));
+    p.add(std::make_shared<library::File>(1, "tst", "a.mp3", 0));
+    p.add(std::make_shared<library::File>(2, "tst", "b.mp3", 0));
+    p.add(std::make_shared<library::File>(3, "tst", "c.mp3", 0));
 
     // go to the second song
     p.reset(player::QueueItem::FIRST);
@@ -150,9 +150,9 @@ BOOST_AUTO_TEST_CASE(TestActiveFileDeletionInsideAlbum)
     std::vector<int> iter;
 
     p.add(std::make_shared<library::Album>(42, "Album", 42, 0, 0), {
-	std::make_shared<library::File>(1, "album", "1.mp3"),
-	std::make_shared<library::File>(2, "album", "2.mp3"),
-	std::make_shared<library::File>(3, "album", "3.mp3")
+	std::make_shared<library::File>(1, "album", "1.mp3", 0),
+	std::make_shared<library::File>(2, "album", "2.mp3", 0),
+	std::make_shared<library::File>(3, "album", "3.mp3", 0)
     });
 
     // go to the second song of the album
@@ -183,12 +183,12 @@ BOOST_AUTO_TEST_CASE(TestActiveFileDeletionAtTheEndOfAlbum)
     std::vector<int> iter;
 
     p.add(std::make_shared<library::Album>(42, "Album", 42, 0, 0), {
-	std::make_shared<library::File>(1, "album", "1.mp3"),
-	std::make_shared<library::File>(2, "album", "2.mp3")
+	std::make_shared<library::File>(1, "album", "1.mp3", 0),
+	std::make_shared<library::File>(2, "album", "2.mp3", 0)
     });
     p.add(std::make_shared<library::Album>(57, "Album2", 57, 0, 0), {
-	std::make_shared<library::File>(3, "album", "a.mp3"),
-	std::make_shared<library::File>(4, "album", "b.mp3")
+	std::make_shared<library::File>(3, "album", "a.mp3", 0),
+	std::make_shared<library::File>(4, "album", "b.mp3", 0)
     });
 
     // go to the second song of the first album
@@ -218,7 +218,7 @@ BOOST_AUTO_TEST_CASE(TestInvalidationAfterDeleteActive)
     player::Playlist p;
     std::vector<int> iter;
 
-    p.add(std::make_shared<library::File>(1, "tst", "a.mp3"));
+    p.add(std::make_shared<library::File>(1, "tst", "a.mp3", 0));
 
     BOOST_CHECK(!p.isValid());
     p.reset(player::QueueItem::FIRST);
@@ -229,7 +229,7 @@ BOOST_AUTO_TEST_CASE(TestInvalidationAfterDeleteActive)
     BOOST_CHECK(!p.isValid());
 
     // queue should be still invalid after adding a new item
-    p.add(std::make_shared<library::File>(2, "tst", "b.mp3"));
+    p.add(std::make_shared<library::File>(2, "tst", "b.mp3", 0));
 
     BOOST_CHECK(!p.isValid());
 }
@@ -240,7 +240,7 @@ BOOST_AUTO_TEST_CASE(TestRemovalOfEmptyAlbum)
     std::vector<int> iter = {0, 0};
 
     p.add(std::make_shared<library::Album>(42, "Album", 42, 0, 0), {
-	std::make_shared<library::File>(1, "album", "1.mp3")
+	std::make_shared<library::File>(1, "album", "1.mp3", 0)
     });
     p.reset(player::QueueItem::FIRST);
 
