@@ -22,13 +22,20 @@ void ContainerQueueItem::get(std::vector<int>& i)
 }
 
 // =====================================================================================================================
-void ContainerQueueItem::set(std::vector<int>& i)
+bool ContainerQueueItem::set(std::vector<int>& i)
 {
-    m_index = i.front();
+    if (i.empty())
+	return false;
+
+    int idx = i.front();
     i.erase(i.begin());
 
-    if (isValid())
-	m_items[m_index]->set(i);
+    if (idx < 0 || static_cast<size_t>(idx) >= m_items.size() || m_items[m_index]->set(i))
+	return false;
+
+    m_index = idx;
+
+    return true;
 }
 
 // =====================================================================================================================
@@ -175,8 +182,9 @@ void File::get(std::vector<int>&)
 }
 
 // =====================================================================================================================
-void File::set(std::vector<int>&)
+bool File::set(std::vector<int>&)
 {
+    return false;
 }
 
 // =====================================================================================================================

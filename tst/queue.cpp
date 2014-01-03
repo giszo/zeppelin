@@ -108,7 +108,7 @@ BOOST_AUTO_TEST_CASE(TestPlaylist)
     iter.clear();
     iter.push_back(1);
     iter.push_back(0);
-    p.set(iter);
+    BOOST_CHECK(p.set(iter));
     BOOST_CHECK(p.isValid());
     BOOST_CHECK_EQUAL(p.file()->m_name, "1.mp3");
 }
@@ -251,4 +251,29 @@ BOOST_AUTO_TEST_CASE(TestRemovalOfEmptyAlbum)
 
     BOOST_CHECK(!p.isValid());
     BOOST_CHECK(p.items().empty());
+}
+
+BOOST_AUTO_TEST_CASE(TestInvalidIndexSet)
+{
+    player::Playlist p;
+    std::vector<int> iter = {2, 1, 0};
+
+    p.add(std::make_shared<library::Album>(42, "Album", 42, 0, 0), {
+	std::make_shared<library::File>(1, "album", "1.mp3", 0),
+	std::make_shared<library::File>(2, "album", "2.mp3", 0)
+    });
+    p.reset(player::QueueItem::FIRST);
+
+    BOOST_CHECK(p.isValid());
+
+    // try to set az invalid index
+    BOOST_CHECK(!p.set(iter));
+
+    BOOST_CHECK(p.isValid());
+
+    iter.clear();
+    p.get(iter);
+    BOOST_REQUIRE_EQUAL(iter.size(), 2);
+    BOOST_CHECK_EQUAL(iter[0], 0);
+    BOOST_CHECK_EQUAL(iter[1], 0);
 }
