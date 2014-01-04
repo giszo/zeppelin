@@ -252,6 +252,12 @@ void Controller::run()
 		else if (cmd->m_cmd == GOTO)
 		{
 		    GoTo& g = static_cast<GoTo&>(*cmd);
+
+		    std::ostringstream ss;
+		    for (int i : g.m_index)
+			ss << "," << i;
+		    LOG("controller: goto " << ss.str().substr(1));
+
 		    m_playerQueue.set(g.m_index);
 		}
 
