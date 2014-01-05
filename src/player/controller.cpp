@@ -304,9 +304,8 @@ void Controller::run()
 		    m_playerQueue.get(it);
 
 		    removingCurrent = true;
-		    assert(rem.m_index.size() <= it.size());
 
-		    for (size_t i = 0; i < rem.m_index.size(); ++i)
+		    for (size_t i = 0; i < std::min(rem.m_index.size(), it.size()); ++i)
 		    {
 			if (rem.m_index[i] != it[i])
 			{
