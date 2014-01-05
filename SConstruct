@@ -1,6 +1,16 @@
 # -*- python -*-
 
-env = Environment()
+AddOption(
+    "--prefix",
+    dest = "prefix",
+    type = "string",
+    nargs = 1,
+    action = "store",
+    metavar = "DIR",
+    help = "installation prefix"
+)
+
+env = Environment(PREFIX = GetOption("prefix"))
 
 env["CPPFLAGS"] = ["-O2", "-Wall", "-Werror", "-Wshadow", "-std=c++11", "-pthread"]
 env["CPPPATH"] = [Dir("src")]
@@ -53,8 +63,6 @@ zep_lib = env.StaticLibrary(
 ########################################################################################################################
 # main application
 
-# TODO: jsonrpc dependency should be removed because the core application is not using the RPC part of it, just the
-#       json parser for the configuration
 zep = env.Program(
     "zeppelin",
     source = ["src/main.cpp"] + zep_lib,
@@ -83,3 +91,8 @@ env.Program(
     source = ["tst/%s" % t for t in tests] + ["tst/main.cpp"] + zep_lib,
     LIBS = ["boost_unit_test_framework"]
 )
+
+########################################################################################################################
+# install
+
+env.Alias("install", env.Install("$PREFIX/usr/bin", zep))

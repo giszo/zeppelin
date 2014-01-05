@@ -11,3 +11,5 @@ plugin = env.SharedLibrary(
 )
 
 env["PLUGINS"].append(plugin)
+
+env.Alias("install", env.Install("$PREFIX/usr/lib/zeppelin/plugins", plugin))
