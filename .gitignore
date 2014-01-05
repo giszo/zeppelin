@@ -8,6 +8,7 @@
 /libzeppelin.a
 /unit_test
 
+/plugins/http-server/libhttp-server.so
 /plugins/jsonrpc-remote/libjsonrpc-remote.so
 
 /cli/__pycache__

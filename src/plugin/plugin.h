@@ -4,8 +4,12 @@
 #include <library/musiclibrary.h>
 #include <player/controller.h>
 
+#include <jsoncpp/json/value.h>
+
 namespace plugin
 {
+
+class PluginManager;
 
 class Plugin
 {
@@ -14,7 +18,8 @@ class Plugin
 	virtual std::string getName() const = 0;
 
 	// called after loading the plugin to start it
-	virtual void start() = 0;
+	virtual void start(const Json::Value& config,
+			   PluginManager& pm) = 0;
 
 	// called before unloading the plugin to stop it
 	virtual void stop() = 0;

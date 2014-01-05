@@ -1,0 +1,16 @@
+# -*- python -*-
+
+Import("env")
+
+env["CPPPATH"] += [Dir("include")]
+
+plugin = env.SharedLibrary(
+    target = "http-server",
+    source = ["src/plugin.cpp", "src/server.cpp", "src/request.cpp"],
+    CPPPATH = env["CPPPATH"] + [Dir("src")],
+    LIBS = ["microhttpd"]
+)
+
+env["PLUGINS"].append(plugin)
+
+env.Alias("install", env.Install("$PREFIX/usr/lib/zeppelin/plugins", plugin))

@@ -29,16 +29,8 @@ config::Config Parser::parse() const
     Json::Value& root = cfg.m_raw;
 
     // plugins section
-    if (!root.isMember("plugins"))
-	throw ConfigException("no plugins section");
-
-    Json::Value plugins = root["plugins"];
-    Json::Value pluginList = plugins["list"];
-
-    cfg.m_plugin.m_root = plugins["root"].asString();
-
-    for (Json::Value::ArrayIndex i = 0; i < pluginList.size(); ++i)
-	cfg.m_plugin.m_list.push_back(pluginList[i].asString());
+    if (root.isMember("plugins"))
+	parsePlugins(cfg.m_raw["plugins"], cfg.m_plugins);
 
     // library section
     if (!root.isMember("library"))
@@ -55,4 +47,46 @@ config::Config Parser::parse() const
 	cfg.m_library.m_root.push_back(libRoots[i].asString());
 
     return cfg;
+}
+
+// =====================================================================================================================
+void Parser::parsePlugins(const Json::Value& config, Plugins& plugins) const
+{
+    if (!config.isMember("root"))
+	throw ConfigException("directory of plugins not configured");
+
+    // root
+    plugins.m_root = config["root"].asString();
+
+    // available
+    if (config.isMember("available"))
+    {
+	if (!config["available"].isObject())
+	    throw ConfigException("available under plugins is not an object");
+
+	const Json::Value& avail = config["available"];
+	auto members = avail.getMemberNames();
+
+	for (const auto& plugin : members)
+	    plugins.m_available[plugin] = avail[plugin];
+    }
+
+    // enabled
+    if (config.isMember("enabled"))
+    {
+	if (!config["enabled"].isArray())
+	    throw ConfigException("enabled under plugins is not an array");
+
+	const Json::Value& enabled = config["enabled"];
+
+	for (Json::Value::ArrayIndex i = 0; i < enabled.size(); ++i)
+	{
+	    std::string plugin = enabled[i].asString();
+
+	    if (plugins.m_available.find(plugin) == plugins.m_available.end())
+		throw ConfigException("plugin '" + plugin + "' not found in the available section");
+
+	    plugins.m_enabled.push_back(plugin);
+	}
+    }
 }

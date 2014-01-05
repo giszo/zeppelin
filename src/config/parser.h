@@ -25,6 +25,9 @@ class Parser
 	Config parse() const;
 
     private:
+	void parsePlugins(const Json::Value& config, Plugins& plugins) const;
+
+    private:
 	std::string m_file;
 };
 

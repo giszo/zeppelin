@@ -5,14 +5,16 @@
 
 #include <string>
 #include <vector>
+#include <unordered_map>
 
 namespace config
 {
 
-struct Plugin
+struct Plugins
 {
     std::string m_root;
-    std::vector<std::string> m_list;
+    std::unordered_map<std::string, Json::Value> m_available;
+    std::vector<std::string> m_enabled;
 };
 
 struct Library
@@ -22,7 +24,7 @@ struct Library
 
 struct Config
 {
-    Plugin m_plugin;
+    Plugins m_plugins;
     Library m_library;
 
     Json::Value m_raw;

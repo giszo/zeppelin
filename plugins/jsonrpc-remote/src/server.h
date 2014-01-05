@@ -1,28 +1,32 @@
 #ifndef JSONRPCREMOTE_SERVER_H_INCLUDED
 #define JSONRPCREMOTE_SERVER_H_INCLUDED
 
+#include <plugins/http-server/httpserver.h>
+
 #include <library/musiclibrary.h>
 #include <player/controller.h>
 #include <config/config.h>
 #include <plugin/plugin.h>
 
-#include <jsonrpc/rpc.h>
+#include <jsoncpp/json/value.h>
 
-class Server : public plugin::Plugin,
-	       public jsonrpc::AbstractServer<Server>
+#include <unordered_map>
+
+class Server : public plugin::Plugin
 {
     public:
-	Server(int port,
-	       const std::shared_ptr<library::MusicLibrary>& library,
+	Server(const std::shared_ptr<library::MusicLibrary>& library,
 	       const std::shared_ptr<player::Controller>& ctrl);
 
 	std::string getName() const override
 	{ return "jsonrpc-remote"; }
 
-	void start() override;
+	void start(const Json::Value& config, plugin::PluginManager& pm) override;
 	void stop() override;
 
     private:
+	std::unique_ptr<httpserver::HttpResponse> processRequest(const httpserver::HttpRequest& request);
+
 	void libraryScan(const Json::Value& request, Json::Value& response);
 
 	// library - artists
@@ -59,10 +63,12 @@ class Server : public plugin::Plugin,
 	void playerDecVolume(const Json::Value& request, Json::Value& response);
 
     private:
-	std::unique_ptr<jsonrpc::AbstractServer<Server>> m_server;
-
 	std::shared_ptr<library::MusicLibrary> m_library;
 	std::shared_ptr<player::Controller> m_ctrl;
+
+	typedef std::function<void(const Json::Value&, Json::Value&)> RpcMethod;
+
+	std::unordered_map<std::string, RpcMethod> m_rpcMethods;
 };
 
 #endif

@@ -19,15 +19,35 @@ PluginManager::PluginManager(const std::shared_ptr<library::MusicLibrary>& libra
 // =====================================================================================================================
 void PluginManager::loadAll(const config::Config& config)
 {
-    for (const auto& name : config.m_plugin.m_list)
+    const config::Plugins& plugins = config.m_plugins;
+
+    for (const auto& name : plugins.m_enabled)
     {
 	LOG("plugin: loading " << name);
-	load(config.m_plugin.m_root + "/lib" + name + ".so", config);
+	load(plugins.m_root + "/lib" + name + ".so", plugins.m_available.find(name)->second);
     }
 }
 
 // =====================================================================================================================
-void PluginManager::load(const std::string& path, const config::Config& config)
+auto PluginManager::getInterface(const std::string& name) -> PluginInterface&
+{
+    auto it = m_interfaces.find(name);
+
+    if (it == m_interfaces.end())
+	throw PluginInterfaceNotFoundException(name);
+
+    return *it->second;
+}
+
+// =====================================================================================================================
+void PluginManager::registerInterface(const std::string& name, PluginInterface* pi)
+{
+    LOG("plugin: registering " << name);
+    m_interfaces[name] = pi;
+}
+
+// =====================================================================================================================
+void PluginManager::load(const std::string& path, const Json::Value& config)
 {
     void* p;
 
@@ -50,7 +70,7 @@ void PluginManager::load(const std::string& path, const config::Config& config)
 	return;
     }
 
-    Plugin* plugin = create(config, m_library, m_controller);
+    Plugin* plugin = create(m_library, m_controller);
 
     if (!plugin)
     {
@@ -59,5 +79,5 @@ void PluginManager::load(const std::string& path, const config::Config& config)
 	return;
     }
 
-    plugin->start();
+    plugin->start(config, *this);
 }

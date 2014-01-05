@@ -1,172 +1,186 @@
 #include "server.h"
 
+#include <plugin/pluginmanager.h>
 #include <logger.h>
 
+#include <jsoncpp/json/reader.h>
+#include <jsoncpp/json/writer.h>
+
 // =====================================================================================================================
-Server::Server(int port,
-	       const std::shared_ptr<library::MusicLibrary>& library,
+Server::Server(const std::shared_ptr<library::MusicLibrary>& library,
 	       const std::shared_ptr<player::Controller>& ctrl)
-    : AbstractServer<Server>(new jsonrpc::HttpServer(port, false, "", 3 /* use 3 worker threads */)),
-      m_library(library),
+    : m_library(library),
       m_ctrl(ctrl)
 {
     // library
-    bindAndAddMethod(new jsonrpc::Procedure("library_scan",
-					    jsonrpc::PARAMS_BY_NAME,
-					    jsonrpc::JSON_NULL,
-					    NULL),
-			       &Server::libraryScan);
+    m_rpcMethods["library_scan"] = std::bind(&Server::libraryScan, this, std::placeholders::_1, std::placeholders::_2);
 
     // library - artists
-    bindAndAddMethod(new jsonrpc::Procedure("library_get_artists",
-					    jsonrpc::PARAMS_BY_NAME,
-					    jsonrpc::JSON_ARRAY,
-					    NULL),
-		     &Server::libraryGetArtists);
+    m_rpcMethods["library_get_artists"] = std::bind(&Server::libraryGetArtists,
+						    this,
+						    std::placeholders::_1,
+						    std::placeholders::_2);
 
     // library - albums
-    bindAndAddMethod(new jsonrpc::Procedure("library_get_albums",
-					    jsonrpc::PARAMS_BY_NAME,
-					    jsonrpc::JSON_ARRAY,
-					    NULL),
-		     &Server::libraryGetAlbums);
-    bindAndAddMethod(new jsonrpc::Procedure("library_get_albums_by_artist",
-					    jsonrpc::PARAMS_BY_NAME,
-					    jsonrpc::JSON_ARRAY,
-					    "artist_id",
-					    jsonrpc::JSON_INTEGER,
-					    NULL),
-		     &Server::libraryGetAlbumsByArtist);
+    m_rpcMethods["library_get_albums"] = std::bind(&Server::libraryGetAlbums,
+						   this,
+						   std::placeholders::_1,
+						   std::placeholders::_2);
+    m_rpcMethods["library_get_albums_by_artist"] = std::bind(&Server::libraryGetAlbumsByArtist,
+							     this,
+							     std::placeholders::_1,
+							     std::placeholders::_2);
 
     // library - files
-    bindAndAddMethod(new jsonrpc::Procedure("library_get_files_of_artist",
-					    jsonrpc::PARAMS_BY_NAME,
-					    jsonrpc::JSON_ARRAY,
-					    "artist_id",
-					    jsonrpc::JSON_INTEGER,
-					    NULL),
-		     &Server::libraryGetFilesOfArtist);
-    bindAndAddMethod(new jsonrpc::Procedure("library_get_files_of_album",
-					    jsonrpc::PARAMS_BY_NAME,
-					    jsonrpc::JSON_ARRAY,
-					    "album_id",
-					    jsonrpc::JSON_INTEGER,
-					    NULL),
-		     &Server::libraryGetFilesOfAlbum);
-    bindAndAddMethod(new jsonrpc::Procedure("library_update_metadata",
-					    jsonrpc::PARAMS_BY_NAME,
-					    jsonrpc::JSON_NULL,
-					    "id", jsonrpc::JSON_INTEGER,
-					    "artist", jsonrpc::JSON_STRING,
-					    "album", jsonrpc::JSON_STRING,
-					    "title", jsonrpc::JSON_STRING,
-					    "year", jsonrpc::JSON_INTEGER,
-					    "track_index", jsonrpc::JSON_INTEGER,
-					    NULL),
-		     &Server::libraryUpdateMetadata);
+    m_rpcMethods["library_get_files_of_artist"] = std::bind(&Server::libraryGetFilesOfArtist,
+							    this,
+							    std::placeholders::_1,
+							    std::placeholders::_2);
+    m_rpcMethods["library_get_files_of_album"] = std::bind(&Server::libraryGetFilesOfAlbum,
+							   this,
+							   std::placeholders::_1,
+							   std::placeholders::_2);
+    m_rpcMethods["library_update_metadata"] = std::bind(&Server::libraryUpdateMetadata,
+							this,
+							std::placeholders::_1,
+							std::placeholders::_2);
 
     // player queue
-    bindAndAddMethod(new jsonrpc::Procedure("player_queue_file",
-					    jsonrpc::PARAMS_BY_NAME,
-					    jsonrpc::JSON_NULL,
-					    "id",
-					    jsonrpc::JSON_INTEGER,
-					    NULL),
-		     &Server::playerQueueFile);
-    bindAndAddMethod(new jsonrpc::Procedure("player_queue_album",
-					    jsonrpc::PARAMS_BY_NAME,
-					    jsonrpc::JSON_NULL,
-					    "id",
-					    jsonrpc::JSON_INTEGER,
-					    NULL),
-		     &Server::playerQueueAlbum);
-    bindAndAddMethod(new jsonrpc::Procedure("player_queue_get",
-					    jsonrpc::PARAMS_BY_NAME,
-					    jsonrpc::JSON_ARRAY,
-					    NULL),
-		     &Server::playerQueueGet);
-    bindAndAddMethod(new jsonrpc::Procedure("player_queue_remove",
-					    jsonrpc::PARAMS_BY_NAME,
-					    jsonrpc::JSON_NULL,
-					    "index",
-					    jsonrpc::JSON_ARRAY,
-					    NULL),
-		     &Server::playerQueueRemove);
+    m_rpcMethods["player_queue_file"] = std::bind(&Server::playerQueueFile,
+						  this,
+						  std::placeholders::_1,
+						  std::placeholders::_2);
+    m_rpcMethods["player_queue_album"] = std::bind(&Server::playerQueueAlbum,
+						   this,
+						   std::placeholders::_1,
+						   std::placeholders::_2);
+    m_rpcMethods["player_queue_get"] = std::bind(&Server::playerQueueGet,
+						 this,
+						 std::placeholders::_1,
+						 std::placeholders::_2);
+    m_rpcMethods["player_queue_remove"] = std::bind(&Server::playerQueueRemove,
+						    this,
+						    std::placeholders::_1,
+						    std::placeholders::_2);
 
     // player status
-    bindAndAddMethod(new jsonrpc::Procedure("player_status",
-					    jsonrpc::PARAMS_BY_NAME,
-					    jsonrpc::JSON_OBJECT,
-					    NULL),
-		     &Server::playerStatus);
+    m_rpcMethods["player_status"] = std::bind(&Server::playerStatus,
+					      this,
+					      std::placeholders::_1,
+					      std::placeholders::_2);
 
     // player control
-    bindAndAddMethod(new jsonrpc::Procedure("player_play",
-					    jsonrpc::PARAMS_BY_NAME,
-					    jsonrpc::JSON_NULL,
-					    NULL),
-		     &Server::playerPlay);
-    bindAndAddMethod(new jsonrpc::Procedure("player_pause",
-					    jsonrpc::PARAMS_BY_NAME,
-					    jsonrpc::JSON_NULL,
-					    NULL),
-		     &Server::playerPause);
-    bindAndAddMethod(new jsonrpc::Procedure("player_stop",
-					    jsonrpc::PARAMS_BY_NAME,
-					    jsonrpc::JSON_NULL,
-					    NULL),
-		     &Server::playerStop);
-    bindAndAddMethod(new jsonrpc::Procedure("player_prev",
-					    jsonrpc::PARAMS_BY_NAME,
-					    jsonrpc::JSON_NULL,
-					    NULL),
-		     &Server::playerPrev);
-    bindAndAddMethod(new jsonrpc::Procedure("player_next",
-					    jsonrpc::PARAMS_BY_NAME,
-					    jsonrpc::JSON_NULL,
-					    NULL),
-		     &Server::playerNext);
-    bindAndAddMethod(new jsonrpc::Procedure("player_goto",
-					    jsonrpc::PARAMS_BY_NAME,
-					    jsonrpc::JSON_NULL,
-					    "index",
-					    jsonrpc::JSON_ARRAY,
-					    NULL),
-		     &Server::playerGoto);
-    bindAndAddMethod(new jsonrpc::Procedure("player_get_volume",
-					    jsonrpc::PARAMS_BY_NAME,
-					    jsonrpc::JSON_INTEGER,
-					    NULL),
-		     &Server::playerGetVolume);
-    bindAndAddMethod(new jsonrpc::Procedure("player_set_volume",
-					    jsonrpc::PARAMS_BY_NAME,
-					    jsonrpc::JSON_NULL,
-					    "level",
-					    jsonrpc::JSON_INTEGER,
-					    NULL),
-		     &Server::playerSetVolume);
-    bindAndAddMethod(new jsonrpc::Procedure("player_inc_volume",
-					    jsonrpc::PARAMS_BY_NAME,
-					    jsonrpc::JSON_NULL,
-					    NULL),
-		     &Server::playerIncVolume);
-    bindAndAddMethod(new jsonrpc::Procedure("player_dec_volume",
-					    jsonrpc::PARAMS_BY_NAME,
-					    jsonrpc::JSON_NULL,
-					    NULL),
-		     &Server::playerDecVolume);
+    m_rpcMethods["player_play"] = std::bind(&Server::playerPlay, this, std::placeholders::_1, std::placeholders::_2);
+    m_rpcMethods["player_pause"] = std::bind(&Server::playerPause, this, std::placeholders::_1, std::placeholders::_2);
+    m_rpcMethods["player_stop"] = std::bind(&Server::playerStop, this, std::placeholders::_1, std::placeholders::_2);
+    m_rpcMethods["player_prev"] = std::bind(&Server::playerPrev, this, std::placeholders::_1, std::placeholders::_2);
+    m_rpcMethods["player_next"] = std::bind(&Server::playerNext, this, std::placeholders::_1, std::placeholders::_2);
+    m_rpcMethods["player_goto"] = std::bind(&Server::playerGoto, this, std::placeholders::_1, std::placeholders::_2);
+
+    m_rpcMethods["player_get_volume"] = std::bind(&Server::playerGetVolume,
+						  this,
+						  std::placeholders::_1,
+						  std::placeholders::_2);
+    m_rpcMethods["player_set_volume"] = std::bind(&Server::playerSetVolume,
+						  this,
+						  std::placeholders::_1,
+						  std::placeholders::_2);
+    m_rpcMethods["player_inc_volume"] = std::bind(&Server::playerIncVolume,
+						  this,
+						  std::placeholders::_1,
+						  std::placeholders::_2);
+    m_rpcMethods["player_dec_volume"] = std::bind(&Server::playerDecVolume,
+						  this,
+						  std::placeholders::_1,
+						  std::placeholders::_2);
 }
 
 // =====================================================================================================================
-void Server::start()
+void Server::start(const Json::Value& config, plugin::PluginManager& pm)
 {
-    if (!StartListening())
-	LOG("jsonrpc-remote: unable to start listening!");
+    if (!config.isMember("path") || !config["path"].isString())
+    {
+	LOG("jsonrpc-remote: path not configured properly");
+	return;
+    }
+
+    try
+    {
+	httpserver::HttpServer& httpServer = static_cast<httpserver::HttpServer&>(pm.getInterface("http-server"));
+
+	if (httpServer.version() != HTTP_SERVER_VERSION)
+	{
+	    LOG("jsonrpc-remote: invalid http-server plugin version!");
+	    return;
+	}
+
+	httpServer.registerHandler(config["path"].asString(),
+	    std::bind(&Server::processRequest, this, std::placeholders::_1));
+    }
+    catch (const plugin::PluginInterfaceNotFoundException& e)
+    {
+	LOG("jsonrpc-remote: http-server interface not found");
+    }
 }
 
 // =====================================================================================================================
 void Server::stop()
 {
+}
+
+// =====================================================================================================================
+static inline std::unique_ptr<httpserver::HttpResponse> createJsonErrorReply(const Json::Value& request,
+									     const std::string& reason)
+{
+    Json::Value response(Json::objectValue);
+    response["jsonrpc"] = "2.0";
+    response["error"] = reason;
+
+    if (request.isMember("id"))
+	response["id"] = request["id"];
+    else
+	response["id"] = Json::Value(Json::nullValue);
+
+    return std::unique_ptr<httpserver::HttpResponse>(new httpserver::HttpResponse(200,
+										  Json::FastWriter().write(response)));
+}
+
+// =====================================================================================================================
+std::unique_ptr<httpserver::HttpResponse> Server::processRequest(const httpserver::HttpRequest& request)
+{
+    Json::Value root;
+    Json::Reader reader;
+
+    if (!reader.parse(request.getData(), root))
+	return createJsonErrorReply(root, "invalid request");
+
+    if (!root.isMember("method") || !root.isMember("id"))
+	return createJsonErrorReply(root, "method/id not found");
+
+    Json::Value params;
+
+    if (root.isMember("params"))
+	params = root["params"];
+
+    Json::Value result;
+    std::string method = root["method"].asString();
+
+    auto it = m_rpcMethods.find(method);
+
+    if (it == m_rpcMethods.end())
+	return createJsonErrorReply(root, "invalid method");
+
+    it->second(params, result);
+
+    Json::Value response(Json::objectValue);
+    response["jsonrpc"] = "2.0";
+    response["id"] = root["id"];
+    response["result"] = result;
+
+    std::unique_ptr<httpserver::HttpResponse> resp(new httpserver::HttpResponse(200,
+										Json::FastWriter().write(response)));
+    resp->addHeader("Content-Type", "application/json;charset=utf-8");
+    return resp;
 }
 
 // =====================================================================================================================
@@ -325,7 +339,7 @@ void Server::playerQueueFile(const Json::Value& request, Json::Value& response)
     }
     catch (const library::FileNotFoundException& e)
     {
-	std::cerr << "File not found with ID: " << request["id"] << std::endl;
+	LOG("File not found with ID: " << request["id"].asInt());
 	return;
     }
 

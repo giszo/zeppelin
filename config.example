@@ -1,12 +1,17 @@
 {
     "plugins" : {
 	"root" : "",
-	"list" : []
+	"available" : {
+	    "http-server" : {
+		"port" : 8080
+	    },
+	    "jsonrpc-remote" : {
+		"path" : "/"
+	    }
+	},
+	"enabled" : ["http-server", "jsonrpc-remote"]
     },
-    "rpc" : {
-        "address" : "",
-        "port" : 8080
-    },
+
     "library" : {
         "root" : [""]
     },
