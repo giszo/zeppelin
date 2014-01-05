@@ -6,6 +6,7 @@
 #include <functional>
 #include <memory>
 #include <unordered_map>
+#include <string>
 
 #define HTTP_SERVER_VERSION 1
 
