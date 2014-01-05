@@ -72,13 +72,13 @@ void SqliteStorage::open()
     prepareStatement(&m_getFileByPath, "SELECT id FROM files WHERE path = ? AND name = ?");
     prepareStatement(&m_getFilesWithoutMeta, "SELECT id, path, name, size FROM files WHERE length IS NULL");
     prepareStatement(&m_getFilesOfArtist,
-                     R"(SELECT id, path, name, size, length, title, year, track_index, type, sampling_rate
+                     R"(SELECT id, path, name, size, length, artist_id, album_id, title, year, track_index, type, sampling_rate
                         FROM files
                         WHERE artist_id IS ?)");
     // 'name' is used in ORDER BY to try to keep the order of tracks inside an album according to file naming because
     // it may contain information about the index of the track
     prepareStatement(&m_getFilesOfAlbum,
-                     R"(SELECT id, path, name, size, length, title, year, track_index, type, sampling_rate
+                     R"(SELECT id, path, name, size, length, artist_id, album_id, title, year, track_index, type, sampling_rate
                         FROM files
                         WHERE album_id = ?
                         ORDER BY track_index, name)");
@@ -247,13 +247,13 @@ std::vector<std::shared_ptr<library::File>> SqliteStorage::getFilesOfArtist(int 
 	    getText(m_getFilesOfArtist, 2), // name
 	    sqlite3_column_int64(m_getFilesOfArtist, 3), // size
 	    sqlite3_column_int(m_getFilesOfArtist, 4), // length
-	    "", // artist
-	    "", // album
-	    getText(m_getFilesOfArtist, 5), // title
-	    sqlite3_column_int(m_getFilesOfArtist, 6), // year
-	    sqlite3_column_int(m_getFilesOfArtist, 7), // track index
-	    static_cast<codec::Type>(sqlite3_column_int(m_getFilesOfArtist, 8)), // type
-	    sqlite3_column_int(m_getFilesOfArtist, 9) // sampling rate
+		sqlite3_column_int(m_getFilesOfArtist, 5), // artist
+		sqlite3_column_int(m_getFilesOfArtist, 6), // album
+	    getText(m_getFilesOfArtist, 7), // title
+	    sqlite3_column_int(m_getFilesOfArtist, 8), // year
+	    sqlite3_column_int(m_getFilesOfArtist, 9), // track index
+	    static_cast<codec::Type>(sqlite3_column_int(m_getFilesOfArtist, 10)), // type
+	    sqlite3_column_int(m_getFilesOfArtist, 11) // sampling rate
 	));
     }
     sqlite3_reset(m_getFilesOfArtist);
@@ -279,13 +279,13 @@ std::vector<std::shared_ptr<library::File>> SqliteStorage::getFilesOfAlbum(int a
 	    getText(m_getFilesOfAlbum, 2), // name
 	    sqlite3_column_int64(m_getFilesOfAlbum, 3), // size
 	    sqlite3_column_int(m_getFilesOfAlbum, 4), // length
-	    "", // artist
-	    "", // album
-	    getText(m_getFilesOfAlbum, 5), // title
-	    sqlite3_column_int(m_getFilesOfAlbum, 6), // year
-	    sqlite3_column_int(m_getFilesOfAlbum, 7), // track index
-	    static_cast<codec::Type>(sqlite3_column_int(m_getFilesOfAlbum, 8)), // type
-	    sqlite3_column_int(m_getFilesOfAlbum, 9) // sampling rate
+	    sqlite3_column_int(m_getFilesOfAlbum, 5), // artist
+	    sqlite3_column_int(m_getFilesOfAlbum, 6), // album
+	    getText(m_getFilesOfAlbum, 7), // title
+	    sqlite3_column_int(m_getFilesOfAlbum, 8), // year
+	    sqlite3_column_int(m_getFilesOfAlbum, 9), // track index
+	    static_cast<codec::Type>(sqlite3_column_int(m_getFilesOfAlbum, 10)), // type
+	    sqlite3_column_int(m_getFilesOfAlbum, 11) // sampling rate
 	));
     }
     sqlite3_reset(m_getFilesOfAlbum);

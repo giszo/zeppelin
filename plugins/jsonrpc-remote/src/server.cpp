@@ -263,6 +263,8 @@ void Server::libraryGetFilesOfArtist(const Json::Value& request, Json::Value& re
 	file["year"] = f->m_year;
 	file["track_index"] = f->m_trackIndex;
 	file["codec"] = f->m_type;
+	file["artist_id"] = f->m_artistId;
+	file["album_id"] = f->m_albumId;	
 	file["sampling_rate"] = f->m_samplingRate;
 
 	response[i].swap(file);
@@ -290,6 +292,8 @@ void Server::libraryGetFilesOfAlbum(const Json::Value& request, Json::Value& res
 	file["year"] = f->m_year;
 	file["track_index"] = f->m_trackIndex;
 	file["codec"] = f->m_type;
+	file["artist_id"] = f->m_artistId;
+	file["album_id"] = f->m_albumId;
 	file["sampling_rate"] = f->m_samplingRate;
 
 	response[i].swap(file);

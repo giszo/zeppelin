@@ -59,6 +59,8 @@ struct File
 	: m_id(id),
 	  m_size(0),
 	  m_length(0),
+	  m_artistId(0),
+	  m_albumId(0),	  
 	  m_year(0),
 	  m_trackIndex(0),
 	  m_type(codec::UNKNOWN),
@@ -71,6 +73,8 @@ struct File
 	  m_name(name),
 	  m_size(size),
 	  m_length(0),
+	  m_artistId(0),
+	  m_albumId(0),
 	  m_year(0),
 	  m_trackIndex(0),
 	  m_type(codec::UNKNOWN),
@@ -93,6 +97,22 @@ struct File
 	  m_samplingRate(samplingRate)
     {}
 
+    File(int id, const std::string& path, const std::string& name, int64_t size,
+	 int length, int artistId, int albumId, const std::string& title, int year, int trackIndex,
+	 codec::Type type, int samplingRate)
+	: m_id(id),
+	  m_path(path),
+	  m_name(name),
+	  m_length(length),
+	  m_artistId(artistId),
+	  m_albumId(albumId),
+	  m_title(title),
+	  m_year(year),
+	  m_trackIndex(trackIndex),
+	  m_type(type),
+	  m_samplingRate(samplingRate)
+    {}	
+
     int m_id;
     std::string m_path;
     std::string m_name;
@@ -104,6 +124,8 @@ struct File
 
     std::string m_artist;
     std::string m_album;
+    int m_artistId;
+    int m_albumId;
     std::string m_title;
     int m_year;
     int m_trackIndex;
