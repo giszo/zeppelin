@@ -58,6 +58,7 @@ void SqliteStorage::open()
 	    UNIQUE(path, name),
 	    FOREIGN KEY(artist_id) REFERENCES artists(id),
 	    FOREIGN KEY(album_id) REFERENCES albums(id)))");
+    execute("CREATE INDEX IF NOT EXISTS files_artist_id ON files(artist_id)");
 
     // prepare statements
     prepareStatement(&m_newFile, "INSERT OR IGNORE INTO files(path, name, size) VALUES(?, ?, ?)");
@@ -98,8 +99,7 @@ void SqliteStorage::open()
     prepareStatement(&m_getArtists,
                      R"(SELECT artists.id, artists.name, COUNT(DISTINCT files.album_id), COUNT(files.id)
                         FROM files LEFT JOIN artists ON artists.id = files.artist_id
-                        GROUP BY files.artist_id
-                        ORDER BY artists.name)");
+                        GROUP BY files.artist_id)");
 
     prepareStatement(&m_getArtistIdByName, "SELECT id FROM artists WHERE name = ?");
 
