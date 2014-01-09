@@ -205,7 +205,6 @@ void Server::libraryGetArtists(const Json::Value& request, Json::Value& response
 	artist["id"] = a->m_id;
 	artist["name"] = a->m_name;
 	artist["albums"] = a->m_albums;
-	artist["songs"] = a->m_songs;
 
 	response[i].swap(artist);
     }
