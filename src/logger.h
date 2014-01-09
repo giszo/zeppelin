@@ -6,7 +6,7 @@
 #include <iostream>
 
 #define LOG(x) \
-    Logger::get() << Logger::Lock() << x << "\n" << Logger::Unlock()
+    Logger::get() << Logger::Lock() << "[" << Logger::Timestamp() << "] " << x << "\n" << Logger::Unlock()
 
 class Logger
 {
@@ -22,9 +22,11 @@ class Logger
 
 	struct Lock {};
 	struct Unlock {};
+	struct Timestamp {};
 
 	Logger& operator<<(const Lock&);
 	Logger& operator<<(const Unlock&);
+	Logger& operator<<(const Timestamp&);
 
     private:
 	thread::Mutex m_mutex;
