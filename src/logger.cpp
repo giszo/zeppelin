@@ -1,5 +1,7 @@
 #include "logger.h"
 
+#include <iomanip>
+
 #include <sys/time.h>
 #include <time.h>
 
@@ -37,7 +39,7 @@ Logger& Logger::operator<<(const Timestamp&)
     char buf[32];
     strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", tm);
 
-    std::cout << buf << "." << tv.tv_usec;
+    std::cout << buf << "." << std::setw(6) << std::setfill('0') << tv.tv_usec;
 
     return *this;
 }
