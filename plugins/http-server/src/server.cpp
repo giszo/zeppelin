@@ -5,6 +5,7 @@
 #include <logger.h>
 
 #include <cstring>
+#include <sys/stat.h>
 
 // =====================================================================================================================
 Server::Server()
@@ -39,6 +40,7 @@ void Server::start(const Json::Value& config, plugin::PluginManager& pm)
 	_requestHandler,
 	this,
 	MHD_OPTION_NOTIFY_COMPLETED, _requestCompleted, NULL,
+	MHD_OPTION_THREAD_POOL_SIZE, 3,
 	MHD_OPTION_END);
 }
 
@@ -51,7 +53,48 @@ void Server::stop()
 // =====================================================================================================================
 void Server::registerHandler(const std::string& url, const Handler& handler)
 {
-    m_handlers[url] = handler;
+    size_t i = 0;
+
+    while (i < m_handlers.size() && url.size() < m_handlers[i].m_baseUrl.size())
+	++i;
+
+    m_handlers.insert(m_handlers.begin() + i, {url, handler});
+}
+
+// =====================================================================================================================
+void Server::sendResponse(const httpserver::BufferedHttpResponse& response)
+{
+    const std::string& data = response.getBuffer();
+    MHD_Response* resp = MHD_create_response_from_data(
+	     data.size(),
+	     (void*)data.c_str(),
+	     MHD_NO,
+	     MHD_YES);
+
+    // set the headers on the response
+    const auto& headers = response.getHeaders();
+
+    for (const auto& hit : headers)
+	MHD_add_response_header(resp, hit.first.c_str(), hit.second.c_str());
+
+    MHD_queue_response(static_cast<const MHDHttpRequest&>(response.getRequest()).getConnection(),
+		       response.getStatus(),
+		       resp);
+    MHD_destroy_response(resp);
+}
+
+// =====================================================================================================================
+void Server::sendResponse(const httpserver::FileHttpResponse& response)
+{
+    // TODO: error handling
+    struct stat st;
+    fstat(response.getFd(), &st);
+
+    MHD_Response* resp = MHD_create_response_from_fd(st.st_size, response.getFd());
+    MHD_queue_response(static_cast<const MHDHttpRequest&>(response.getRequest()).getConnection(),
+		       response.getStatus(),
+		       resp);
+    MHD_destroy_response(resp);
 }
 
 // =====================================================================================================================
@@ -67,7 +110,7 @@ int Server::requestHandler(MHD_Connection* connection,
 
     if (!request)
     {
-	request = new MHDHttpRequest(method, url);
+	request = new MHDHttpRequest(connection, method, url);
 	*conCls = request;
 	return MHD_YES;
     }
@@ -79,42 +122,54 @@ int Server::requestHandler(MHD_Connection* connection,
 	return MHD_YES;
     }
 
-    // serve the request
-    int status = MHD_HTTP_OK;
-    MHD_Response* resp;
+    LOG("http-server: serving request: " << request->getUrl());
 
-    auto it = m_handlers.find(request->getUrl());
-
-    if (it != m_handlers.end())
+    try
     {
-	std::unique_ptr<httpserver::HttpResponse> response = it->second(*request);
-	const std::string& data = response->getData();
+	// find a handler for the request
+	auto handler = lookupHandler(request->getUrl());
 
-	status = response->getStatus();
-	resp = MHD_create_response_from_data(
-	     data.size(),
-	     (void*)data.c_str(),
-	     MHD_NO,
-	     MHD_YES);
+	// execute the handler
+	std::unique_ptr<httpserver::HttpResponse> response = handler(*request);
 
-	// set the headers on the response
-	const auto& headers = response->getHeaders();
-
-	for (const auto& hit : headers)
-	    MHD_add_response_header(resp, hit.first.c_str(), hit.second.c_str());
+	if (response)
+	    response->send(*this);
+	else
+	    sendNotFound(connection);
     }
-    else
+    catch (const HandlerNotFoundException&)
     {
-	static const char* error = "Not found";
-
-	status = MHD_HTTP_NOT_FOUND;
-	resp = MHD_create_response_from_data(strlen(error), (void*)error, MHD_NO, MHD_NO);
+	sendNotFound(connection);
     }
 
-    int ret = MHD_queue_response(connection, status, resp);
+    return MHD_YES;
+}
+
+// =====================================================================================================================
+auto Server::lookupHandler(const std::string& url) const -> const Handler&
+{
+    for (size_t i = 0; i < m_handlers.size(); ++i)
+    {
+	const HandlerItem& item = m_handlers[i];
+
+	if (url.size() < item.m_baseUrl.size())
+	    continue;
+
+	if (url.compare(0, item.m_baseUrl.size(), item.m_baseUrl) == 0)
+	    return item.m_handler;
+    }
+
+    throw HandlerNotFoundException();
+}
+
+// =====================================================================================================================
+void Server::sendNotFound(MHD_Connection* connection)
+{
+    static const char* error = "Not found";
+
+    MHD_Response* resp = MHD_create_response_from_data(strlen(error), (void*)error, MHD_NO, MHD_NO);
+    MHD_queue_response(connection, MHD_HTTP_NOT_FOUND, resp);
     MHD_destroy_response(resp);
-
-    return ret;
 }
 
 // =====================================================================================================================

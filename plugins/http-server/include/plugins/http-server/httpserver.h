@@ -13,6 +13,9 @@
 namespace httpserver
 {
 
+class HttpResponse;
+class HttpServer;
+
 class HttpRequest
 {
     public:
@@ -23,23 +26,33 @@ class HttpRequest
 	virtual const std::string& getUrl() const = 0;
 
 	virtual const std::string& getData() const = 0;
+
+	virtual std::unique_ptr<HttpResponse> createBufferedResponse(int, const std::string&) const = 0;
+	virtual std::unique_ptr<HttpResponse> createFileResponse(int) const = 0;
 };
 
 class HttpResponse
 {
     public:
-	HttpResponse(int status, const std::string& data);
+	virtual void addHeader(const std::string& key, const std::string& value) = 0;
 
-	void addHeader(const std::string& key, const std::string& value);
+	virtual const HttpRequest& getRequest() const = 0;
+	virtual int getStatus() const = 0;
+	virtual const std::unordered_map<std::string, std::string>& getHeaders() const = 0;
 
-	int getStatus() const;
-	const std::string& getData() const;
-	const std::unordered_map<std::string, std::string>& getHeaders() const;
+	virtual void send(HttpServer&) const = 0;
+};
 
-    private:
-	int m_status;
-	std::string m_data;
-	std::unordered_map<std::string, std::string> m_headers;
+class BufferedHttpResponse : public HttpResponse
+{
+    public:
+	virtual const std::string& getBuffer() const = 0;
+};
+
+class FileHttpResponse : public HttpResponse
+{
+    public:
+	virtual int getFd() const = 0;
 };
 
 class HttpServer : public plugin::PluginInterface
@@ -51,9 +64,10 @@ class HttpServer : public plugin::PluginInterface
 	{ return HTTP_SERVER_VERSION; }
 
 	virtual void registerHandler(const std::string& url, const Handler& handler) = 0;
-};
 
-#include "response.ipp"
+	virtual void sendResponse(const BufferedHttpResponse&) = 0;
+	virtual void sendResponse(const FileHttpResponse&) = 0;
+};
 
 }
 

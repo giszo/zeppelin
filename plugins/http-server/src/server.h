@@ -7,7 +7,8 @@
 
 #include <microhttpd.h>
 
-#include <unordered_map>
+#include <vector>
+#include <stdexcept>
 
 class Server : public plugin::Plugin,
 	       public httpserver::HttpServer
@@ -24,7 +25,16 @@ class Server : public plugin::Plugin,
 
 	void registerHandler(const std::string& url, const Handler& handler) override;
 
+	void sendResponse(const httpserver::BufferedHttpResponse&) override;
+	void sendResponse(const httpserver::FileHttpResponse&) override;
+
     private:
+	class HandlerNotFoundException : public std::runtime_error
+	{
+	    public:
+		HandlerNotFoundException() : runtime_error("handler not found") {}
+	};
+
 	int requestHandler(MHD_Connection* connection,
 			   const std::string& url,
 			   const std::string& method,
@@ -32,6 +42,10 @@ class Server : public plugin::Plugin,
 			   const char* uploadData,
 			   size_t* uploadDataSize,
 			   void** conCls);
+
+	const Handler& lookupHandler(const std::string& url) const;
+
+	void sendNotFound(MHD_Connection* connection);
 
 	static int _requestHandler(void* cls,
 				   MHD_Connection* connection,
@@ -50,7 +64,13 @@ class Server : public plugin::Plugin,
     private:
 	MHD_Daemon* m_daemon;
 
-	std::unordered_map<std::string, Handler> m_handlers;
+	struct HandlerItem
+	{
+	    std::string m_baseUrl;
+	    Handler m_handler;
+	};
+
+	std::vector<HandlerItem> m_handlers;
 };
 
 #endif

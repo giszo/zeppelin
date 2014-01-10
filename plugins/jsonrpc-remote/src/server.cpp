@@ -129,7 +129,8 @@ void Server::stop()
 }
 
 // =====================================================================================================================
-static inline std::unique_ptr<httpserver::HttpResponse> createJsonErrorReply(const Json::Value& request,
+static inline std::unique_ptr<httpserver::HttpResponse> createJsonErrorReply(const httpserver::HttpRequest& httpReq,
+									     const Json::Value& request,
 									     const std::string& reason)
 {
     Json::Value response(Json::objectValue);
@@ -141,8 +142,8 @@ static inline std::unique_ptr<httpserver::HttpResponse> createJsonErrorReply(con
     else
 	response["id"] = Json::Value(Json::nullValue);
 
-    return std::unique_ptr<httpserver::HttpResponse>(new httpserver::HttpResponse(200,
-										  Json::FastWriter().write(response)));
+    return httpReq.createBufferedResponse(200,
+					  Json::FastWriter().write(response));
 }
 
 // =====================================================================================================================
@@ -152,10 +153,10 @@ std::unique_ptr<httpserver::HttpResponse> Server::processRequest(const httpserve
     Json::Reader reader;
 
     if (!reader.parse(request.getData(), root))
-	return createJsonErrorReply(root, "invalid request");
+	return createJsonErrorReply(request, root, "invalid request");
 
     if (!root.isMember("method") || !root.isMember("id"))
-	return createJsonErrorReply(root, "method/id not found");
+	return createJsonErrorReply(request, root, "method/id not found");
 
     Json::Value params;
 
@@ -168,7 +169,7 @@ std::unique_ptr<httpserver::HttpResponse> Server::processRequest(const httpserve
     auto it = m_rpcMethods.find(method);
 
     if (it == m_rpcMethods.end())
-	return createJsonErrorReply(root, "invalid method");
+	return createJsonErrorReply(request, root, "invalid method");
 
     it->second(params, result);
 
@@ -177,8 +178,8 @@ std::unique_ptr<httpserver::HttpResponse> Server::processRequest(const httpserve
     response["id"] = root["id"];
     response["result"] = result;
 
-    std::unique_ptr<httpserver::HttpResponse> resp(new httpserver::HttpResponse(200,
-										Json::FastWriter().write(response)));
+    std::unique_ptr<httpserver::HttpResponse> resp = request.createBufferedResponse(200,
+										    Json::FastWriter().write(response));
     resp->addHeader("Content-Type", "application/json;charset=utf-8");
     return resp;
 }
