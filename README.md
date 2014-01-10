@@ -21,4 +21,5 @@ Remote control
 
 Available applications:
 
-- [zeppelin-android](https://github.com/giszo/zeppelin-android) - an Android application for controlling Zeppelin
+- [zeppelin-android](https://github.com/giszo/zeppelin-android) - Android based control application
+- [zeppelin-web](https://github.com/voidpp/zeppelin-web) - Web based control application
