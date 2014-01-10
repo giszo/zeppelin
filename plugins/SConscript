@@ -2,4 +2,4 @@
 
 Import("env")
 
-SConscript(dirs = ["http-server", "jsonrpc-remote"], exports = ["env"])
+SConscript(dirs = ["http-server", "jsonrpc-remote", "file-server"], exports = ["env"])
