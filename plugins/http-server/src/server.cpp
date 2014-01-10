@@ -33,7 +33,7 @@ void Server::start(const Json::Value& config, plugin::PluginManager& pm)
     pm.registerInterface("http-server", this);
 
     m_daemon = MHD_start_daemon(
-	MHD_USE_SELECT_INTERNALLY | MHD_USE_DEBUG,
+	MHD_USE_SELECT_INTERNALLY,
 	config["port"].asInt(),
 	NULL,
 	NULL,
@@ -42,6 +42,9 @@ void Server::start(const Json::Value& config, plugin::PluginManager& pm)
 	MHD_OPTION_NOTIFY_COMPLETED, _requestCompleted, NULL,
 	MHD_OPTION_THREAD_POOL_SIZE, 3,
 	MHD_OPTION_END);
+
+    if (!m_daemon)
+	LOG("http-server: unable to start daemon on port " << config["port"].asInt());
 }
 
 // =====================================================================================================================
