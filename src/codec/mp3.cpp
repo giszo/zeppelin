@@ -114,11 +114,10 @@ bool Mp3::decode(float*& samples, size_t& count)
 
     if (r != MPG123_OK)
     {
-	// check whether the end of the stream has been reached
-	if (r == MPG123_DONE)
-	    return false;
+	if (r != MPG123_DONE)
+	    LOG("mp3: frame decoding error: " << r);
 
-	throw CodecException("frame decoding error");
+	return false;
     }
 
     if ((bytes % (m_channels * sizeof(int16_t))) != 0)
