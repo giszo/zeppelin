@@ -35,6 +35,7 @@ sources = [
     "codec/basecodec.cpp",
     "codec/mp3.cpp",
     "codec/flac.cpp",
+    "codec/metadata.cpp",
     "library/musiclibrary.cpp",
     "library/scanner.cpp",
     "library/metaparser.cpp",

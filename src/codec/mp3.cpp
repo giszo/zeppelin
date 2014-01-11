@@ -175,14 +175,25 @@ static inline void readID3v1Field(const char* field, size_t length, std::string&
 // =====================================================================================================================
 void Mp3::processID3v1(Metadata& info, const mpg123_id3v1& id3)
 {
-    if (info.m_artist.empty())
-	readID3v1Field(id3.artist, 30, info.m_artist);
+    std::string tmp;
 
-    if (info.m_album.empty())
-	readID3v1Field(id3.album, 30, info.m_album);
+    if (info.getArtist().empty())
+    {
+	readID3v1Field(id3.artist, 30, tmp);
+	info.setArtist(tmp);
+    }
 
-    if (info.m_title.empty())
-	readID3v1Field(id3.title, 30, info.m_title);
+    if (info.getAlbum().empty())
+    {
+	readID3v1Field(id3.album, 30, tmp);
+	info.setAlbum(tmp);
+    }
+
+    if (info.getTitle().empty())
+    {
+	readID3v1Field(id3.title, 30, tmp);
+	info.setTitle(tmp);
+    }
 
     if (info.m_year == 0)
     {
@@ -202,13 +213,13 @@ void Mp3::processID3v1(Metadata& info, const mpg123_id3v1& id3)
 void Mp3::processID3v2(Metadata& info, const mpg123_id3v2& id3)
 {
     if (id3.artist && id3.artist->p)
-	info.m_artist = id3.artist->p;
+	info.setArtist(id3.artist->p);
 
     if (id3.album && id3.album->p)
-	info.m_album = id3.album->p;
+	info.setAlbum(id3.album->p);
 
     if (id3.title && id3.title->p)
-	info.m_title = id3.title->p;
+	info.setTitle(id3.title->p);
 
     if (id3.year && id3.year->p)
     {

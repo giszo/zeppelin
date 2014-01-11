@@ -241,11 +241,11 @@ void Flac::parseVorbisComment(const FLAC__StreamMetadata_VorbisComment& vc)
 	std::string value(p + 1);
 
 	if (key == "ARTIST")
-	    m_metadata.m_artist = value;
+	    m_metadata.setArtist(value);
 	else if (key == "ALBUM")
-	    m_metadata.m_album = value;
+	    m_metadata.setAlbum(value);
 	else if (key == "TITLE")
-	    m_metadata.m_title = value;
+	    m_metadata.setTitle(value);
 	else if (key == "DATE")
 	{
 	    try

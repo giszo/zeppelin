@@ -75,9 +75,9 @@ void MetaParser::parse(File& file)
     }
 
     file.m_length = meta.m_samples / meta.m_rate;
-    file.m_artist = meta.m_artist;
-    file.m_album = meta.m_album;
-    file.m_title = meta.m_title;
+    file.m_artist = meta.getArtist();
+    file.m_album = meta.getAlbum();
+    file.m_title = meta.getTitle();
     file.m_year = meta.m_year;
     file.m_trackIndex = meta.m_trackIndex;
     file.m_type = meta.m_type;
