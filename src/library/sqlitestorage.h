@@ -16,7 +16,7 @@ namespace library
 class SqliteStorage : public Storage
 {
     public:
-	SqliteStorage();
+	SqliteStorage(const config::Library& config);
 	~SqliteStorage();
 
 	void open();

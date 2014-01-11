@@ -26,6 +26,7 @@ class Parser
 
     private:
 	void parsePlugins(const Json::Value& config, Plugins& plugins) const;
+	void parseLibrary(const Json::Value& config, Library& library) const;
 
     private:
 	std::string m_file;

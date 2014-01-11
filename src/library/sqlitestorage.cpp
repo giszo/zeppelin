@@ -5,8 +5,9 @@
 using library::SqliteStorage;
 
 // =====================================================================================================================
-SqliteStorage::SqliteStorage()
-    : m_db(NULL)
+SqliteStorage::SqliteStorage(const config::Library& config)
+    : Storage(config),
+      m_db(NULL)
 {
 }
 
@@ -20,7 +21,7 @@ SqliteStorage::~SqliteStorage()
 // =====================================================================================================================
 void SqliteStorage::open()
 {
-    if (sqlite3_open("library.db", &m_db) != SQLITE_OK)
+    if (sqlite3_open(m_config.m_database.empty() ? "library.db" : m_config.m_database.c_str(), &m_db) != SQLITE_OK)
 	throw StorageException("unable to open database");
 
     // turn synchronous mode off and store journal data in memory to speed-up SQLite

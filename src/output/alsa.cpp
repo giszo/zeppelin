@@ -62,9 +62,9 @@ void AlsaOutput::setup(int rate, int channels)
     {
 	const Json::Value& cfg = getConfig();
 
-	if (cfg.isMember("buffer_max"))
+	if (cfg.isMember("buffer-max"))
 	{
-	    snd_pcm_uframes_t frames = cfg["buffer_max"].asInt();
+	    snd_pcm_uframes_t frames = cfg["buffer-max"].asInt();
 	    snd_pcm_hw_params_set_buffer_size_max(m_handle, params, &frames);
 	}
     }

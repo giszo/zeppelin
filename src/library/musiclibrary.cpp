@@ -4,7 +4,7 @@ using library::MusicLibrary;
 
 // =====================================================================================================================
 MusicLibrary::MusicLibrary(Storage& storage, const config::Library& config)
-    : m_roots(config.m_root),
+    : m_roots(config.m_roots),
       m_scanner(*this),
       m_metaParser(*this),
       m_storage(storage)

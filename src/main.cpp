@@ -35,7 +35,7 @@ int main(int argc, char** argv)
     }
 
     // open the music library
-    library::SqliteStorage storage;
+    library::SqliteStorage storage(config.m_library);
 
     try
     {

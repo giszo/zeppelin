@@ -2,6 +2,7 @@
 #define LIBRARY_STORAGE_H_INCLUDED
 
 #include <codec/type.h>
+#include <config/config.h>
 
 #include <stdexcept>
 #include <string>
@@ -145,6 +146,10 @@ class StorageException : public std::runtime_error
 class Storage
 {
     public:
+	Storage(const config::Library& config)
+	    : m_config(config)
+	{}
+
 	virtual ~Storage()
 	{}
 
@@ -182,6 +187,9 @@ class Storage
 	virtual std::vector<std::shared_ptr<Album>> getAlbums() = 0;
 	/// returns the available albums associated to the given artist
 	virtual std::vector<std::shared_ptr<Album>> getAlbumsByArtist(int artistId) = 0;
+
+    protected:
+	const config::Library& m_config;
 };
 
 }

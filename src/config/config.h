@@ -19,7 +19,8 @@ struct Plugins
 
 struct Library
 {
-    std::vector<std::string> m_root;
+    std::vector<std::string> m_roots;
+    std::string m_database;
 };
 
 struct Config

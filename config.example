@@ -7,13 +7,20 @@
 	    },
 	    "jsonrpc-remote" : {
 		"path" : "/"
+	    },
+	    "file-server" : {
+	        "document-root" : "/"
 	    }
 	},
-	"enabled" : ["http-server", "jsonrpc-remote"]
+	"enabled" : ["http-server", "jsonrpc-remote", "file-server"]
     },
 
     "library" : {
-        "root" : [""]
+        # root directories used for searching for music files
+        "roots" : [""],
+
+	# database file of the music library (optional)
+	"database" : ""
     },
 
     # filter configurations
@@ -32,7 +39,7 @@
 	    # the name of the PCM to use for playing
 	    "pcm" : "",
 	    # maximum hardware buffer size in frames (optional)
-	    "buffer_max" : 0
+	    "buffer-max" : 0
         }
     }
 }

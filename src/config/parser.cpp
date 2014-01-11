@@ -29,22 +29,14 @@ config::Config Parser::parse() const
     Json::Value& root = cfg.m_raw;
 
     // plugins section
-    if (root.isMember("plugins"))
+    if (root.isMember("plugins") && root["plugins"].isObject())
 	parsePlugins(cfg.m_raw["plugins"], cfg.m_plugins);
 
     // library section
-    if (!root.isMember("library"))
+    if (!root.isMember("library") || !root["library"].isObject())
 	throw ConfigException("no library section");
 
-    Json::Value library = root["library"];
-
-    if (!library.isMember("root"))
-	throw ConfigException("library section is incomplete");
-
-    Json::Value libRoots = library["root"];
-
-    for (Json::Value::ArrayIndex i = 0; i < libRoots.size(); ++i)
-	cfg.m_library.m_root.push_back(libRoots[i].asString());
+    parseLibrary(root["library"], cfg.m_library);
 
     return cfg;
 }
@@ -89,4 +81,21 @@ void Parser::parsePlugins(const Json::Value& config, Plugins& plugins) const
 	    plugins.m_enabled.push_back(plugin);
 	}
     }
+}
+
+// =====================================================================================================================
+void Parser::parseLibrary(const Json::Value& config, Library& library) const
+{
+    // roots
+    if (!config.isMember("roots"))
+	throw ConfigException("roots is not configured for library");
+
+    const Json::Value& roots = config["roots"];
+
+    for (Json::Value::ArrayIndex i = 0; i < roots.size(); ++i)
+	library.m_roots.push_back(roots[i].asString());
+
+    // database
+    if (config.isMember("database") && config["database"].isString())
+	library.m_database = config["database"].asString();
 }
