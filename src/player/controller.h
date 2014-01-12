@@ -46,6 +46,7 @@ class Controller
 	    NEXT,
 	    GOTO,
 	    REMOVE,
+	    REMOVE_ALL,
 	    // sent by the player thread once all samples of the current track have been written to the output
 	    SONG_FINISHED,
 	    // sent by the decoder thread when the decoding of the current file has been finished
@@ -67,6 +68,8 @@ class Controller
 		   const std::vector<std::shared_ptr<library::File>>& files);
 	/// removes the referenced part of the queue
 	void remove(const std::vector<int>& index);
+	/// removes all members of the queue
+	void removeAll();
 
 	void play();
 	void pause();

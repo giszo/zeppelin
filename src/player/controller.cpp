@@ -91,6 +91,12 @@ void Controller::remove(const std::vector<int>& index)
 }
 
 // =====================================================================================================================
+void Controller::removeAll()
+{
+    command(REMOVE_ALL);
+}
+
+// =====================================================================================================================
 void Controller::play()
 {
     command(PLAY);
@@ -352,6 +358,25 @@ void Controller::run()
 
 		break;
 	    }
+
+	    case REMOVE_ALL :
+		LOG("controller: remove-all");
+
+		if (m_state == PLAYING || m_state == PAUSED)
+		{
+		    // stop playback
+		    stopPlayback();
+		    // invalidate the decoder
+		    m_decoder->setInput(nullptr);
+		    m_decoderInitialized = false;
+		    // update state
+		    m_state = STOPPED;
+		}
+
+		m_decoderQueue.clear();
+		m_playerQueue.clear();
+
+		break;
 
 	    case STOP :
 	    {

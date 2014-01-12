@@ -47,6 +47,7 @@ class Server : public plugin::Plugin
 	void playerQueueAlbum(const Json::Value& request, Json::Value& response);
 	void playerQueueGet(const Json::Value& request, Json::Value& response);
 	void playerQueueRemove(const Json::Value& request, Json::Value& response);
+	void playerQueueRemoveAll(const Json::Value& request, Json::Value& response);
 
 	void playerStatus(const Json::Value& request, Json::Value& response);
 

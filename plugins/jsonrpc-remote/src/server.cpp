@@ -62,6 +62,10 @@ Server::Server(const std::shared_ptr<library::MusicLibrary>& library,
 						    this,
 						    std::placeholders::_1,
 						    std::placeholders::_2);
+    m_rpcMethods["player_queue_remove_all"] = std::bind(&Server::playerQueueRemoveAll,
+							this,
+							std::placeholders::_1,
+							std::placeholders::_2);
 
     // player status
     m_rpcMethods["player_status"] = std::bind(&Server::playerStatus,
@@ -429,6 +433,12 @@ void Server::playerQueueRemove(const Json::Value& request, Json::Value& response
 	i.push_back(index[j].asInt());
 
     m_ctrl->remove(i);
+}
+
+// =====================================================================================================================
+void Server::playerQueueRemoveAll(const Json::Value& request, Json::Value& response)
+{
+    m_ctrl->removeAll();
 }
 
 // =====================================================================================================================

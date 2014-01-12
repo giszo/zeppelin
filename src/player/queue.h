@@ -135,6 +135,9 @@ class Playlist : public ContainerQueueItem
 	void add(const std::shared_ptr<library::Album>& album,
 		 const std::vector<std::shared_ptr<library::File>>& files);
 
+	// removes all items from the playlist
+	void clear();
+
 	Type type() const override;
 
 	std::shared_ptr<QueueItem> clone() const override;
