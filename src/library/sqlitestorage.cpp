@@ -99,9 +99,9 @@ void SqliteStorage::open()
     // artists
     prepareStatement(&m_addArtist, "INSERT OR IGNORE INTO artists(name) VALUES(?)");
     prepareStatement(&m_getArtists,
-                     R"(SELECT artists.id, artists.name, COUNT(albums.id)
-                        FROM albums LEFT JOIN artists ON artists.id = albums.artist_id
-                        GROUP BY albums.artist_id)");
+                     R"(SELECT artists.id, artists.name, COUNT(DISTINCT files.album_id)
+                        FROM files LEFT JOIN artists ON artists.id = files.artist_id
+                        GROUP BY files.artist_id)");
 
     prepareStatement(&m_getArtistIdByName, "SELECT id FROM artists WHERE name = ?");
 
