@@ -442,6 +442,10 @@ void Server::playerStatus(const Json::Value& request, Json::Value& response)
     response["state"] = static_cast<int>(s.m_state);
     response["position"] = s.m_position;
     response["volume"] = s.m_volume;
+    response["index"] = Json::Value(Json::arrayValue);
+    response["index"].resize(s.m_index.size());
+    for (size_t i = 0; i < s.m_index.size(); ++i)
+	response["index"][i] = s.m_index[i];
 }
 
 // =====================================================================================================================

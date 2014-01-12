@@ -23,6 +23,8 @@ struct Status
 {
     // the currently played file
     std::shared_ptr<library::File> m_file;
+    // the tree index of the currently played file
+    std::vector<int> m_index;
     // the state of the player
     State m_state;
     // position inside the current track in seconds

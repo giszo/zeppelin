@@ -52,7 +52,10 @@ auto Controller::getStatus() -> Status
     thread::BlockLock bl(m_mutex);
 
     if (m_playerQueue.isValid())
+    {
 	s.m_file = m_playerQueue.file();
+	m_playerQueue.get(s.m_index);
+    }
     s.m_state = m_state;
     s.m_position = m_player->getPosition();
     s.m_volume = m_volumeLevel;
