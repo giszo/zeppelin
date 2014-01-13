@@ -59,6 +59,12 @@ void Flac::open()
     if (!FLAC__stream_decoder_process_until_end_of_metadata(m_decoder))
 	throw CodecException("unable to process metadata");
 
+    if (m_error)
+    {
+	LOG("flac: error was set after processing metadata");
+	throw CodecException("unable to process metadata");
+    }
+
     if (m_channels != 2)
     {
 	LOG("flac: currently 2 channels are supported only!");
@@ -159,9 +165,6 @@ bool Flac::decode(float*& samples, size_t& count)
 
     if (!FLAC__stream_decoder_process_single(m_decoder))
 	throw CodecException("stream decoding error");
-
-    if (m_error)
-	return false;
 
     samples = &m_samples[0];
     count = m_samples.size() / 2;
