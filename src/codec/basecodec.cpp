@@ -9,8 +9,6 @@ using codec::BaseCodec;
 // =====================================================================================================================
 std::shared_ptr<BaseCodec> BaseCodec::create(const std::string& file)
 {
-    std::shared_ptr<BaseCodec> codec;
-
     if (utils::StringUtils::endsWith(file, ".mp3"))
 	return std::make_shared<Mp3>(file);
     else if (utils::StringUtils::endsWith(file, ".flac"))
