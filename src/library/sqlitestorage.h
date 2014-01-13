@@ -72,7 +72,9 @@ class SqliteStorage : public Storage
 	sqlite3_stmt* m_getFilesOfArtist;
 	sqlite3_stmt* m_getFilesOfAlbum;
 	sqlite3_stmt* m_getFilesOfDirectory;
+
 	sqlite3_stmt* m_setFileMark;
+	sqlite3_stmt* m_setDirectoryMark;
 
 	sqlite3_stmt* m_setFileMeta;
 	sqlite3_stmt* m_updateFileMeta;
@@ -90,8 +92,10 @@ class SqliteStorage : public Storage
 	sqlite3_stmt* m_getAlbumsByArtist;
 
 	/// mark handling
-	sqlite3_stmt* m_clearMark;
-	sqlite3_stmt* m_deleteNonMarked;
+	sqlite3_stmt* m_clearFileMarks;
+	sqlite3_stmt* m_clearDirectoryMarks;
+	sqlite3_stmt* m_deleteNonMarkedFiles;
+	sqlite3_stmt* m_deleteNonMarkedDirectories;
 
 	// mutex for the music database
 	thread::Mutex m_mutex;

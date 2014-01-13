@@ -52,6 +52,7 @@ void SqliteStorage::open()
             id INTEGER PRIMARY KEY,
             parent_id INTEGER DEFAULT NULL,
             name TEXT,
+            mark INTEGER DEFAULT 1,
             UNIQUE(parent_id, name),
             FOREIGN KEY(parent_id) REFERENCES directories(id)))");
 
@@ -110,6 +111,7 @@ void SqliteStorage::open()
                         FROM files
                         WHERE directory_id = ?)");
     prepareStatement(&m_setFileMark, "UPDATE files SET mark = 1 WHERE id = ?");
+    prepareStatement(&m_setDirectoryMark, "UPDATE directories SET mark = 1 WHERE id = ?");
 
     prepareStatement(&m_setFileMeta,
                      R"(UPDATE files
@@ -146,17 +148,17 @@ void SqliteStorage::open()
                         ORDER BY albums.name)");
 
     // mark
-    prepareStatement(&m_clearMark, "UPDATE files SET mark = 0");
-    prepareStatement(&m_deleteNonMarked, "DELETE FROM files WHERE mark = 0");
+    prepareStatement(&m_clearFileMarks, "UPDATE files SET mark = 0");
+    prepareStatement(&m_clearDirectoryMarks, "UPDATE directories SET mark = 0");
+
+    prepareStatement(&m_deleteNonMarkedFiles, "DELETE FROM files WHERE mark = 0");
+    prepareStatement(&m_deleteNonMarkedDirectories, "DELETE FROM directories WHERE mark = 0");
 }
 
 // =====================================================================================================================
 int SqliteStorage::ensureDirectory(const std::string& name, int parentId)
 {
     thread::BlockLock bl(m_mutex);
-
-    prepareStatement(&m_getDirectory, "SELECT id FROM directories WHERE id IS ? and NAME = ?");
-    prepareStatement(&m_addDirectory, "INSERT INTO directories(parent_id, name) VALUES(?, ?)");
 
     // first try to get the directory from the database
     if (parentId == -1)
@@ -168,6 +170,12 @@ int SqliteStorage::ensureDirectory(const std::string& name, int parentId)
     {
 	int id = sqlite3_column_int(m_getDirectory, 0);
 	sqlite3_reset(m_getDirectory);
+
+	// set mark on the directory
+	sqlite3_bind_int(m_setDirectoryMark, 1, id);
+	sqlite3_step(m_setDirectoryMark);
+	sqlite3_reset(m_setDirectoryMark);
+
 	return id;
     }
     sqlite3_reset(m_getDirectory);
@@ -245,8 +253,10 @@ void SqliteStorage::clearMark()
 {
     thread::BlockLock bl(m_mutex);
 
-    sqlite3_step(m_clearMark);
-    sqlite3_reset(m_clearMark);
+    sqlite3_step(m_clearFileMarks);
+    sqlite3_reset(m_clearFileMarks);
+    sqlite3_step(m_clearDirectoryMarks);
+    sqlite3_reset(m_clearDirectoryMarks);
 }
 
 // =====================================================================================================================
@@ -254,8 +264,10 @@ void SqliteStorage::deleteNonMarked()
 {
     thread::BlockLock bl(m_mutex);
 
-    sqlite3_step(m_deleteNonMarked);
-    sqlite3_reset(m_deleteNonMarked);
+    sqlite3_step(m_deleteNonMarkedFiles);
+    sqlite3_reset(m_deleteNonMarkedFiles);
+    sqlite3_step(m_deleteNonMarkedDirectories);
+    sqlite3_reset(m_deleteNonMarkedDirectories);
 }
 
 // =====================================================================================================================

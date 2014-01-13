@@ -26,10 +26,8 @@ Scanner::Scanner(Storage& storage, ScannerListener& listener)
 // =====================================================================================================================
 void Scanner::add(const std::string& path)
 {
-    int directoryId = m_storage.ensureDirectory(path, -1);
-
     thread::BlockLock bl(m_mutex);
-    m_paths.push_back({directoryId, path});
+    m_paths.push_back({-1, path});
 }
 
 // =====================================================================================================================
@@ -76,6 +74,10 @@ void Scanner::scanDirectories()
 	paths = m_paths;
 	m_paths.clear();
     }
+
+    // get the ID of the root directories
+    for (auto& p : paths)
+	p.m_id = m_storage.ensureDirectory(p.m_path, -1);
 
     while (!paths.empty())
     {
