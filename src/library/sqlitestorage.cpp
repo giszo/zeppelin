@@ -27,6 +27,7 @@ void SqliteStorage::open()
     // turn synchronous mode off and store journal data in memory to speed-up SQLite
     execute("PRAGMA synchronous = OFF");
     execute("PRAGMA journal_mode = MEMORY");
+    execute("PRAGMA foreign_keys = ON");
 
     // create db tables
     execute(
