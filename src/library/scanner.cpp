@@ -17,16 +17,19 @@ const std::string Scanner::s_mediaExtensions[] = {
 };
 
 // =====================================================================================================================
-Scanner::Scanner(ScannerListener& listener)
-    : m_listener(listener)
+Scanner::Scanner(Storage& storage, ScannerListener& listener)
+    : m_storage(storage),
+      m_listener(listener)
 {
 }
 
 // =====================================================================================================================
 void Scanner::add(const std::string& path)
 {
+    int directoryId = m_storage.ensureDirectory(path, -1);
+
     thread::BlockLock bl(m_mutex);
-    m_paths.push_back(path);
+    m_paths.push_back({directoryId, path});
 }
 
 // =====================================================================================================================
@@ -66,7 +69,7 @@ void Scanner::run()
 // =====================================================================================================================
 void Scanner::scanDirectories()
 {
-    std::deque<std::string> paths;
+    std::deque<Directory> paths;
 
     {
 	thread::BlockLock bl(m_mutex);
@@ -76,7 +79,7 @@ void Scanner::scanDirectories()
 
     while (!paths.empty())
     {
-	std::string path = paths.front();
+	Directory path = paths.front();
 	paths.pop_front();
 
 	scanDirectory(path, paths);
@@ -84,16 +87,16 @@ void Scanner::scanDirectories()
 }
 
 // =====================================================================================================================
-void Scanner::scanDirectory(const std::string& path, std::deque<std::string>& paths)
+void Scanner::scanDirectory(const Directory& path, std::deque<Directory>& paths)
 {
-    LOG("Scanning directory: " << path);
+    LOG("Scanning directory: " << path.m_path);
 
     // open the directory
-    DIR* dir = opendir(path.c_str());
+    DIR* dir = opendir(path.m_path.c_str());
 
     if (!dir)
     {
-	LOG("Unable to open directory: " << path);
+	LOG("Unable to open directory: " << path.m_path);
 	return;
     }
 
@@ -108,23 +111,26 @@ void Scanner::scanDirectory(const std::string& path, std::deque<std::string>& pa
 	    continue;
 
 	struct stat st;
-	std::string p = path + "/" + name;
+	std::string p = path.m_path + "/" + name;
 
 	if (stat(p.c_str(), &st) != 0)
 	    continue;
 
 	if (S_ISDIR(st.st_mode))
-	    paths.push_back(p);
+	{
+	    int directoryId = m_storage.ensureDirectory(name, path.m_id);
+	    paths.push_back({directoryId, p});
+	}
 	else if (isMediaFile(name))
 	{
-	    File file(-1, path, name, st.st_size);
+	    File file(-1, path.m_id, path.m_path, name, st.st_size);
 	    m_listener.musicFound(file);
 	}
     }
 
     closedir(dir);
 
-    LOG("Scanning of " << path << " finished");
+    LOG("Scanning of " << path.m_path << " finished");
 }
 
 // =====================================================================================================================

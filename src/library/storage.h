@@ -66,8 +66,9 @@ struct File
 	  m_samplingRate(0)
     {}
 
-    File(int id, const std::string& path, const std::string& name, int64_t size)
+    File(int id, int directoryId, const std::string& path, const std::string& name, int64_t size)
 	: m_id(id),
+	  m_directoryId(directoryId),
 	  m_path(path),
 	  m_name(name),
 	  m_size(size),
@@ -113,6 +114,7 @@ struct File
     {}
 
     int m_id;
+    int m_directoryId;
     std::string m_path;
     std::string m_name;
     // size of the file in bytes
@@ -135,6 +137,17 @@ struct File
     int m_samplingRate;
 };
 
+struct Directory
+{
+    Directory(int id, const std::string& name)
+	: m_id(id),
+	  m_name(name)
+    {}
+
+    int m_id;
+    std::string m_name;
+};
+
 class StorageException : public std::runtime_error
 {
     public:
@@ -152,6 +165,11 @@ class Storage
 
 	virtual ~Storage()
 	{}
+
+	/// ensures that the given directory with the parent exists in the database and returns its ID
+	virtual int ensureDirectory(const std::string& name, int parentId) = 0;
+	/// lists the subdirectories of the given directory
+	virtual std::vector<std::shared_ptr<Directory>> listSubdirectories(int id) = 0;
 
 	/**
 	 * Adds a new file to the storage.
@@ -172,6 +190,8 @@ class Storage
 	virtual std::vector<std::shared_ptr<File>> getFilesOfArtist(int artistId) = 0;
 	/// returns the files of the given album
 	virtual std::vector<std::shared_ptr<File>> getFilesOfAlbum(int albumId) = 0;
+	/// returns the files of the given directory
+	virtual std::vector<std::shared_ptr<File>> getFilesOfDirectory(int directoryId) = 0;
 
 	// Sets all metadata related fields of the file including length, sampling rate, etc.
 	virtual void setFileMetadata(const File& file) = 0;

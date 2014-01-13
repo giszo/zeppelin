@@ -29,12 +29,14 @@ void SqliteStorage::open()
     execute("PRAGMA journal_mode = MEMORY");
     execute("PRAGMA foreign_keys = ON");
 
-    // create db tables
+    // artists
     execute(
 	R"(CREATE TABLE IF NOT EXISTS artists(
 	      id INTEGER PRIMARY KEY,
 	      name TEXT,
               UNIQUE(name)))");
+
+    // albums
     execute(
 	R"(CREATE TABLE IF NOT EXISTS albums(
 	    id INTEGER PRIMARY KEY,
@@ -43,11 +45,23 @@ void SqliteStorage::open()
 	    UNIQUE(artist_id, name),
 	    FOREIGN KEY(artist_id) REFERENCES artists(id)))");
     execute("CREATE INDEX IF NOT EXISTS albums_artist_id ON albums(artist_id)");
+
+    // directories
+    execute(
+	R"(CREATE TABLE IF NOT EXISTS directories(
+            id INTEGER PRIMARY KEY,
+            parent_id INTEGER DEFAULT NULL,
+            name TEXT,
+            UNIQUE(parent_id, name),
+            FOREIGN KEY(parent_id) REFERENCES directories(id)))");
+
+    // files
     execute(
 	R"(CREATE TABLE IF NOT EXISTS files(
 	    id INTEGER PRIMARY KEY,
 	    artist_id INTEGER DEFAULT NULL,
 	    album_id INTEGER DEFAULT NULL,
+	    directory_id INTEGER,
 	    path TEXT,
 	    name TEXT,
 	    size INTEGER,
@@ -60,11 +74,16 @@ void SqliteStorage::open()
 	    mark INTEGER DEFAULT 1,
 	    UNIQUE(path, name),
 	    FOREIGN KEY(artist_id) REFERENCES artists(id),
-	    FOREIGN KEY(album_id) REFERENCES albums(id)))");
+	    FOREIGN KEY(album_id) REFERENCES albums(id),
+	    FOREIGN KEY(directory_id) REFERENCES directories(id)))");
     execute("CREATE INDEX IF NOT EXISTS files_artist_id ON files(artist_id)");
 
     // prepare statements
-    prepareStatement(&m_newFile, "INSERT OR IGNORE INTO files(path, name, size) VALUES(?, ?, ?)");
+    prepareStatement(&m_getDirectory, "SELECT id FROM directories WHERE parent_id IS ? and NAME = ?");
+    prepareStatement(&m_addDirectory, "INSERT INTO directories(parent_id, name) VALUES(?, ?)");
+    prepareStatement(&m_getSubdirectories, "SELECT id, name FROM directories WHERE parent_id IS ?");
+
+    prepareStatement(&m_newFile, "INSERT OR IGNORE INTO files(path, name, size, directory_id) VALUES(?, ?, ?, ?)");
     prepareStatement(&m_getFile,
                      R"(SELECT files.path, files.name, files.size, files.length, files.title, files.year,
                                files.track_index, files.type, files.sampling_rate,
@@ -74,7 +93,7 @@ void SqliteStorage::open()
                                    LEFT JOIN artists ON artists.id = files.artist_id
                         WHERE files.id = ?)");
     prepareStatement(&m_getFileByPath, "SELECT id FROM files WHERE path = ? AND name = ?");
-    prepareStatement(&m_getFilesWithoutMeta, "SELECT id, path, name, size FROM files WHERE length IS NULL");
+    prepareStatement(&m_getFilesWithoutMeta, "SELECT id, path, name, size, directory_id FROM files WHERE length IS NULL");
     prepareStatement(&m_getFilesOfArtist,
                      R"(SELECT id, path, name, size, length, artist_id, album_id, title, year, track_index, type, sampling_rate
                         FROM files
@@ -86,6 +105,10 @@ void SqliteStorage::open()
                         FROM files
                         WHERE album_id = ?
                         ORDER BY track_index, name)");
+    prepareStatement(&m_getFilesOfDirectory,
+                     R"(SELECT id, path, name, size, length, artist_id, album_id, title, year, track_index, type, sampling_rate
+                        FROM files
+                        WHERE directory_id = ?)");
     prepareStatement(&m_setFileMark, "UPDATE files SET mark = 1 WHERE id = ?");
 
     prepareStatement(&m_setFileMeta,
@@ -128,6 +151,63 @@ void SqliteStorage::open()
 }
 
 // =====================================================================================================================
+int SqliteStorage::ensureDirectory(const std::string& name, int parentId)
+{
+    thread::BlockLock bl(m_mutex);
+
+    prepareStatement(&m_getDirectory, "SELECT id FROM directories WHERE id IS ? and NAME = ?");
+    prepareStatement(&m_addDirectory, "INSERT INTO directories(parent_id, name) VALUES(?, ?)");
+
+    // first try to get the directory from the database
+    if (parentId == -1)
+	sqlite3_bind_null(m_getDirectory, 1);
+    else
+	sqlite3_bind_int(m_getDirectory, 1, parentId);
+    bindText(m_getDirectory, 2, name);
+    if (sqlite3_step(m_getDirectory) == SQLITE_ROW)
+    {
+	int id = sqlite3_column_int(m_getDirectory, 0);
+	sqlite3_reset(m_getDirectory);
+	return id;
+    }
+    sqlite3_reset(m_getDirectory);
+
+    // directory not found - insert it now ...
+    if (parentId == -1)
+	sqlite3_bind_null(m_addDirectory, 1);
+    else
+	sqlite3_bind_int(m_addDirectory, 1, parentId);
+    bindText(m_addDirectory, 2, name);
+    sqlite3_step(m_addDirectory);
+    sqlite3_reset(m_addDirectory);
+
+    return sqlite3_last_insert_rowid(m_db);
+}
+
+// =====================================================================================================================
+std::vector<std::shared_ptr<library::Directory>> SqliteStorage::listSubdirectories(int id)
+{
+    std::vector<std::shared_ptr<library::Directory>> directories;
+
+    if (id == -1)
+	sqlite3_bind_null(m_getSubdirectories, 1);
+    else
+	sqlite3_bind_int(m_getSubdirectories, 1, id);
+
+    while (sqlite3_step(m_getSubdirectories) == SQLITE_ROW)
+    {
+	directories.push_back(std::make_shared<Directory>(
+	    sqlite3_column_int(m_getSubdirectories, 0),
+	    getText(m_getSubdirectories, 1)
+	));
+    }
+
+    sqlite3_reset(m_getSubdirectories);
+
+    return directories;
+}
+
+// =====================================================================================================================
 bool SqliteStorage::addFile(File& file)
 {
     thread::BlockLock bl(m_mutex);
@@ -150,6 +230,7 @@ bool SqliteStorage::addFile(File& file)
     bindText(m_newFile, 1, file.m_path);
     bindText(m_newFile, 2, file.m_name);
     sqlite3_bind_int64(m_newFile, 3, file.m_size);
+    sqlite3_bind_int(m_newFile, 4, file.m_directoryId);
     sqlite3_step(m_newFile);
     sqlite3_reset(m_newFile);
 
@@ -220,6 +301,7 @@ std::vector<std::shared_ptr<library::File>> SqliteStorage::getFilesWithoutMetada
     {
 	files.push_back(std::make_shared<File>(
 	    sqlite3_column_int(m_getFilesWithoutMeta, 0),
+	    sqlite3_column_int(m_getFilesWithoutMeta, 4),
 	    getText(m_getFilesWithoutMeta, 1),
 	    getText(m_getFilesWithoutMeta, 2),
 	    sqlite3_column_int64(m_getFilesWithoutMeta, 3)
@@ -292,6 +374,42 @@ std::vector<std::shared_ptr<library::File>> SqliteStorage::getFilesOfAlbum(int a
 	));
     }
     sqlite3_reset(m_getFilesOfAlbum);
+
+    return files;
+
+}
+
+// =====================================================================================================================
+std::vector<std::shared_ptr<library::File>> SqliteStorage::getFilesOfDirectory(int directoryId)
+{
+    std::vector<std::shared_ptr<File>> files;
+
+    // root directory does not contain any files
+    if (directoryId == -1)
+	return files;
+
+    thread::BlockLock bl(m_mutex);
+
+    sqlite3_bind_int(m_getFilesOfDirectory, 1, directoryId);
+
+    while (sqlite3_step(m_getFilesOfDirectory) == SQLITE_ROW)
+    {
+	files.push_back(std::make_shared<File>(
+	    sqlite3_column_int(m_getFilesOfDirectory, 0), // id
+	    getText(m_getFilesOfDirectory, 1), // path
+	    getText(m_getFilesOfDirectory, 2), // name
+	    sqlite3_column_int64(m_getFilesOfDirectory, 3), // size
+	    sqlite3_column_int(m_getFilesOfDirectory, 4), // length
+	    sqlite3_column_int(m_getFilesOfDirectory, 5), // artist
+	    sqlite3_column_int(m_getFilesOfDirectory, 6), // album
+	    getText(m_getFilesOfDirectory, 7), // title
+	    sqlite3_column_int(m_getFilesOfDirectory, 8), // year
+	    sqlite3_column_int(m_getFilesOfDirectory, 9), // track index
+	    static_cast<codec::Type>(sqlite3_column_int(m_getFilesOfDirectory, 10)), // type
+	    sqlite3_column_int(m_getFilesOfDirectory, 11) // sampling rate
+	));
+    }
+    sqlite3_reset(m_getFilesOfDirectory);
 
     return files;
 

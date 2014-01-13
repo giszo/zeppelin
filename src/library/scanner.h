@@ -12,6 +12,7 @@ namespace library
 {
 
 struct File;
+class Storage;
 
 class ScannerListener
 {
@@ -28,7 +29,7 @@ class ScannerListener
 class Scanner : public thread::Thread
 {
     public:
-	Scanner(ScannerListener& listener);
+	Scanner(Storage& storage, ScannerListener& listener);
 
 	void add(const std::string& path);
 
@@ -39,7 +40,16 @@ class Scanner : public thread::Thread
 
     private:
 	void scanDirectories();
-	void scanDirectory(const std::string& path, std::deque<std::string>& paths);
+
+	struct Directory
+	{
+	    // ID of the directory in the database
+	    int m_id;
+	    // path of the directory
+	    std::string m_path;
+	};
+
+	void scanDirectory(const Directory& path, std::deque<Directory>& paths);
 
 	bool isMediaFile(const std::string& name);
 
@@ -53,11 +63,12 @@ class Scanner : public thread::Thread
 	std::deque<Command> m_commands;
 
 	// list of paths that will be scanned
-	std::deque<std::string> m_paths;
+	std::deque<Directory> m_paths;
 
 	thread::Mutex m_mutex;
 	thread::Condition m_cond;
 
+	Storage& m_storage;
 	ScannerListener& m_listener;
 
 	static const std::string s_mediaExtensions[];

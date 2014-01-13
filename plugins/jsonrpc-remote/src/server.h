@@ -40,6 +40,10 @@ class Server : public plugin::Plugin
 	void libraryGetFilesOfArtist(const Json::Value& request, Json::Value& response);
 	void libraryGetFilesOfAlbum(const Json::Value& request, Json::Value& response);
 
+	// library - directories
+	void libraryListDirectory(const Json::Value& request, Json::Value& response);
+
+	// library - metadata
 	void libraryUpdateMetadata(const Json::Value& request, Json::Value& response);
 
 	// player - queue

@@ -21,6 +21,9 @@ class SqliteStorage : public Storage
 
 	void open();
 
+	int ensureDirectory(const std::string& name, int parentId) override;
+	std::vector<std::shared_ptr<Directory>> listSubdirectories(int id) override;
+
 	bool addFile(File& file) override;
 
 	void clearMark() override;
@@ -30,6 +33,7 @@ class SqliteStorage : public Storage
 	std::vector<std::shared_ptr<File>> getFilesWithoutMetadata() override;
 	std::vector<std::shared_ptr<File>> getFilesOfArtist(int artistId) override;
 	std::vector<std::shared_ptr<File>> getFilesOfAlbum(int albumId) override;
+	std::vector<std::shared_ptr<File>> getFilesOfDirectory(int directoryId) override;
 
 	void setFileMetadata(const File& file) override;
 	void updateFileMetadata(const File& file) override;
@@ -56,6 +60,10 @@ class SqliteStorage : public Storage
 	// the database to store the music library
 	sqlite3* m_db;
 
+	sqlite3_stmt* m_getDirectory;
+	sqlite3_stmt* m_addDirectory;
+	sqlite3_stmt* m_getSubdirectories;
+
 	sqlite3_stmt* m_newFile;
 
 	sqlite3_stmt* m_getFile;
@@ -63,6 +71,7 @@ class SqliteStorage : public Storage
 	sqlite3_stmt* m_getFilesWithoutMeta;
 	sqlite3_stmt* m_getFilesOfArtist;
 	sqlite3_stmt* m_getFilesOfAlbum;
+	sqlite3_stmt* m_getFilesOfDirectory;
 	sqlite3_stmt* m_setFileMark;
 
 	sqlite3_stmt* m_setFileMeta;
