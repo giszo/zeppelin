@@ -34,6 +34,9 @@ class HttpRequest
 class HttpResponse
 {
     public:
+	virtual ~HttpResponse()
+	{}
+
 	virtual void addHeader(const std::string& key, const std::string& value) = 0;
 
 	virtual const HttpRequest& getRequest() const = 0;
