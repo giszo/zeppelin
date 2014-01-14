@@ -34,6 +34,8 @@ class AlsaOutput : public BaseOutput
 
 	int m_rate;
 	int m_channels;
+
+	std::vector<int16_t> m_buffer;
 };
 
 }

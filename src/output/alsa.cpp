@@ -86,13 +86,13 @@ void AlsaOutput::drop()
 // =====================================================================================================================
 void AlsaOutput::write(const float* samples, size_t count)
 {
-    int16_t ss[count * m_channels];
+    m_buffer.resize(count * m_channels);
 
     // convert float samples to signed 16bit integer
-    for (size_t i = 0; i < count * m_channels; ++i)
-	ss[i] = samples[i] * 32767;
+    for (size_t i = 0; i < m_buffer.size(); ++i)
+	m_buffer[i] = samples[i] * 32767;
 
-    const int16_t* data = ss;
+    const int16_t* data = &m_buffer[0];
 
     while (count > 0)
     {
