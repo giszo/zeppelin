@@ -48,6 +48,9 @@ class Player : public thread::Thread
 	    STOP
 	};
 
+	// local buffer to store samples read from the fifo before playing them
+	std::vector<float> m_buffer;
+
 	// the sample buffer we are going to play from
 	Fifo& m_fifo;
 

@@ -85,14 +85,15 @@ void Player::run()
 	    {
 		case Fifo::SAMPLES :
 		{
-		    float buffer[availSamples * m_format.getChannels()];
+		    // reserve enough space in the buffer
+		    m_buffer.resize(availSamples * m_format.getChannels());
 
 		    // read samples from the fifo
-		    size_t res = m_fifo.readSamples(buffer, sizeof(buffer));
+		    size_t res = m_fifo.readSamples(&m_buffer[0], m_format.sizeOfSamples(availSamples));
 		    size_t samples = m_format.numOfSamples(res);
 
 		    // perform volume filter
-		    float* p = buffer;
+		    float* p = &m_buffer[0];
 		    m_volumeFilter.run(p, samples, m_format);
 
 		    // play the data
