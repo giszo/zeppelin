@@ -110,7 +110,8 @@ void SqliteStorage::open()
     prepareStatement(&m_getFilesOfDirectory,
                      R"(SELECT id, path, name, size, length, artist_id, album_id, title, year, track_index, type, sampling_rate
                         FROM files
-                        WHERE directory_id = ?)");
+                        WHERE directory_id = ?
+                        ORDER BY name)");
     prepareStatement(&m_setFileMark, "UPDATE files SET mark = 1 WHERE id = ?");
     prepareStatement(&m_setDirectoryMark, "UPDATE directories SET mark = 1 WHERE id = ?");
 
