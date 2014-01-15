@@ -81,6 +81,7 @@ void SqliteStorage::open()
 
     // prepare statements
     prepareStatement(&m_getDirectory, "SELECT id FROM directories WHERE parent_id IS ? and NAME = ?");
+    prepareStatement(&m_getDirectoryById, "SELECT name FROM directories WHERE id = ?");
     prepareStatement(&m_addDirectory, "INSERT INTO directories(parent_id, name) VALUES(?, ?)");
     prepareStatement(&m_getSubdirectories, "SELECT id, name FROM directories WHERE parent_id IS ?");
 
@@ -153,6 +154,28 @@ void SqliteStorage::open()
 
     prepareStatement(&m_deleteNonMarkedFiles, "DELETE FROM files WHERE mark = 0");
     prepareStatement(&m_deleteNonMarkedDirectories, "DELETE FROM directories WHERE mark = 0");
+}
+
+// =====================================================================================================================
+std::shared_ptr<library::Directory> SqliteStorage::getDirectory(int id)
+{
+    std::shared_ptr<Directory> directory;
+
+    thread::BlockLock bl(m_mutex);
+
+    sqlite3_bind_int(m_getDirectoryById, 1, id);
+
+    if (sqlite3_step(m_getDirectoryById) != SQLITE_ROW)
+	throw FileNotFoundException("directory not found with ID");
+
+    directory = std::make_shared<Directory>(
+	id,
+	getText(m_getDirectoryById, 0) // name
+    );
+
+    sqlite3_reset(m_getDirectoryById);
+
+    return directory;
 }
 
 // =====================================================================================================================

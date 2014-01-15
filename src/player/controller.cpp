@@ -73,6 +73,16 @@ void Controller::queue(const std::shared_ptr<library::File>& file)
 }
 
 // =====================================================================================================================
+void Controller::queue(const std::shared_ptr<library::Directory>& directory,
+		       const std::vector<std::shared_ptr<library::File>>& files)
+{
+    thread::BlockLock bl(m_mutex);
+
+    m_decoderQueue.add(directory, files);
+    m_playerQueue.add(directory, files);
+}
+
+// =====================================================================================================================
 void Controller::queue(const std::shared_ptr<library::Album>& album,
 		      const std::vector<std::shared_ptr<library::File>>& files)
 {

@@ -58,6 +58,10 @@ Server::Server(const std::shared_ptr<library::MusicLibrary>& library,
 						  this,
 						  std::placeholders::_1,
 						  std::placeholders::_2);
+    m_rpcMethods["player_queue_directory"] = std::bind(&Server::playerQueueDirectory,
+						       this,
+						       std::placeholders::_1,
+						       std::placeholders::_2);
     m_rpcMethods["player_queue_album"] = std::bind(&Server::playerQueueAlbum,
 						   this,
 						   std::placeholders::_1,
@@ -386,6 +390,20 @@ void Server::playerQueueFile(const Json::Value& request, Json::Value& response)
 }
 
 // =====================================================================================================================
+void Server::playerQueueDirectory(const Json::Value& request, Json::Value& response)
+{
+    int directoryId = request["directory_id"].asInt();
+
+    LOG("Queueing directory: " << directoryId);
+
+    // TODO: handle not found exception here!
+    auto directory = m_library->getStorage().getDirectory(directoryId);
+    auto files = m_library->getStorage().getFilesOfDirectory(directoryId);
+
+    m_ctrl->queue(directory, files);
+}
+
+// =====================================================================================================================
 void Server::playerQueueAlbum(const Json::Value& request, Json::Value& response)
 {
     int albumId = request["id"].asInt();
@@ -403,18 +421,34 @@ void Server::playerQueueAlbum(const Json::Value& request, Json::Value& response)
 static inline void serializeQueueItem(Json::Value& parent, const std::shared_ptr<player::QueueItem>& item)
 {
     Json::Value qi(Json::objectValue);
-    qi["type"] = item->type();
 
     switch (item->type())
     {
 	case player::QueueItem::PLAYLIST :
 	    break;
 
+	case player::QueueItem::DIRECTORY :
+	{
+	    const player::Directory& di = static_cast<const player::Directory&>(*item);
+	    const library::Directory& directory = di.directory();
+
+	    qi["type"] = "dir";
+	    qi["id"] = directory.m_id;
+	    qi["name"] = directory.m_name;
+	    qi["files"] = Json::Value(Json::arrayValue);
+
+	    for (const auto& i : di.items())
+		serializeQueueItem(qi["files"], i);
+
+	    break;
+	}
+
 	case player::QueueItem::ALBUM :
 	{
 	    const player::Album& ai = static_cast<const player::Album&>(*item);
 	    const library::Album& album = ai.album();
 
+	    qi["type"] = "album";
 	    qi["id"] = album.m_id;
 	    qi["name"] = album.m_name;
 	    qi["files"] = Json::Value(Json::arrayValue);
@@ -429,6 +463,7 @@ static inline void serializeQueueItem(Json::Value& parent, const std::shared_ptr
 	{
 	    auto file = item->file();
 
+	    qi["type"] = "file";
 	    qi["id"] = file->m_id;
 	    qi["path"] = file->m_path;
 	    qi["name"] = file->m_name;

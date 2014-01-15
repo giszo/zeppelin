@@ -21,6 +21,7 @@ class SqliteStorage : public Storage
 
 	void open();
 
+	std::shared_ptr<Directory> getDirectory(int id) override;
 	int ensureDirectory(const std::string& name, int parentId) override;
 	std::vector<std::shared_ptr<Directory>> listSubdirectories(int id) override;
 
@@ -61,6 +62,7 @@ class SqliteStorage : public Storage
 	sqlite3* m_db;
 
 	sqlite3_stmt* m_getDirectory;
+	sqlite3_stmt* m_getDirectoryById;
 	sqlite3_stmt* m_addDirectory;
 	sqlite3_stmt* m_getSubdirectories;
 

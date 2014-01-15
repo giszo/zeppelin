@@ -3,6 +3,7 @@
 using player::QueueItem;
 using player::ContainerQueueItem;
 using player::File;
+using player::Directory;
 using player::Album;
 using player::Playlist;
 
@@ -235,6 +236,41 @@ std::vector<std::shared_ptr<QueueItem>> File::items() const
 }
 
 // =====================================================================================================================
+Directory::Directory(const std::shared_ptr<library::Directory>& d,
+		     const std::vector<std::shared_ptr<library::File>>& files)
+    : m_directory(d)
+{
+    for (const auto& f : files)
+	m_items.push_back(std::make_shared<File>(f));
+}
+
+// =====================================================================================================================
+QueueItem::Type Directory::type() const
+{
+    return DIRECTORY;
+}
+
+// =====================================================================================================================
+std::shared_ptr<QueueItem> Directory::clone() const
+{
+    std::shared_ptr<Directory> d(new Directory());
+
+    d->m_index = m_index;
+    d->m_directory = m_directory;
+
+    for (const auto& item : m_items)
+	d->m_items.push_back(item->clone());
+
+    return d;
+}
+
+// =====================================================================================================================
+const library::Directory& Directory::directory() const
+{
+    return *m_directory;
+}
+
+// =====================================================================================================================
 Album::Album(const std::shared_ptr<library::Album>& a,
 	     const std::vector<std::shared_ptr<library::File>>& files)
     : m_album(a)
@@ -273,6 +309,13 @@ const library::Album& Album::album() const
 void Playlist::add(const std::shared_ptr<library::File>& f)
 {
     m_items.push_back(std::make_shared<File>(f));
+}
+
+// =====================================================================================================================
+void Playlist::add(const std::shared_ptr<library::Directory>& directory,
+		   const std::vector<std::shared_ptr<library::File>>& files)
+{
+    m_items.push_back(std::make_shared<Directory>(directory, files));
 }
 
 // =====================================================================================================================

@@ -12,7 +12,7 @@ namespace player
 class QueueItem
 {
     public:
-	enum Type { PLAYLIST, ALBUM, FILE };
+	enum Type { PLAYLIST, ALBUM, DIRECTORY, FILE };
 	enum Position { FIRST, LAST };
 
 	virtual ~QueueItem() {}
@@ -108,6 +108,26 @@ class File : public QueueItem
 	std::shared_ptr<library::File> m_file;
 };
 
+class Directory : public ContainerQueueItem
+{
+    public:
+	Directory(const std::shared_ptr<library::Directory>& directory,
+		  const std::vector<std::shared_ptr<library::File>>& files);
+
+	Type type() const override;
+
+	std::shared_ptr<QueueItem> clone() const override;
+
+	const library::Directory& directory() const;
+
+    private:
+	// used for cloning
+	Directory()
+	{}
+
+	std::shared_ptr<library::Directory> m_directory;
+};
+
 class Album : public ContainerQueueItem
 {
     public:
@@ -132,6 +152,8 @@ class Playlist : public ContainerQueueItem
 {
     public:
 	void add(const std::shared_ptr<library::File>& f);
+	void add(const std::shared_ptr<library::Directory>& directory,
+		 const std::vector<std::shared_ptr<library::File>>& files);
 	void add(const std::shared_ptr<library::Album>& album,
 		 const std::vector<std::shared_ptr<library::File>>& files);
 
