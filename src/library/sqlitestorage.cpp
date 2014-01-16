@@ -312,8 +312,8 @@ std::shared_ptr<library::File> SqliteStorage::getFile(int id)
 	getText(m_getFile, 1), // name
 	sqlite3_column_int64(m_getFile, 2), // size
 	sqlite3_column_int(m_getFile, 3), // length
-	getText(m_getFile, 8), // artist
-	getText(m_getFile, 7), // album
+	getText(m_getFile, 10), // artist
+	getText(m_getFile, 9), // album
 	getText(m_getFile, 4), // title
 	sqlite3_column_int(m_getFile, 5), // year
 	sqlite3_column_int(m_getFile, 6), // track index
