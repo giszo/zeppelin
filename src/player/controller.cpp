@@ -258,6 +258,10 @@ void Controller::run()
 
 	    case SEEK :
 	    {
+		// seeking is only allowed in playing and paused states
+		if (m_state != PLAYING && m_state != PAUSED)
+		    break;
+
 		Seek& s = static_cast<Seek&>(*cmd);
 
 		LOG("controller: seek " << s.m_seconds);
