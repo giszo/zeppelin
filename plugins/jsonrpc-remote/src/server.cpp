@@ -371,6 +371,8 @@ void Server::libraryGetMetadata(const Json::Value& request, Json::Value& respons
     response["title"] = file->m_title;
     response["year"] = file->m_year;
     response["track_index"] = file->m_trackIndex;
+    response["id"] = file->m_id;
+    response["name"] = file->m_name;
 }
 
 // =====================================================================================================================
