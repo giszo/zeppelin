@@ -44,6 +44,7 @@ class Server : public plugin::Plugin
 	void libraryListDirectory(const Json::Value& request, Json::Value& response);
 
 	// library - metadata
+	void libraryGetMetadata(const Json::Value& request, Json::Value& response);
 	void libraryUpdateMetadata(const Json::Value& request, Json::Value& response);
 
 	// player - queue

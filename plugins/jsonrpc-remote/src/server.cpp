@@ -48,6 +48,10 @@ Server::Server(const std::shared_ptr<library::MusicLibrary>& library,
 						       std::placeholders::_2);
 
     // library - metadata
+    m_rpcMethods["library_get_metadata"] = std::bind(&Server::libraryGetMetadata,
+						     this,
+						     std::placeholders::_1,
+						     std::placeholders::_2);
     m_rpcMethods["library_update_metadata"] = std::bind(&Server::libraryUpdateMetadata,
 							this,
 							std::placeholders::_1,
@@ -354,6 +358,19 @@ void Server::libraryListDirectory(const Json::Value& request, Json::Value& respo
 
 	response[i++].swap(file);
     }
+}
+
+// =====================================================================================================================
+void Server::libraryGetMetadata(const Json::Value& request, Json::Value& response)
+{
+    auto file = m_library->getStorage().getFile(request["id"].asInt());
+
+    response = Json::Value(Json::objectValue);
+    response["artist"] = file->m_artist;
+    response["album"] = file->m_album;
+    response["title"] = file->m_title;
+    response["year"] = file->m_year;
+    response["track_index"] = file->m_trackIndex;
 }
 
 // =====================================================================================================================
