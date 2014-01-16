@@ -215,7 +215,7 @@ void Server::libraryGetArtists(const Json::Value& request, Json::Value& response
     response = Json::Value(Json::arrayValue);
     response.resize(artists.size());
 
-    for (size_t i = 0; i < artists.size(); ++i)
+    for (Json::Value::ArrayIndex i = 0; i < artists.size(); ++i)
     {
 	const auto& a = artists[i];
 
@@ -236,7 +236,7 @@ void Server::libraryGetAlbums(const Json::Value& request, Json::Value& response)
     response = Json::Value(Json::arrayValue);
     response.resize(albums.size());
 
-    for (size_t i = 0; i < albums.size(); ++i)
+    for (Json::Value::ArrayIndex i = 0; i < albums.size(); ++i)
     {
 	const auto& a = albums[i];
 
@@ -259,7 +259,7 @@ void Server::libraryGetAlbumsByArtist(const Json::Value& request, Json::Value& r
     response = Json::Value(Json::arrayValue);
     response.resize(albums.size());
 
-    for (size_t i = 0; i < albums.size(); ++i)
+    for (Json::Value::ArrayIndex i = 0; i < albums.size(); ++i)
     {
 	const auto& a = albums[i];
 
@@ -297,7 +297,7 @@ void Server::libraryGetFilesOfArtist(const Json::Value& request, Json::Value& re
     response = Json::Value(Json::arrayValue);
     response.resize(files.size());
 
-    for (size_t i = 0; i < files.size(); ++i)
+    for (Json::Value::ArrayIndex i = 0; i < files.size(); ++i)
     {
 	Json::Value file(Json::objectValue);
 	serializeFile(file, *files[i]);
@@ -314,7 +314,7 @@ void Server::libraryGetFilesOfAlbum(const Json::Value& request, Json::Value& res
     response = Json::Value(Json::arrayValue);
     response.resize(files.size());
 
-    for (size_t i = 0; i < files.size(); ++i)
+    for (Json::Value::ArrayIndex i = 0; i < files.size(); ++i)
     {
 	Json::Value file(Json::objectValue);
 	serializeFile(file, *files[i]);
@@ -523,7 +523,7 @@ void Server::playerStatus(const Json::Value& request, Json::Value& response)
     response["volume"] = s.m_volume;
     response["index"] = Json::Value(Json::arrayValue);
     response["index"].resize(s.m_index.size());
-    for (size_t i = 0; i < s.m_index.size(); ++i)
+    for (Json::Value::ArrayIndex i = 0; i < s.m_index.size(); ++i)
 	response["index"][i] = s.m_index[i];
 }
 
