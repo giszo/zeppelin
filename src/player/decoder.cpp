@@ -52,6 +52,14 @@ void Decoder::stopDecoding()
 }
 
 // =====================================================================================================================
+void Decoder::seek(off_t seconds)
+{
+    thread::BlockLock bl(m_mutex);
+    m_commands.push_back(std::make_shared<Seek>(seconds));
+    m_cond.signal();
+}
+
+// =====================================================================================================================
 void Decoder::notify()
 {
     thread::BlockLock bl(m_mutex);
@@ -127,6 +135,25 @@ void Decoder::run()
 		    LOG("decoder: stop");
 		    m_fifo.reset();
 		    working = false;
+		    break;
+
+		case SEEK :
+		    LOG("decoder: seek");
+
+		    if (!m_input)
+		    {
+			LOG("decoder: unable to seek without input!");
+			break;
+		    }
+
+		    if (working)
+		    {
+			LOG("decoder: tried to seek without stopping");
+			break;
+		    }
+
+		    m_input->seek(static_cast<Seek&>(*cmd).m_seconds * m_format.getRate());
+
 		    break;
 
 		case NOTIFY :

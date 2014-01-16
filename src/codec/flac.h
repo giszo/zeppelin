@@ -23,6 +23,8 @@ class Flac : public BaseCodec
 
 	bool decode(float*& samples, size_t& count) override;
 
+	void seek(off_t sample) override;
+
 	Metadata readMetadata() override;
 
     private:

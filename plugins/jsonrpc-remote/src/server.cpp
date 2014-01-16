@@ -89,6 +89,7 @@ Server::Server(const std::shared_ptr<library::MusicLibrary>& library,
     m_rpcMethods["player_play"] = std::bind(&Server::playerPlay, this, std::placeholders::_1, std::placeholders::_2);
     m_rpcMethods["player_pause"] = std::bind(&Server::playerPause, this, std::placeholders::_1, std::placeholders::_2);
     m_rpcMethods["player_stop"] = std::bind(&Server::playerStop, this, std::placeholders::_1, std::placeholders::_2);
+    m_rpcMethods["player_seek"] = std::bind(&Server::playerSeek, this, std::placeholders::_1, std::placeholders::_2);
     m_rpcMethods["player_prev"] = std::bind(&Server::playerPrev, this, std::placeholders::_1, std::placeholders::_2);
     m_rpcMethods["player_next"] = std::bind(&Server::playerNext, this, std::placeholders::_1, std::placeholders::_2);
     m_rpcMethods["player_goto"] = std::bind(&Server::playerGoto, this, std::placeholders::_1, std::placeholders::_2);
@@ -542,6 +543,12 @@ void Server::playerPause(const Json::Value& request, Json::Value& response)
 void Server::playerStop(const Json::Value& request, Json::Value& response)
 {
     m_ctrl->stop();
+}
+
+// =====================================================================================================================
+void Server::playerSeek(const Json::Value& request, Json::Value& response)
+{
+    m_ctrl->seek(request["seconds"].asInt());
 }
 
 // =====================================================================================================================

@@ -125,6 +125,14 @@ void Controller::stop()
 }
 
 // =====================================================================================================================
+void Controller::seek(off_t seconds)
+{
+    thread::BlockLock bl(m_mutex);
+    m_commands.push_back(std::make_shared<Seek>(seconds));
+    m_cond.signal();
+}
+
+// =====================================================================================================================
 void Controller::prev()
 {
     command(PREV);
@@ -247,6 +255,25 @@ void Controller::run()
 		m_state = PAUSED;
 
 		break;
+
+	    case SEEK :
+	    {
+		Seek& s = static_cast<Seek&>(*cmd);
+
+		LOG("controller: seek " << s.m_seconds);
+
+		if (m_state == PLAYING)
+		    stopPlayback();
+
+		// seek to the given position
+		m_decoder->seek(s.m_seconds);
+		m_player->seek(s.m_seconds);
+
+		if (m_state == PLAYING)
+		    startPlayback();
+
+		break;
+	    }
 
 	    case PREV :
 	    case NEXT :

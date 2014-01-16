@@ -42,6 +42,9 @@ class BaseCodec
 	 */
 	virtual bool decode(float*& samples, size_t& count) = 0;
 
+	// seeks to the given sample offset
+	virtual void seek(off_t sample) = 0;
+
 	/// returns informations about the media
 	virtual Metadata readMetadata() = 0;
 

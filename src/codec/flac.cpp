@@ -173,6 +173,16 @@ bool Flac::decode(float*& samples, size_t& count)
 }
 
 // =====================================================================================================================
+void Flac::seek(off_t sample)
+{
+    if (!FLAC__stream_decoder_seek_absolute(m_decoder, sample))
+    {
+	LOG("flac: seek error");
+	// TODO: call FLAC__stream_decoder_flush() here?
+    }
+}
+
+// =====================================================================================================================
 static inline void convertSample(const FLAC__int32 in, float& out, unsigned scale)
 {
     out = (float)in / scale;

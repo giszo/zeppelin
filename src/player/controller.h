@@ -42,6 +42,7 @@ class Controller
 	    PLAY,
 	    PAUSE,
 	    STOP,
+	    SEEK,
 	    PREV,
 	    NEXT,
 	    GOTO,
@@ -77,6 +78,7 @@ class Controller
 	void play();
 	void pause();
 	void stop();
+	void seek(off_t seconds);
 	void prev();
 	void next();
 	void goTo(const std::vector<int>& index);
@@ -116,6 +118,12 @@ class Controller
 	{
 	    CmdBase(Command cmd) : m_cmd(cmd) {}
 	    Command m_cmd;
+	};
+
+	struct Seek : public CmdBase
+	{
+	    Seek(off_t seconds) : CmdBase(SEEK), m_seconds(seconds) {}
+	    off_t m_seconds;
 	};
 
 	struct GoTo : public CmdBase

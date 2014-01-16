@@ -35,6 +35,8 @@ class Player : public thread::Thread
 	void pausePlayback();
 	void stopPlayback();
 
+	void seek(off_t seconds);
+
 	void run();
 
     private:
@@ -45,7 +47,20 @@ class Player : public thread::Thread
 	{
 	    START,
 	    PAUSE,
-	    STOP
+	    STOP,
+	    SEEK
+	};
+
+	struct CmdBase
+	{
+	    CmdBase(Command cmd) : m_cmd(cmd) {}
+	    Command m_cmd;
+	};
+
+	struct Seek : public CmdBase
+	{
+	    Seek(off_t seconds) : CmdBase(SEEK), m_seconds(seconds) {}
+	    off_t m_seconds;
 	};
 
 	// local buffer to store samples read from the fifo before playing them
@@ -63,7 +78,7 @@ class Player : public thread::Thread
 	// number of played samples
 	std::atomic_uint m_position;
 
-	std::deque<Command> m_commands;
+	std::deque<std::shared_ptr<CmdBase>> m_commands;
 
 	thread::Mutex m_mutex;
 	thread::Condition m_cond;

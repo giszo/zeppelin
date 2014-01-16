@@ -32,6 +32,7 @@ class Decoder : public thread::Thread
 	void startDecoding();
 	void stopDecoding();
 
+	void seek(off_t seconds);
 	void notify();
 
     private:
@@ -47,6 +48,7 @@ class Decoder : public thread::Thread
 	    INPUT,
 	    START,
 	    STOP,
+	    SEEK,
 	    NOTIFY
 	};
 
@@ -60,6 +62,12 @@ class Decoder : public thread::Thread
 	{
 	    Input(const std::shared_ptr<codec::BaseCodec>& input) : CmdBase(INPUT), m_input(input) {}
 	    std::shared_ptr<codec::BaseCodec> m_input;
+	};
+
+	struct Seek : public CmdBase
+	{
+	    Seek(off_t seconds) : CmdBase(SEEK), m_seconds(seconds) {}
+	    off_t m_seconds;
 	};
 
 	std::deque<std::shared_ptr<CmdBase>> m_commands;

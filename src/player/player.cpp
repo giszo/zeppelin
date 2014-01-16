@@ -34,7 +34,7 @@ unsigned Player::getPosition() const
 void Player::startPlayback()
 {
     thread::BlockLock bl(m_mutex);
-    m_commands.push_back(START);
+    m_commands.push_back(std::make_shared<CmdBase>(START));
     m_cond.signal();
 }
 
@@ -42,7 +42,7 @@ void Player::startPlayback()
 void Player::pausePlayback()
 {
     thread::BlockLock bl(m_mutex);
-    m_commands.push_back(PAUSE);
+    m_commands.push_back(std::make_shared<CmdBase>(PAUSE));
     m_cond.signal();
 }
 
@@ -50,12 +50,20 @@ void Player::pausePlayback()
 void Player::stopPlayback()
 {
     thread::BlockLock bl(m_mutex);
-    m_commands.push_back(STOP);
+    m_commands.push_back(std::make_shared<CmdBase>(STOP));
     m_cond.signal();
 
     // wait until all of the commands are processed, so the caller can make sure that playing is really stopped
     while (!m_commands.empty())
 	m_emptyCond.wait(m_mutex);
+}
+
+// =====================================================================================================================
+void Player::seek(off_t seconds)
+{
+    thread::BlockLock bl(m_mutex);
+    m_commands.push_back(std::make_shared<Seek>(seconds));
+    m_cond.signal();
 }
 
 // =====================================================================================================================
@@ -133,10 +141,10 @@ void Player::processCommands()
 
     while (!m_commands.empty())
     {
-	Command cmd = m_commands.front();
+	std::shared_ptr<CmdBase> cmd = m_commands.front();
 	m_commands.pop_front();
 
-	switch (cmd)
+	switch (cmd->m_cmd)
 	{
 	    case START :
 		LOG("player: start");
@@ -155,6 +163,14 @@ void Player::processCommands()
 		m_running = false;
 		m_output->drop();
 		break;
+
+	    case SEEK :
+	    {
+		Seek& s = static_cast<Seek&>(*cmd);
+		LOG("player: seek " << s.m_seconds);
+		m_position = s.m_seconds * m_format.getRate();
+		break;
+	    }
 	}
     }
 

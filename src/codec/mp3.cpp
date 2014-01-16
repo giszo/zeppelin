@@ -145,6 +145,13 @@ bool Mp3::decode(float*& samples, size_t& count)
 }
 
 // =====================================================================================================================
+void Mp3::seek(off_t sample)
+{
+    if (mpg123_seek(m_handle, sample, SEEK_SET) < 0)
+	LOG("mp3: unable to seek to " << sample);
+}
+
+// =====================================================================================================================
 void Mp3::create()
 {
     m_handle = mpg123_new(NULL, NULL);
