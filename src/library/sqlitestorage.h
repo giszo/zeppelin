@@ -49,15 +49,40 @@ class SqliteStorage : public Storage
 	void execute(const std::string& sql);
 	void prepareStatement(sqlite3_stmt** stmt, const std::string& sql);
 
-	std::string getText(sqlite3_stmt* stmt, int col);
-
-	void bindText(sqlite3_stmt* stmt, int col, const std::string& s);
-
 	int getFileIdByPath(const std::string& path, const std::string& name);
 	int getArtistId(const File& file);
 	int getAlbumId(const File& file, int artistId);
 
     private:
+	struct StatementHolder
+	{
+	    StatementHolder(sqlite3_stmt* stmt);
+	    ~StatementHolder();
+
+	    void bindNull(int col);
+	    void bindInt(int col, int value);
+	    void bindInt64(int col, int64_t value);
+	    void bindText(int col, const std::string& value);
+	    // a special bind function that binds NULL if the value is -1, otherwise the numeric value
+	    void bindIndex(int col, int value);
+
+	    int step();
+
+	    int columnCount();
+	    std::string tableName(int col);
+	    std::string columnName(int col);
+	    int columnType(int col);
+
+	    int getInt(int col);
+	    int64_t getInt64(int col);
+	    std::string getText(int col);
+
+	    sqlite3_stmt* m_stmt;
+	};
+
+    private:
+	void fillFile(StatementHolder& stmt, File& file);
+
 	// the database to store the music library
 	sqlite3* m_db;
 

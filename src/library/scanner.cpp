@@ -125,7 +125,12 @@ void Scanner::scanDirectory(const Directory& path, std::deque<Directory>& paths)
 	}
 	else if (isMediaFile(name))
 	{
-	    File file(-1, path.m_id, path.m_path, name, st.st_size);
+	    File file;
+	    file.m_directoryId = path.m_id;
+	    file.m_path = path.m_path;
+	    file.m_name = name;
+	    file.m_size = st.st_size;
+
 	    m_listener.musicFound(file);
 	}
     }

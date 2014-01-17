@@ -1,6 +1,7 @@
 #include "sqlitestorage.h"
 
 #include <thread/blocklock.h>
+#include <logger.h>
 
 using library::SqliteStorage;
 
@@ -164,17 +165,16 @@ std::shared_ptr<library::Directory> SqliteStorage::getDirectory(int id)
 
     thread::BlockLock bl(m_mutex);
 
-    sqlite3_bind_int(m_getDirectoryById, 1, id);
+    StatementHolder stmt(m_getDirectoryById);
+    stmt.bindInt(1, id);
 
-    if (sqlite3_step(m_getDirectoryById) != SQLITE_ROW)
+    if (stmt.step() != SQLITE_ROW)
 	throw FileNotFoundException("directory not found with ID");
 
     directory = std::make_shared<Directory>(
 	id,
-	getText(m_getDirectoryById, 0) // name
+	stmt.getText(0) // name
     );
-
-    sqlite3_reset(m_getDirectoryById);
 
     return directory;
 }
@@ -184,34 +184,37 @@ int SqliteStorage::ensureDirectory(const std::string& name, int parentId)
 {
     thread::BlockLock bl(m_mutex);
 
-    // first try to get the directory from the database
-    if (parentId == -1)
-	sqlite3_bind_null(m_getDirectory, 1);
-    else
-	sqlite3_bind_int(m_getDirectory, 1, parentId);
-    bindText(m_getDirectory, 2, name);
-    if (sqlite3_step(m_getDirectory) == SQLITE_ROW)
-    {
-	int id = sqlite3_column_int(m_getDirectory, 0);
-	sqlite3_reset(m_getDirectory);
+    int id;
 
-	// set mark on the directory
-	sqlite3_bind_int(m_setDirectoryMark, 1, id);
-	sqlite3_step(m_setDirectoryMark);
-	sqlite3_reset(m_setDirectoryMark);
+    // first try to get the directory from the database
+    {
+	StatementHolder stmt(m_getDirectory);
+	stmt.bindIndex(1, parentId);
+	stmt.bindText(2, name);
+
+	if (stmt.step() == SQLITE_ROW)
+	    id = stmt.getInt(0);
+	else
+	    id = -1;
+    }
+
+    // set mark on the directory and return its id if it was found
+    if (id != -1)
+    {
+	StatementHolder stmt(m_setDirectoryMark);
+	stmt.bindInt(1, id);
+	stmt.step();
 
 	return id;
     }
-    sqlite3_reset(m_getDirectory);
 
     // directory not found - insert it now ...
-    if (parentId == -1)
-	sqlite3_bind_null(m_addDirectory, 1);
-    else
-	sqlite3_bind_int(m_addDirectory, 1, parentId);
-    bindText(m_addDirectory, 2, name);
-    sqlite3_step(m_addDirectory);
-    sqlite3_reset(m_addDirectory);
+    {
+	StatementHolder stmt(m_addDirectory);
+	stmt.bindIndex(1, parentId);
+	stmt.bindText(2, name);
+	stmt.step();
+    }
 
     return sqlite3_last_insert_rowid(m_db);
 }
@@ -221,20 +224,18 @@ std::vector<std::shared_ptr<library::Directory>> SqliteStorage::listSubdirectori
 {
     std::vector<std::shared_ptr<library::Directory>> directories;
 
-    if (id == -1)
-	sqlite3_bind_null(m_getSubdirectories, 1);
-    else
-	sqlite3_bind_int(m_getSubdirectories, 1, id);
+    thread::BlockLock bl(m_mutex);
 
-    while (sqlite3_step(m_getSubdirectories) == SQLITE_ROW)
+    StatementHolder stmt(m_getSubdirectories);
+    stmt.bindIndex(1, id);
+
+    while (stmt.step() == SQLITE_ROW)
     {
 	directories.push_back(std::make_shared<Directory>(
-	    sqlite3_column_int(m_getSubdirectories, 0),
-	    getText(m_getSubdirectories, 1)
+	    stmt.getInt(0),
+	    stmt.getText(1)
 	));
     }
-
-    sqlite3_reset(m_getSubdirectories);
 
     return directories;
 }
@@ -251,20 +252,22 @@ bool SqliteStorage::addFile(File& file)
     if (id != -1)
     {
 	// set mark on the file
-	sqlite3_bind_int(m_setFileMark, 1, id);
-	sqlite3_step(m_setFileMark);
-	sqlite3_reset(m_setFileMark);
+	StatementHolder stmt(m_setFileMark);
+	stmt.bindInt(1, id);
+	stmt.step();
 
 	return false;
     }
 
     // add the new file
-    bindText(m_newFile, 1, file.m_path);
-    bindText(m_newFile, 2, file.m_name);
-    sqlite3_bind_int64(m_newFile, 3, file.m_size);
-    sqlite3_bind_int(m_newFile, 4, file.m_directoryId);
-    sqlite3_step(m_newFile);
-    sqlite3_reset(m_newFile);
+    {
+	StatementHolder stmt(m_newFile);
+	stmt.bindText(1, file.m_path);
+	stmt.bindText(2, file.m_name);
+	stmt.bindInt64(3, file.m_size);
+	stmt.bindInt(4, file.m_directoryId);
+	stmt.step();
+    }
 
     // set the ID of the new file
     file.m_id = sqlite3_last_insert_rowid(m_db);
@@ -301,27 +304,14 @@ std::shared_ptr<library::File> SqliteStorage::getFile(int id)
 
     thread::BlockLock bl(m_mutex);
 
-    sqlite3_bind_int(m_getFile, 1, id);
+    StatementHolder stmt(m_getFile);
+    stmt.bindInt(1, id);
 
-    if (sqlite3_step(m_getFile) != SQLITE_ROW)
+    if (stmt.step() != SQLITE_ROW)
 	throw FileNotFoundException("file not found with ID");
 
-    file = std::make_shared<File>(
-	id,
-	getText(m_getFile, 0), // path
-	getText(m_getFile, 1), // name
-	sqlite3_column_int64(m_getFile, 2), // size
-	sqlite3_column_int(m_getFile, 3), // length
-	getText(m_getFile, 10), // artist
-	getText(m_getFile, 9), // album
-	getText(m_getFile, 4), // title
-	sqlite3_column_int(m_getFile, 5), // year
-	sqlite3_column_int(m_getFile, 6), // track index
-	static_cast<codec::Type>(sqlite3_column_int(m_getFile, 7)), // type
-	sqlite3_column_int(m_getFile, 8) // sampling rate
-    );
-
-    sqlite3_reset(m_getFile);
+    file = std::make_shared<File>(id);
+    fillFile(stmt, *file);
 
     return file;
 }
@@ -333,17 +323,14 @@ std::vector<std::shared_ptr<library::File>> SqliteStorage::getFilesWithoutMetada
 
     thread::BlockLock bl(m_mutex);
 
-    while (sqlite3_step(m_getFilesWithoutMeta) == SQLITE_ROW)
+    StatementHolder stmt(m_getFilesWithoutMeta);
+
+    while (stmt.step() == SQLITE_ROW)
     {
-	files.push_back(std::make_shared<File>(
-	    sqlite3_column_int(m_getFilesWithoutMeta, 0),
-	    sqlite3_column_int(m_getFilesWithoutMeta, 4),
-	    getText(m_getFilesWithoutMeta, 1),
-	    getText(m_getFilesWithoutMeta, 2),
-	    sqlite3_column_int64(m_getFilesWithoutMeta, 3)
-	));
+	std::shared_ptr<File> file = std::make_shared<File>();
+	fillFile(stmt, *file);
+	files.push_back(file);
     }
-    sqlite3_reset(m_getFilesWithoutMeta);
 
     return files;
 }
@@ -355,32 +342,17 @@ std::vector<std::shared_ptr<library::File>> SqliteStorage::getFilesOfArtist(int 
 
     thread::BlockLock bl(m_mutex);
 
-    if (artistId == -1)
-	sqlite3_bind_null(m_getFilesOfArtist, 1);
-    else
-	sqlite3_bind_int(m_getFilesOfArtist, 1, artistId);
+    StatementHolder stmt(m_getFilesOfArtist);
+    stmt.bindIndex(1, artistId);
 
-    while (sqlite3_step(m_getFilesOfArtist) == SQLITE_ROW)
+    while (stmt.step() == SQLITE_ROW)
     {
-	files.push_back(std::make_shared<File>(
-	    sqlite3_column_int(m_getFilesOfArtist, 0), // id
-	    getText(m_getFilesOfArtist, 1), // path
-	    getText(m_getFilesOfArtist, 2), // name
-	    sqlite3_column_int64(m_getFilesOfArtist, 3), // size
-	    sqlite3_column_int(m_getFilesOfArtist, 4), // length
-		sqlite3_column_int(m_getFilesOfArtist, 5), // artist
-		sqlite3_column_int(m_getFilesOfArtist, 6), // album
-	    getText(m_getFilesOfArtist, 7), // title
-	    sqlite3_column_int(m_getFilesOfArtist, 8), // year
-	    sqlite3_column_int(m_getFilesOfArtist, 9), // track index
-	    static_cast<codec::Type>(sqlite3_column_int(m_getFilesOfArtist, 10)), // type
-	    sqlite3_column_int(m_getFilesOfArtist, 11) // sampling rate
-	));
+	std::shared_ptr<File> file = std::make_shared<File>();
+	fillFile(stmt, *file);
+	files.push_back(file);
     }
-    sqlite3_reset(m_getFilesOfArtist);
 
     return files;
-
 }
 
 // =====================================================================================================================
@@ -390,29 +362,17 @@ std::vector<std::shared_ptr<library::File>> SqliteStorage::getFilesOfAlbum(int a
 
     thread::BlockLock bl(m_mutex);
 
-    sqlite3_bind_int(m_getFilesOfAlbum, 1, albumId);
+    StatementHolder stmt(m_getFilesOfAlbum);
+    stmt.bindInt(1, albumId);
 
-    while (sqlite3_step(m_getFilesOfAlbum) == SQLITE_ROW)
+    while (stmt.step() == SQLITE_ROW)
     {
-	files.push_back(std::make_shared<File>(
-	    sqlite3_column_int(m_getFilesOfAlbum, 0), // id
-	    getText(m_getFilesOfAlbum, 1), // path
-	    getText(m_getFilesOfAlbum, 2), // name
-	    sqlite3_column_int64(m_getFilesOfAlbum, 3), // size
-	    sqlite3_column_int(m_getFilesOfAlbum, 4), // length
-	    sqlite3_column_int(m_getFilesOfAlbum, 5), // artist
-	    sqlite3_column_int(m_getFilesOfAlbum, 6), // album
-	    getText(m_getFilesOfAlbum, 7), // title
-	    sqlite3_column_int(m_getFilesOfAlbum, 8), // year
-	    sqlite3_column_int(m_getFilesOfAlbum, 9), // track index
-	    static_cast<codec::Type>(sqlite3_column_int(m_getFilesOfAlbum, 10)), // type
-	    sqlite3_column_int(m_getFilesOfAlbum, 11) // sampling rate
-	));
+	std::shared_ptr<File> file = std::make_shared<File>();
+	fillFile(stmt, *file);
+	files.push_back(file);
     }
-    sqlite3_reset(m_getFilesOfAlbum);
 
     return files;
-
 }
 
 // =====================================================================================================================
@@ -426,29 +386,17 @@ std::vector<std::shared_ptr<library::File>> SqliteStorage::getFilesOfDirectory(i
 
     thread::BlockLock bl(m_mutex);
 
-    sqlite3_bind_int(m_getFilesOfDirectory, 1, directoryId);
+    StatementHolder stmt(m_getFilesOfDirectory);
+    stmt.bindInt(1, directoryId);
 
-    while (sqlite3_step(m_getFilesOfDirectory) == SQLITE_ROW)
+    while (stmt.step() == SQLITE_ROW)
     {
-	files.push_back(std::make_shared<File>(
-	    sqlite3_column_int(m_getFilesOfDirectory, 0), // id
-	    getText(m_getFilesOfDirectory, 1), // path
-	    getText(m_getFilesOfDirectory, 2), // name
-	    sqlite3_column_int64(m_getFilesOfDirectory, 3), // size
-	    sqlite3_column_int(m_getFilesOfDirectory, 4), // length
-	    sqlite3_column_int(m_getFilesOfDirectory, 5), // artist
-	    sqlite3_column_int(m_getFilesOfDirectory, 6), // album
-	    getText(m_getFilesOfDirectory, 7), // title
-	    sqlite3_column_int(m_getFilesOfDirectory, 8), // year
-	    sqlite3_column_int(m_getFilesOfDirectory, 9), // track index
-	    static_cast<codec::Type>(sqlite3_column_int(m_getFilesOfDirectory, 10)), // type
-	    sqlite3_column_int(m_getFilesOfDirectory, 11) // sampling rate
-	));
+	std::shared_ptr<File> file = std::make_shared<File>();
+	fillFile(stmt, *file);
+	files.push_back(file);
     }
-    sqlite3_reset(m_getFilesOfDirectory);
 
     return files;
-
 }
 
 // =====================================================================================================================
@@ -459,46 +407,39 @@ void SqliteStorage::setFileMetadata(const library::File& file)
     int artistId = getArtistId(file);
     int albumId = getAlbumId(file, artistId);
 
-    if (artistId == -1)
-	sqlite3_bind_null(m_setFileMeta, 1);
-    else
-	sqlite3_bind_int(m_setFileMeta, 1, artistId);
-    if (albumId == -1)
-	sqlite3_bind_null(m_setFileMeta, 2);
-    else
-	sqlite3_bind_int(m_setFileMeta, 2, albumId);
-    sqlite3_bind_int(m_setFileMeta, 3, file.m_length);
-    bindText(m_setFileMeta, 4, file.m_title);
-    sqlite3_bind_int(m_setFileMeta, 5, file.m_year);
-    sqlite3_bind_int(m_setFileMeta, 6, file.m_trackIndex);
-    sqlite3_bind_int(m_setFileMeta, 7, file.m_type);
-    sqlite3_bind_int(m_setFileMeta, 8, file.m_samplingRate);
-    sqlite3_bind_int(m_setFileMeta, 9, file.m_id);
+    StatementHolder stmt(m_setFileMeta);
 
-    sqlite3_step(m_setFileMeta);
-    sqlite3_reset(m_setFileMeta);
+    stmt.bindIndex(1, artistId);
+    stmt.bindIndex(2, albumId);
+    stmt.bindInt(3, file.m_length);
+    stmt.bindText(4, file.m_title);
+    stmt.bindInt(5, file.m_year);
+    stmt.bindInt(6, file.m_trackIndex);
+    stmt.bindInt(7, file.m_type);
+    stmt.bindInt(8, file.m_samplingRate);
+    stmt.bindInt(9, file.m_id);
+
+    stmt.step();
 }
 
 // =====================================================================================================================
 void SqliteStorage::updateFileMetadata(const File& file)
 {
+    thread::BlockLock bl(m_mutex);
+
     int artistId = getArtistId(file);
     int albumId = getAlbumId(file, artistId);
 
-    if (artistId == -1)
-	sqlite3_bind_null(m_updateFileMeta, 1);
-    else
-	sqlite3_bind_int(m_updateFileMeta, 1, artistId);
-    if (albumId == -1)
-	sqlite3_bind_null(m_updateFileMeta, 2);
-    else
-	sqlite3_bind_int(m_updateFileMeta, 2, albumId);
-    bindText(m_updateFileMeta, 3, file.m_title);
-    sqlite3_bind_int(m_updateFileMeta, 4, file.m_year);
-    sqlite3_bind_int(m_updateFileMeta, 5, file.m_trackIndex);
-    sqlite3_bind_int(m_updateFileMeta, 6, file.m_id);
-    sqlite3_step(m_updateFileMeta);
-    sqlite3_reset(m_updateFileMeta);
+    StatementHolder stmt(m_updateFileMeta);
+
+    stmt.bindIndex(1, artistId);
+    stmt.bindIndex(2, albumId);
+    stmt.bindText(3, file.m_title);
+    stmt.bindInt(4, file.m_year);
+    stmt.bindInt(5, file.m_trackIndex);
+    stmt.bindInt(6, file.m_id);
+
+    stmt.step();
 }
 
 // =====================================================================================================================
@@ -508,16 +449,16 @@ std::vector<std::shared_ptr<library::Artist>> SqliteStorage::getArtists()
 
     thread::BlockLock bl(m_mutex);
 
-    while (sqlite3_step(m_getArtists) == SQLITE_ROW)
+    StatementHolder stmt(m_getArtists);
+
+    while (stmt.step() == SQLITE_ROW)
     {
 	std::shared_ptr<Artist> artist = std::make_shared<Artist>(
-	    sqlite3_column_type(m_getArtists, 0) == SQLITE_NULL ? -1 : sqlite3_column_int(m_getArtists, 0),
-	    getText(m_getArtists, 1),
-	    sqlite3_column_int(m_getArtists, 2));
+	    stmt.columnType(0) == SQLITE_NULL ? -1 : stmt.getInt(0),
+	    stmt.getText(1),
+	    stmt.getInt(2));
 	artists.push_back(artist);
     }
-
-    sqlite3_reset(m_getArtists);
 
     return artists;
 }
@@ -529,19 +470,18 @@ std::shared_ptr<library::Album> SqliteStorage::getAlbum(int id)
 
     thread::BlockLock bl(m_mutex);
 
-    sqlite3_bind_int(m_getAlbum, 1, id);
+    StatementHolder stmt(m_getAlbum);
+    stmt.bindInt(1, id);
 
-    if (sqlite3_step(m_getAlbum) != SQLITE_ROW)
+    if (stmt.step() != SQLITE_ROW)
 	throw FileNotFoundException("album not found"); // TODO: use a new exception here!
 
     album = std::make_shared<Album>(
 	id,
-	getText(m_getAlbum, 1),
-	sqlite3_column_int(m_getAlbum, 0),
+	stmt.getText(1),
+	stmt.getInt(0),
 	0,
 	0);
-
-    sqlite3_reset(m_getAlbum);
 
     return album;
 }
@@ -553,18 +493,18 @@ std::vector<std::shared_ptr<library::Album>> SqliteStorage::getAlbums()
 
     thread::BlockLock bl(m_mutex);
 
-    while (sqlite3_step(m_getAlbums) == SQLITE_ROW)
+    StatementHolder stmt(m_getAlbums);
+
+    while (stmt.step() == SQLITE_ROW)
     {
 	std::shared_ptr<Album> album = std::make_shared<Album>(
-	    sqlite3_column_int(m_getAlbums, 0),
-	    getText(m_getAlbums, 1),
-	    sqlite3_column_int(m_getAlbums, 2),
-	    sqlite3_column_int(m_getAlbums, 3),
-	    sqlite3_column_int(m_getAlbums, 4));
+	    stmt.getInt(0),
+	    stmt.getText(1),
+	    stmt.getInt(2),
+	    stmt.getInt(3),
+	    stmt.getInt(4));
 	albums.push_back(album);
     }
-
-    sqlite3_reset(m_getAlbums);
 
     return albums;
 }
@@ -576,20 +516,19 @@ std::vector<std::shared_ptr<library::Album>> SqliteStorage::getAlbumsByArtist(in
 
     thread::BlockLock bl(m_mutex);
 
-    sqlite3_bind_int(m_getAlbumsByArtist, 1, artistId);
+    StatementHolder stmt(m_getAlbumsByArtist);
+    stmt.bindInt(1, artistId);
 
-    while (sqlite3_step(m_getAlbumsByArtist) == SQLITE_ROW)
+    while (stmt.step() == SQLITE_ROW)
     {
 	std::shared_ptr<Album> album = std::make_shared<Album>(
-	    sqlite3_column_int(m_getAlbumsByArtist, 0),
-	    getText(m_getAlbumsByArtist, 1),
+	    stmt.getInt(0),
+	    stmt.getText(1),
 	    artistId,
-	    sqlite3_column_int(m_getAlbumsByArtist, 2),
-	    sqlite3_column_int(m_getAlbumsByArtist, 3));
+	    stmt.getInt(2),
+	    stmt.getInt(3));
 	albums.push_back(album);
     }
-
-    sqlite3_reset(m_getAlbumsByArtist);
 
     return albums;
 }
@@ -611,88 +550,220 @@ void SqliteStorage::prepareStatement(sqlite3_stmt** stmt, const std::string& sql
 }
 
 // =====================================================================================================================
-std::string SqliteStorage::getText(sqlite3_stmt* stmt, int col)
-{
-    const char* s = reinterpret_cast<const char*>(sqlite3_column_text(stmt, col));
-
-    if (!s)
-	return "";
-
-    return s;
-}
-
-// =====================================================================================================================
-void SqliteStorage::bindText(sqlite3_stmt* stmt, int col, const std::string& s)
-{
-    sqlite3_bind_text(stmt, col, s.c_str(), s.length(), NULL);
-}
-
-// =====================================================================================================================
 int SqliteStorage::getFileIdByPath(const std::string& path, const std::string& name)
 {
-    int id;
+    StatementHolder stmt(m_getFileByPath);
+    stmt.bindText(1, path);
+    stmt.bindText(2, name);
 
-    bindText(m_getFileByPath, 1, path);
-    bindText(m_getFileByPath, 2, name);
+    if (stmt.step() == SQLITE_ROW)
+	return stmt.getInt(0);
 
-    if (sqlite3_step(m_getFileByPath) == SQLITE_ROW)
-	id = sqlite3_column_int(m_getFileByPath, 0);
-    else
-	id = -1;
-
-    sqlite3_reset(m_getFileByPath);
-
-    return id;
+    return -1;
 }
 
 // =====================================================================================================================
 int SqliteStorage::getArtistId(const File& file)
 {
-    int id;
-
     if (file.m_artist.empty())
 	return -1;
 
-    bindText(m_addArtist, 1, file.m_artist);
-    if (sqlite3_step(m_addArtist) != SQLITE_DONE)
-	throw StorageException("unable to insert artist");
-    sqlite3_reset(m_addArtist);
+    // add artist
+    {
+	StatementHolder stmt(m_addArtist);
+	stmt.bindText(1, file.m_artist);
+	if (stmt.step() != SQLITE_DONE)
+	    throw StorageException("unable to insert artist");
+    }
 
-    bindText(m_getArtistIdByName, 1, file.m_artist);
-    if (sqlite3_step(m_getArtistIdByName) != SQLITE_ROW)
-	throw StorageException("unable to get artist after inserting!");
-    id = sqlite3_column_int(m_getArtistIdByName, 0);
-    sqlite3_reset(m_getArtistIdByName);
-
-    return id;
+    // get artist
+    {
+	StatementHolder stmt(m_getArtistIdByName);
+	stmt.bindText(1, file.m_artist);
+	if (stmt.step() != SQLITE_ROW)
+	    throw StorageException("unable to get artist after inserting!");
+	return stmt.getInt(0);
+    }
 }
 
 // =====================================================================================================================
 int SqliteStorage::getAlbumId(const File& file, int artistId)
 {
-    int id;
-
     if (file.m_album.empty())
 	return -1;
 
-    if (artistId == -1)
-	sqlite3_bind_null(m_addAlbum, 1);
-    else
-	sqlite3_bind_int(m_addAlbum, 1, artistId);
-    bindText(m_addAlbum, 2, file.m_album);
-    if (sqlite3_step(m_addAlbum) != SQLITE_DONE)
-	throw StorageException("unable to insert album");
-    sqlite3_reset(m_addAlbum);
+    // add album
+    {
+	StatementHolder stmt(m_addAlbum);
+	stmt.bindIndex(1, artistId);
+	stmt.bindText(2, file.m_album);
+	if (stmt.step() != SQLITE_DONE)
+	    throw StorageException("unable to insert album");
+    }
 
-    if (artistId == -1)
-	sqlite3_bind_null(m_getAlbumIdByName, 1);
-    else
-	sqlite3_bind_int(m_getAlbumIdByName, 1, artistId);
-    bindText(m_getAlbumIdByName, 2, file.m_album);
-    if (sqlite3_step(m_getAlbumIdByName) != SQLITE_ROW)
-	throw StorageException("unable to get album after inserting!");
-    id = sqlite3_column_int(m_getAlbumIdByName, 0);
-    sqlite3_reset(m_getAlbumIdByName);
+    // get album
+    {
+	StatementHolder stmt(m_getAlbumIdByName);
+	stmt.bindIndex(1, artistId);
+	stmt.bindText(2, file.m_album);
+	if (stmt.step() != SQLITE_ROW)
+	    throw StorageException("unable to get album after inserting!");
+	return stmt.getInt(0);
+    }
+}
 
-    return id;
+// =====================================================================================================================
+void SqliteStorage::fillFile(StatementHolder& stmt, File& file)
+{
+    for (int col = 0; col < stmt.columnCount(); ++col)
+    {
+	std::string tableName = stmt.tableName(col);
+	std::string colName = stmt.columnName(col);
+
+	if (tableName == "files")
+	{
+	    if (colName == "id")
+		file.m_id = stmt.getInt(col);
+	    if (colName == "directory_id")
+		file.m_directoryId = stmt.getInt(col);
+	    else if (colName == "path")
+		file.m_path = stmt.getText(col);
+	    else if (colName == "name")
+		file.m_name = stmt.getText(col);
+	    else if (colName == "size")
+		file.m_size = stmt.getInt64(col);
+	    else if (colName == "length")
+		file.m_length = stmt.getInt(col);
+	    else if (colName == "artist_id")
+		file.m_artistId = stmt.getInt(col);
+	    else if (colName == "album_id")
+		file.m_albumId = stmt.getInt(col);
+	    else if (colName == "title")
+		file.m_title = stmt.getText(col);
+	    else if (colName == "year")
+		file.m_year = stmt.getInt(col);
+	    else if (colName == "track_index")
+		file.m_trackIndex = stmt.getInt(col);
+	    else if (colName == "type")
+		file.m_type = static_cast<codec::Type>(stmt.getInt(col));
+	    else if (colName == "sampling_rate")
+		file.m_samplingRate = stmt.getInt(col);
+	    else
+		LOG("storage: unhandled files column: " << colName);
+	}
+	else if (tableName == "artists")
+	{
+	    if (colName == "name")
+		file.m_artist = stmt.getText(col);
+	    else
+		LOG("storage: unhandled artists column: " << colName);
+	}
+	else if (tableName == "albums")
+	{
+	    if (colName == "name")
+		file.m_album = stmt.getText(col);
+	    else
+		LOG("storage: unhandled albums column: " << colName);
+	}
+	else
+	    LOG("storage: unhandled table while filling file: " << tableName);
+    }
+}
+
+// =====================================================================================================================
+SqliteStorage::StatementHolder::StatementHolder(sqlite3_stmt* stmt)
+    : m_stmt(stmt)
+{
+}
+
+// =====================================================================================================================
+SqliteStorage::StatementHolder::~StatementHolder()
+{
+    sqlite3_reset(m_stmt);
+}
+
+// =====================================================================================================================
+void SqliteStorage::StatementHolder::bindNull(int col)
+{
+    sqlite3_bind_null(m_stmt, col);
+}
+
+// =====================================================================================================================
+void SqliteStorage::StatementHolder::bindInt(int col, int value)
+{
+    sqlite3_bind_int(m_stmt, col, value);
+}
+
+// =====================================================================================================================
+void SqliteStorage::StatementHolder::bindInt64(int col, int64_t value)
+{
+    sqlite3_bind_int64(m_stmt, col, value);
+}
+
+// =====================================================================================================================
+void SqliteStorage::StatementHolder::bindText(int col, const std::string& value)
+{
+    sqlite3_bind_text(m_stmt, col, value.c_str(), value.length(), NULL);
+}
+
+// =====================================================================================================================
+void SqliteStorage::StatementHolder::bindIndex(int col, int value)
+{
+    if (value == -1)
+	sqlite3_bind_null(m_stmt, col);
+    else
+	sqlite3_bind_int(m_stmt, col, value);
+}
+
+// =====================================================================================================================
+int SqliteStorage::StatementHolder::step()
+{
+    return sqlite3_step(m_stmt);
+}
+
+// =====================================================================================================================
+int SqliteStorage::StatementHolder::columnCount()
+{
+    return sqlite3_column_count(m_stmt);
+}
+
+// =====================================================================================================================
+std::string SqliteStorage::StatementHolder::tableName(int col)
+{
+    return sqlite3_column_table_name(m_stmt, col);
+}
+
+// =====================================================================================================================
+std::string SqliteStorage::StatementHolder::columnName(int col)
+{
+    return sqlite3_column_name(m_stmt, col);
+}
+
+// =====================================================================================================================
+int SqliteStorage::StatementHolder::columnType(int col)
+{
+    return sqlite3_column_type(m_stmt, col);
+}
+
+// =====================================================================================================================
+int SqliteStorage::StatementHolder::getInt(int col)
+{
+    return sqlite3_column_int(m_stmt, col);
+}
+
+// =====================================================================================================================
+int64_t SqliteStorage::StatementHolder::getInt64(int col)
+{
+    return sqlite3_column_int64(m_stmt, col);
+}
+
+// =====================================================================================================================
+std::string SqliteStorage::StatementHolder::getText(int col)
+{
+    const char* s = reinterpret_cast<const char*>(sqlite3_column_text(m_stmt, col));
+
+    if (!s)
+	return "";
+
+    return s;
 }
