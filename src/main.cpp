@@ -5,6 +5,7 @@
 #include <player/controller.h>
 #include <config/parser.h>
 #include <plugin/pluginmanager.h>
+#include <utils/signalhandler.h>
 
 #include <iostream>
 
@@ -34,6 +35,9 @@ int main(int argc, char** argv)
 	return 1;
     }
 
+    // create the signal handler before anything else to setup signal masking
+    utils::SignalHandler signalHandler;
+
     // open the music library
     library::SqliteStorage storage(config.m_library);
 
@@ -56,8 +60,11 @@ int main(int argc, char** argv)
     plugin::PluginManager pm(lib, ctrl);
     pm.loadAll(config);
 
-    // run the main loop of the player
-    ctrl->run();
+    // start the main loop of the player
+    ctrl->start();
+
+    // run the signal handler
+    signalHandler.run();
 
     mpg123_exit();
 

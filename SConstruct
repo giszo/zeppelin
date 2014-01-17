@@ -49,6 +49,7 @@ sources = [
     "thread/thread.cpp",
     "thread/condition.cpp",
     "utils/stringutils.cpp",
+    "utils/signalhandler.cpp",
     "config/parser.cpp",
     "filter/basefilter.cpp",
     "filter/volume.cpp",

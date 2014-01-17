@@ -6,6 +6,7 @@
 #include "fifo.h"
 #include "queue.h"
 
+#include <thread/thread.h>
 #include <thread/condition.h>
 #include <filter/volume.h>
 
@@ -33,7 +34,7 @@ struct Status
     int m_volume;
 };
 
-class Controller
+class Controller : public thread::Thread
 {
     public:
 	/// availables commands for the controller
@@ -95,7 +96,7 @@ class Controller
 	void command(Command cmd);
 
 	/// the mainloop of the controller
-	void run();
+	void run() override;
 
     private:
 	void startPlayback();
