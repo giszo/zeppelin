@@ -75,10 +75,7 @@ void Server::sendResponse(const httpserver::BufferedHttpResponse& response)
 	     MHD_YES);
 
     // set the headers on the response
-    const auto& headers = response.getHeaders();
-
-    for (const auto& hit : headers)
-	MHD_add_response_header(resp, hit.first.c_str(), hit.second.c_str());
+    sendHeaders(resp, response.getHeaders());
 
     MHD_queue_response(static_cast<const MHDHttpRequest&>(response.getRequest()).getConnection(),
 		       response.getStatus(),
@@ -94,6 +91,10 @@ void Server::sendResponse(const httpserver::FileHttpResponse& response)
     fstat(response.getFd(), &st);
 
     MHD_Response* resp = MHD_create_response_from_fd(st.st_size, response.getFd());
+
+    // set the headers on the response
+    sendHeaders(resp, response.getHeaders());
+
     MHD_queue_response(static_cast<const MHDHttpRequest&>(response.getRequest()).getConnection(),
 		       response.getStatus(),
 		       resp);
@@ -163,6 +164,13 @@ auto Server::lookupHandler(const std::string& url) const -> const Handler&
     }
 
     throw HandlerNotFoundException();
+}
+
+// =====================================================================================================================
+void Server::sendHeaders(MHD_Response* response, const std::unordered_map<std::string, std::string>& headers)
+{
+    for (const auto& it : headers)
+	MHD_add_response_header(response, it.first.c_str(), it.second.c_str());
 }
 
 // =====================================================================================================================

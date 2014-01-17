@@ -17,8 +17,13 @@ class FileServer : public plugin::Plugin
     private:
 	std::unique_ptr<httpserver::HttpResponse> processRequest(const httpserver::HttpRequest& request);
 
+	void setContentType(httpserver::HttpResponse& response, const std::string& url);
+
     private:
 	std::string m_documentRoot;
+
+	static const std::string s_contentType;
+	static std::map<std::string, std::string> s_contentTypeMap;
 };
 
 #endif

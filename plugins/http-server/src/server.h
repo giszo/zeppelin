@@ -45,6 +45,7 @@ class Server : public plugin::Plugin,
 
 	const Handler& lookupHandler(const std::string& url) const;
 
+	void sendHeaders(MHD_Response* response, const std::unordered_map<std::string, std::string>& headers);
 	void sendNotFound(MHD_Connection* connection);
 
 	static int _requestHandler(void* cls,
