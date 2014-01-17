@@ -6,7 +6,7 @@
 		"port" : 8080
 	    },
 	    "jsonrpc-remote" : {
-		"path" : "/"
+		"path" : "/jsonrpc"
 	    },
 	    "file-server" : {
 	        "document-root" : "/"
@@ -16,30 +16,30 @@
     },
 
     "library" : {
-        # root directories used for searching for music files
-        "roots" : [""],
+        // root directories used for searching for music files
+        "roots" : [],
 
-	# database file of the music library (optional)
-	"database" : ""
+	// database file of the music library (optional)
+	"database" : "library.db"
     },
 
-    # filter configurations
+    // filter configurations
     "filter" : {
         "resample" : {
-	    # resampling quality (optional)
-	    # values: best, medium, fastest
-	    "quality" : ""
+	    // resampling quality (optional)
+	    // values: best, medium, fastest
+	    "quality" : "best"
         }
     },
 
-    # audio output configurations
+    // audio output configurations
     "output" : {
-        # ALSA
+	// ALSA
         "alsa" : {
-	    # the name of the PCM to use for playing
-	    "pcm" : "",
-	    # maximum hardware buffer size in frames (optional)
-	    "buffer-max" : 0
+	    // the name of the PCM to use for playing
+	    "pcm" : "default",
+	    // maximum hardware buffer size in frames (optional)
+	    "buffer-max" : 24000
         }
     }
 }
