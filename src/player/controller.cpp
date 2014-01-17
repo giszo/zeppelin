@@ -269,6 +269,11 @@ void Controller::run()
 		if (m_state == PLAYING)
 		    stopPlayback();
 
+		// set decoder queue index to the same as the player
+		setDecoderToPlayerIndex();
+		// load the file into the decoder
+		setDecoderInput();
+
 		// seek to the given position
 		m_decoder->seek(s.m_seconds);
 		m_player->seek(s.m_seconds);
@@ -288,7 +293,7 @@ void Controller::run()
 		if (m_state == PLAYING || m_state == PAUSED)
 		{
 		    stopPlayback();
-		    m_decoderInitialized = false;
+		    invalidateDecoder();
 		}
 
 		if (cmd->m_cmd == PREV)
@@ -312,9 +317,7 @@ void Controller::run()
 		}
 
 		// set the decoder to the same position
-		std::vector<int> it;
-		m_playerQueue.get(it);
-		m_decoderQueue.set(it);
+		setDecoderToPlayerIndex();
 
 		// resume playback if it was running before
 		if (m_state == PLAYING)
@@ -373,8 +376,7 @@ void Controller::run()
 			stopPlayback();
 		    }
 
-		    m_decoder->setInput(nullptr);
-		    m_decoderInitialized = false;
+		    invalidateDecoder();
 		}
 
 		// remove the selected subtree from the queue
@@ -408,8 +410,7 @@ void Controller::run()
 		    // stop playback
 		    stopPlayback();
 		    // invalidate the decoder
-		    m_decoder->setInput(nullptr);
-		    m_decoderInitialized = false;
+		    invalidateDecoder();
 		    // update state
 		    m_state = STOPPED;
 		}
@@ -430,11 +431,8 @@ void Controller::run()
 		stopPlayback();
 
 		// reset the decoder index to the currently played song
-		std::vector<int> it;
-		m_playerQueue.get(it);
-		m_decoderQueue.set(it);
-		m_decoderInitialized = false;
-		m_decoder->setInput(nullptr);
+		setDecoderToPlayerIndex();
+		invalidateDecoder();
 
 		m_state = STOPPED;
 
@@ -447,8 +445,7 @@ void Controller::run()
 		// jump to the next file
 		if (!m_decoderQueue.next())
 		{
-		    m_decoder->setInput(nullptr);
-		    m_decoderInitialized = false;
+		    invalidateDecoder();
 		    break;
 		}
 
@@ -516,8 +513,23 @@ void Controller::setDecoderInput()
 	return;
     }
 
+    invalidateDecoder();
+}
+
+// =====================================================================================================================
+void Controller::invalidateDecoder()
+{
     m_decoder->setInput(nullptr);
     m_decoderInitialized = false;
+}
+
+// =====================================================================================================================
+void Controller::setDecoderToPlayerIndex()
+{
+    std::vector<int> it;
+
+    m_playerQueue.get(it);
+    m_decoderQueue.set(it);
 }
 
 // =====================================================================================================================

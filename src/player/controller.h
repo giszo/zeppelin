@@ -101,7 +101,12 @@ class Controller
 	void startPlayback();
 	void stopPlayback();
 
+	// loads the selected file from the decoder queue into the decoder
 	void setDecoderInput();
+	// invalidates the decoder by clearing its file
+	void invalidateDecoder();
+	// sets the decoder queue index to the same position as the player queue
+	void setDecoderToPlayerIndex();
 
 	std::shared_ptr<codec::BaseCodec> openFile(const library::File& file);
 
