@@ -5,16 +5,18 @@
 #include <thread/blocklock.h>
 #include <logger.h>
 
+#include <zeppelin/library/storage.h>
+
 using library::MetaParser;
 
 // =====================================================================================================================
-MetaParser::MetaParser(MusicLibrary& library)
-    : m_library(library)
+MetaParser::MetaParser(zeppelin::library::Storage& storage)
+    : m_storage(storage)
 {
 }
 
 // =====================================================================================================================
-void MetaParser::add(const std::shared_ptr<File>& file)
+void MetaParser::add(const std::shared_ptr<zeppelin::library::File>& file)
 {
     thread::BlockLock bl(m_mutex);
     m_files.push_back(file);
@@ -28,14 +30,14 @@ void MetaParser::run()
     {
 	thread::BlockLock bl(m_mutex);
 
-	auto files = m_library.getStorage().getFilesWithoutMetadata();
+	auto files = m_storage.getFilesWithoutMetadata();
 	for (const auto& f : files)
 	    m_files.push_back(f);
     }
 
     while (1)
     {
-	std::shared_ptr<File> file;
+	std::shared_ptr<zeppelin::library::File> file;
 
 	m_mutex.lock();
 
@@ -48,12 +50,12 @@ void MetaParser::run()
 	m_mutex.unlock();
 
 	parse(*file);
-	m_library.getStorage().setFileMetadata(*file);
+	m_storage.setFileMetadata(*file);
     }
 }
 
 // =====================================================================================================================
-void MetaParser::parse(File& file)
+void MetaParser::parse(zeppelin::library::File& file)
 {
     LOG("Parsing meta information of " << file.m_path << "/" << file.m_name);
 
@@ -80,6 +82,6 @@ void MetaParser::parse(File& file)
     file.m_title = meta.getTitle();
     file.m_year = meta.m_year;
     file.m_trackIndex = meta.m_trackIndex;
-    file.m_type = meta.m_type;
+    file.m_codec = meta.m_codec;
     file.m_samplingRate = meta.m_rate;
 }

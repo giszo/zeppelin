@@ -1,14 +1,18 @@
-#ifndef LIBRARY_STORAGE_H_INCLUDED
-#define LIBRARY_STORAGE_H_INCLUDED
+#ifndef ZEPPELIN_LIBRARY_STORAGE_H_INCLUDED
+#define ZEPPELIN_LIBRARY_STORAGE_H_INCLUDED
 
-#include <codec/type.h>
-#include <config/config.h>
+#include <zeppelin/library/file.h>
+#include <zeppelin/library/directory.h>
+#include <zeppelin/library/artist.h>
+#include <zeppelin/library/album.h>
 
 #include <stdexcept>
 #include <string>
 #include <vector>
 #include <memory>
 
+namespace zeppelin
+{
 namespace library
 {
 
@@ -18,99 +22,6 @@ class FileNotFoundException : public std::runtime_error
 	FileNotFoundException(const std::string& error)
 	    : runtime_error(error)
 	{}
-};
-
-struct Artist
-{
-    Artist(int id, const std::string& name, int albums)
-	: m_id(id),
-	  m_name(name),
-	  m_albums(albums)
-    {}
-
-    int m_id;
-    std::string m_name;
-    int m_albums;
-};
-
-struct Album
-{
-    Album(int id, const std::string& name, int artist, int songs, int length)
-	: m_id(id),
-	  m_name(name),
-	  m_artist(artist),
-	  m_songs(songs),
-	  m_length(length)
-    {}
-
-    int m_id;
-    std::string m_name;
-    int m_artist;
-    /// number of songs in this album
-    int m_songs;
-    /// length of the album in seconds
-    int m_length;
-};
-
-struct File
-{
-    File()
-	: m_id(-1),
-	  m_size(0),
-	  m_length(0),
-	  m_artistId(-1),
-	  m_albumId(-1),
-	  m_year(0),
-	  m_trackIndex(0),
-	  m_type(codec::UNKNOWN),
-	  m_samplingRate(0)
-    {}
-
-    File(int id)
-	: m_id(id),
-	  m_size(0),
-	  m_length(0),
-	  m_artistId(-1),
-	  m_albumId(-1),
-	  m_year(0),
-	  m_trackIndex(0),
-	  m_type(codec::UNKNOWN),
-	  m_samplingRate(0)
-    {}
-
-    int m_id;
-    int m_directoryId;
-    std::string m_path;
-    std::string m_name;
-    // size of the file in bytes
-    int64_t m_size;
-
-    /// the length of the music file in seconds
-    int m_length;
-
-    std::string m_artist;
-    std::string m_album;
-    int m_artistId;
-    int m_albumId;
-    std::string m_title;
-    int m_year;
-    int m_trackIndex;
-
-    // the type of the file (mp3, flac, etc.)
-    codec::Type m_type;
-    // sampling rate of the file (44100Hz, 48000Hz, etc.)
-    int m_samplingRate;
-};
-
-struct Directory
-{
-    Directory(int id, const std::string& name)
-	: m_id(id),
-	  m_name(name)
-    {}
-
-    int m_id;
-    std::string m_name;
 };
 
 class StorageException : public std::runtime_error
@@ -124,10 +35,6 @@ class StorageException : public std::runtime_error
 class Storage
 {
     public:
-	Storage(const config::Library& config)
-	    : m_config(config)
-	{}
-
 	virtual ~Storage()
 	{}
 
@@ -174,11 +81,9 @@ class Storage
 	virtual std::vector<std::shared_ptr<Album>> getAlbums() = 0;
 	/// returns the available albums associated to the given artist
 	virtual std::vector<std::shared_ptr<Album>> getAlbumsByArtist(int artistId) = 0;
-
-    protected:
-	const config::Library& m_config;
 };
 
+}
 }
 
 #endif

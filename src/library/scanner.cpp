@@ -1,9 +1,10 @@
 #include "scanner.h"
-#include "storage.h"
 
 #include <thread/blocklock.h>
 #include <utils/stringutils.h>
 #include <logger.h>
+
+#include <zeppelin/library/storage.h>
 
 #include <dirent.h>
 #include <sys/types.h>
@@ -17,7 +18,7 @@ const std::string Scanner::s_mediaExtensions[] = {
 };
 
 // =====================================================================================================================
-Scanner::Scanner(Storage& storage, ScannerListener& listener)
+Scanner::Scanner(zeppelin::library::Storage& storage, ScannerListener& listener)
     : m_storage(storage),
       m_listener(listener)
 {
@@ -125,7 +126,7 @@ void Scanner::scanDirectory(const Directory& path, std::deque<Directory>& paths)
 	}
 	else if (isMediaFile(name))
 	{
-	    File file;
+	    zeppelin::library::File file(-1);
 	    file.m_directoryId = path.m_id;
 	    file.m_path = path.m_path;
 	    file.m_name = name;

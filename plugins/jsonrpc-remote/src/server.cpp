@@ -3,12 +3,14 @@
 #include <plugin/pluginmanager.h>
 #include <logger.h>
 
+#include <zeppelin/library/storage.h>
+
 #include <jsoncpp/json/reader.h>
 #include <jsoncpp/json/writer.h>
 
 // =====================================================================================================================
-Server::Server(const std::shared_ptr<library::MusicLibrary>& library,
-	       const std::shared_ptr<player::Controller>& ctrl)
+Server::Server(const std::shared_ptr<zeppelin::library::MusicLibrary>& library,
+	       const std::shared_ptr<zeppelin::player::Controller>& ctrl)
     : m_library(library),
       m_ctrl(ctrl)
 {
@@ -117,7 +119,7 @@ Server::Server(const std::shared_ptr<library::MusicLibrary>& library,
 }
 
 // =====================================================================================================================
-void Server::start(const Json::Value& config, plugin::PluginManager& pm)
+void Server::start(const Json::Value& config, zeppelin::plugin::PluginManager& pm)
 {
     if (!config.isMember("path") || !config["path"].isString())
     {
@@ -138,7 +140,7 @@ void Server::start(const Json::Value& config, plugin::PluginManager& pm)
 	httpServer.registerHandler(config["path"].asString(),
 	    std::bind(&Server::processRequest, this, std::placeholders::_1));
     }
-    catch (const plugin::PluginInterfaceNotFoundException& e)
+    catch (const zeppelin::plugin::PluginInterfaceNotFoundException&)
     {
 	LOG("jsonrpc-remote: http-server interface not found");
     }
@@ -278,7 +280,7 @@ void Server::libraryGetAlbumsByArtist(const Json::Value& request, Json::Value& r
 }
 
 // =====================================================================================================================
-static inline void serializeFile(Json::Value& file, const library::File& f)
+static inline void serializeFile(Json::Value& file, const zeppelin::library::File& f)
 {
     file["id"] = f.m_id;
     file["path"] = f.m_path;
@@ -287,7 +289,7 @@ static inline void serializeFile(Json::Value& file, const library::File& f)
     file["title"] = f.m_title;
     file["year"] = f.m_year;
     file["track_index"] = f.m_trackIndex;
-    file["codec"] = f.m_type;
+    file["codec"] = f.m_codec;
     file["artist_id"] = f.m_artistId;
     file["album_id"] = f.m_albumId;
     file["sampling_rate"] = f.m_samplingRate;
@@ -378,7 +380,7 @@ void Server::libraryGetMetadata(const Json::Value& request, Json::Value& respons
 // =====================================================================================================================
 void Server::libraryUpdateMetadata(const Json::Value& request, Json::Value& response)
 {
-    library::File file(request["id"].asInt());
+    zeppelin::library::File file(request["id"].asInt());
 
     file.m_artist = request["artist"].asString();
     file.m_album = request["album"].asString();
@@ -392,13 +394,13 @@ void Server::libraryUpdateMetadata(const Json::Value& request, Json::Value& resp
 // =====================================================================================================================
 void Server::playerQueueFile(const Json::Value& request, Json::Value& response)
 {
-    std::shared_ptr<library::File> file;
+    std::shared_ptr<zeppelin::library::File> file;
 
     try
     {
 	file = m_library->getStorage().getFile(request["id"].asInt());
     }
-    catch (const library::FileNotFoundException& e)
+    catch (const zeppelin::library::FileNotFoundException& e)
     {
 	LOG("File not found with ID: " << request["id"].asInt());
 	return;
@@ -438,19 +440,19 @@ void Server::playerQueueAlbum(const Json::Value& request, Json::Value& response)
 }
 
 // =====================================================================================================================
-static inline void serializeQueueItem(Json::Value& parent, const std::shared_ptr<player::QueueItem>& item)
+static inline void serializeQueueItem(Json::Value& parent, const std::shared_ptr<zeppelin::player::QueueItem>& item)
 {
     Json::Value qi(Json::objectValue);
 
     switch (item->type())
     {
-	case player::QueueItem::PLAYLIST :
+	case zeppelin::player::QueueItem::PLAYLIST :
 	    break;
 
-	case player::QueueItem::DIRECTORY :
+	case zeppelin::player::QueueItem::DIRECTORY :
 	{
-	    const player::Directory& di = static_cast<const player::Directory&>(*item);
-	    const library::Directory& directory = di.directory();
+	    const zeppelin::player::Directory& di = static_cast<const zeppelin::player::Directory&>(*item);
+	    const zeppelin::library::Directory& directory = di.directory();
 
 	    qi["type"] = "dir";
 	    qi["id"] = directory.m_id;
@@ -463,10 +465,10 @@ static inline void serializeQueueItem(Json::Value& parent, const std::shared_ptr
 	    break;
 	}
 
-	case player::QueueItem::ALBUM :
+	case zeppelin::player::QueueItem::ALBUM :
 	{
-	    const player::Album& ai = static_cast<const player::Album&>(*item);
-	    const library::Album& album = ai.album();
+	    const zeppelin::player::Album& ai = static_cast<const zeppelin::player::Album&>(*item);
+	    const zeppelin::library::Album& album = ai.album();
 
 	    qi["type"] = "album";
 	    qi["id"] = album.m_id;
@@ -479,7 +481,7 @@ static inline void serializeQueueItem(Json::Value& parent, const std::shared_ptr
 	    break;
 	}
 
-	case player::QueueItem::FILE :
+	case zeppelin::player::QueueItem::FILE :
 	{
 	    auto file = item->file();
 
@@ -489,7 +491,7 @@ static inline void serializeQueueItem(Json::Value& parent, const std::shared_ptr
 	    qi["name"] = file->m_name;
 	    qi["title"] = file->m_title;
 	    qi["length"] = file->m_length;
-	    qi["codec"] = file->m_type;
+	    qi["codec"] = file->m_codec;
 	    qi["sampling_rate"] = file->m_samplingRate;
 
 	    break;
@@ -517,7 +519,7 @@ void Server::playerQueueRemove(const Json::Value& request, Json::Value& response
 
     std::vector<int> i;
 
-    for (Json::UInt j = 0; j < index.size(); ++j)
+    for (Json::Value::ArrayIndex j = 0; j < index.size(); ++j)
 	i.push_back(index[j].asInt());
 
     m_ctrl->remove(i);
@@ -532,7 +534,7 @@ void Server::playerQueueRemoveAll(const Json::Value& request, Json::Value& respo
 // =====================================================================================================================
 void Server::playerStatus(const Json::Value& request, Json::Value& response)
 {
-    player::Status s = m_ctrl->getStatus();
+    zeppelin::player::Controller::Status s = m_ctrl->getStatus();
 
     response = Json::Value(Json::objectValue);
 

@@ -8,11 +8,17 @@
 #include <string>
 #include <deque>
 
+namespace zeppelin
+{
 namespace library
 {
-
 struct File;
 class Storage;
+}
+}
+
+namespace library
+{
 
 class ScannerListener
 {
@@ -23,13 +29,13 @@ class ScannerListener
 	virtual void scanningStarted() = 0;
 	virtual void scanningFinished() = 0;
 
-	virtual void musicFound(const File& file) = 0;
+	virtual void musicFound(const zeppelin::library::File& file) = 0;
 };
 
 class Scanner : public thread::Thread
 {
     public:
-	Scanner(Storage& storage, ScannerListener& listener);
+	Scanner(zeppelin::library::Storage& storage, ScannerListener& listener);
 
 	void add(const std::string& path);
 
@@ -68,7 +74,7 @@ class Scanner : public thread::Thread
 	thread::Mutex m_mutex;
 	thread::Condition m_cond;
 
-	Storage& m_storage;
+	zeppelin::library::Storage& m_storage;
 	ScannerListener& m_listener;
 
 	static const std::string s_mediaExtensions[];

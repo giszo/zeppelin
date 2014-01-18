@@ -3,14 +3,14 @@
 
 #include <plugins/http-server/httpserver.h>
 
-#include <plugin/plugin.h>
+#include <zeppelin/plugin/plugin.h>
 
 #include <microhttpd.h>
 
 #include <vector>
 #include <stdexcept>
 
-class Server : public plugin::Plugin,
+class Server : public zeppelin::plugin::Plugin,
 	       public httpserver::HttpServer
 {
     public:
@@ -20,7 +20,7 @@ class Server : public plugin::Plugin,
 	std::string getName() const override
 	{ return "http-server"; }
 
-	void start(const Json::Value& config, plugin::PluginManager& pm) override;
+	void start(const Json::Value& config, zeppelin::plugin::PluginManager& pm) override;
 	void stop() override;
 
 	void registerHandler(const std::string& url, const Handler& handler) override;

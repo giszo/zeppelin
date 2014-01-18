@@ -1,12 +1,14 @@
 #include "musiclibrary.h"
 
-using library::MusicLibrary;
+#include <zeppelin/library/storage.h>
+
+using library::MusicLibraryImpl;
 
 // =====================================================================================================================
-MusicLibrary::MusicLibrary(Storage& storage, const config::Library& config)
+MusicLibraryImpl::MusicLibraryImpl(zeppelin::library::Storage& storage, const config::Library& config)
     : m_roots(config.m_roots),
       m_scanner(storage, *this),
-      m_metaParser(*this),
+      m_metaParser(storage),
       m_storage(storage)
 {
     m_scanner.start();
@@ -14,13 +16,13 @@ MusicLibrary::MusicLibrary(Storage& storage, const config::Library& config)
 }
 
 // =====================================================================================================================
-library::Storage& MusicLibrary::getStorage()
+zeppelin::library::Storage& MusicLibraryImpl::getStorage()
 {
     return m_storage;
 }
 
 // =====================================================================================================================
-void MusicLibrary::scan()
+void MusicLibraryImpl::scan()
 {
     // scan all of the configured root directories
     for (const auto& r : m_roots)
@@ -30,7 +32,7 @@ void MusicLibrary::scan()
 }
 
 // =====================================================================================================================
-void MusicLibrary::scanningStarted()
+void MusicLibraryImpl::scanningStarted()
 {
     // Clear mark from all of the files before starting directory scanning. Mark will be put on existing files so we
     // can delete the non-marked files at the end of the scanning to remove deleted files from the library.
@@ -38,16 +40,16 @@ void MusicLibrary::scanningStarted()
 }
 
 // =====================================================================================================================
-void MusicLibrary::scanningFinished()
+void MusicLibraryImpl::scanningFinished()
 {
     // Delete non-marked files from the library
     m_storage.deleteNonMarked();
 }
 
 // =====================================================================================================================
-void MusicLibrary::musicFound(const File& file)
+void MusicLibraryImpl::musicFound(const zeppelin::library::File& file)
 {
-    std::shared_ptr<File> f(new File(file));
+    std::shared_ptr<zeppelin::library::File> f(new zeppelin::library::File(file));
 
     // add the file into the library and start metadata parsing if it is a new one
     if (m_storage.addFile(*f))

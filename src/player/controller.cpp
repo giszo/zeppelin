@@ -6,10 +6,10 @@
 
 #include <sstream>
 
-using player::Controller;
+using player::ControllerImpl;
 
 // =====================================================================================================================
-Controller::Controller(const config::Config& config)
+ControllerImpl::ControllerImpl(const config::Config& config)
     : m_state(STOPPED),
       m_decoderInitialized(false),
       m_fifo(4 * 1024 /* 4kB for now */)
@@ -38,14 +38,14 @@ Controller::Controller(const config::Config& config)
 }
 
 // =====================================================================================================================
-std::shared_ptr<player::Playlist> Controller::getQueue() const
+std::shared_ptr<zeppelin::player::Playlist> ControllerImpl::getQueue() const
 {
     thread::BlockLock bl(m_mutex);
-    return std::static_pointer_cast<Playlist>(m_playerQueue.clone());
+    return std::static_pointer_cast<zeppelin::player::Playlist>(m_playerQueue.clone());
 }
 
 // =====================================================================================================================
-auto Controller::getStatus() -> Status
+zeppelin::player::Controller::Status ControllerImpl::getStatus()
 {
     Status s;
 
@@ -64,7 +64,7 @@ auto Controller::getStatus() -> Status
 }
 
 // =====================================================================================================================
-void Controller::queue(const std::shared_ptr<library::File>& file)
+void ControllerImpl::queue(const std::shared_ptr<zeppelin::library::File>& file)
 {
     thread::BlockLock bl(m_mutex);
 
@@ -73,8 +73,8 @@ void Controller::queue(const std::shared_ptr<library::File>& file)
 }
 
 // =====================================================================================================================
-void Controller::queue(const std::shared_ptr<library::Directory>& directory,
-		       const std::vector<std::shared_ptr<library::File>>& files)
+void ControllerImpl::queue(const std::shared_ptr<zeppelin::library::Directory>& directory,
+			   const std::vector<std::shared_ptr<zeppelin::library::File>>& files)
 {
     thread::BlockLock bl(m_mutex);
 
@@ -83,8 +83,8 @@ void Controller::queue(const std::shared_ptr<library::Directory>& directory,
 }
 
 // =====================================================================================================================
-void Controller::queue(const std::shared_ptr<library::Album>& album,
-		      const std::vector<std::shared_ptr<library::File>>& files)
+void ControllerImpl::queue(const std::shared_ptr<zeppelin::library::Album>& album,
+			   const std::vector<std::shared_ptr<zeppelin::library::File>>& files)
 {
     thread::BlockLock bl(m_mutex);
 
@@ -93,7 +93,7 @@ void Controller::queue(const std::shared_ptr<library::Album>& album,
 }
 
 // =====================================================================================================================
-void Controller::remove(const std::vector<int>& index)
+void ControllerImpl::remove(const std::vector<int>& index)
 {
     thread::BlockLock bl(m_mutex);
     m_commands.push_back(std::make_shared<Remove>(index));
@@ -101,31 +101,31 @@ void Controller::remove(const std::vector<int>& index)
 }
 
 // =====================================================================================================================
-void Controller::removeAll()
+void ControllerImpl::removeAll()
 {
     command(REMOVE_ALL);
 }
 
 // =====================================================================================================================
-void Controller::play()
+void ControllerImpl::play()
 {
     command(PLAY);
 }
 
 // =====================================================================================================================
-void Controller::pause()
+void ControllerImpl::pause()
 {
     command(PAUSE);
 }
 
 // =====================================================================================================================
-void Controller::stop()
+void ControllerImpl::stop()
 {
     command(STOP);
 }
 
 // =====================================================================================================================
-void Controller::seek(off_t seconds)
+void ControllerImpl::seek(off_t seconds)
 {
     thread::BlockLock bl(m_mutex);
     m_commands.push_back(std::make_shared<Seek>(seconds));
@@ -133,19 +133,19 @@ void Controller::seek(off_t seconds)
 }
 
 // =====================================================================================================================
-void Controller::prev()
+void ControllerImpl::prev()
 {
     command(PREV);
 }
 
 // =====================================================================================================================
-void Controller::next()
+void ControllerImpl::next()
 {
     command(NEXT);
 }
 
 // =====================================================================================================================
-void Controller::goTo(const std::vector<int>& index)
+void ControllerImpl::goTo(const std::vector<int>& index)
 {
     thread::BlockLock bl(m_mutex);
     m_commands.push_back(std::make_shared<GoTo>(index));
@@ -153,14 +153,14 @@ void Controller::goTo(const std::vector<int>& index)
 }
 
 // =====================================================================================================================
-int Controller::getVolume() const
+int ControllerImpl::getVolume() const
 {
     thread::BlockLock bl(m_mutex);
     return m_volumeLevel;
 }
 
 // =====================================================================================================================
-void Controller::setVolume(int level)
+void ControllerImpl::setVolume(int level)
 {
     // make sure volume level is valid
     if (level < 0 || level > 100)
@@ -173,7 +173,7 @@ void Controller::setVolume(int level)
 }
 
 // =====================================================================================================================
-void Controller::incVolume()
+void ControllerImpl::incVolume()
 {
     thread::BlockLock bl(m_mutex);
 
@@ -185,7 +185,7 @@ void Controller::incVolume()
 }
 
 // =====================================================================================================================
-void Controller::decVolume()
+void ControllerImpl::decVolume()
 {
     thread::BlockLock bl(m_mutex);
 
@@ -197,7 +197,7 @@ void Controller::decVolume()
 }
 
 // =====================================================================================================================
-void Controller::command(Command cmd)
+void ControllerImpl::command(Command cmd)
 {
     thread::BlockLock bl(m_mutex);
     m_commands.push_back(std::make_shared<CmdBase>(cmd));
@@ -205,7 +205,7 @@ void Controller::command(Command cmd)
 }
 
 // =====================================================================================================================
-void Controller::run()
+void ControllerImpl::run()
 {
     while (1)
     {
@@ -228,8 +228,8 @@ void Controller::run()
 		// reset both decoder and player index to the start of the queue if we are in an undefined state
 		if (!m_decoderQueue.isValid())
 		{
-		    m_decoderQueue.reset(QueueItem::FIRST);
-		    m_playerQueue.reset(QueueItem::FIRST);
+		    m_decoderQueue.reset(zeppelin::player::QueueItem::FIRST);
+		    m_playerQueue.reset(zeppelin::player::QueueItem::FIRST);
 		}
 
 		// initialize the decoder if it has no input
@@ -471,14 +471,14 @@ void Controller::run()
 }
 
 // =====================================================================================================================
-void Controller::startPlayback()
+void ControllerImpl::startPlayback()
 {
     m_decoder->startDecoding();
     m_player->startPlayback();
 }
 
 // =====================================================================================================================
-void Controller::stopPlayback()
+void ControllerImpl::stopPlayback()
 {
     // stop the player first because it could send NOTIFY messages to the decoder causing stopDecoding() to never
     // return because the decoder would get new commans from the player again and again
@@ -487,11 +487,11 @@ void Controller::stopPlayback()
 }
 
 // =====================================================================================================================
-void Controller::setDecoderInput()
+void ControllerImpl::setDecoderInput()
 {
     while (m_decoderQueue.isValid())
     {
-	const library::File& file = *m_decoderQueue.file();
+	const zeppelin::library::File& file = *m_decoderQueue.file();
 
 	// open the file
 	std::shared_ptr<codec::BaseCodec> input = openFile(file);
@@ -517,14 +517,14 @@ void Controller::setDecoderInput()
 }
 
 // =====================================================================================================================
-void Controller::invalidateDecoder()
+void ControllerImpl::invalidateDecoder()
 {
     m_decoder->setInput(nullptr);
     m_decoderInitialized = false;
 }
 
 // =====================================================================================================================
-void Controller::setDecoderToPlayerIndex()
+void ControllerImpl::setDecoderToPlayerIndex()
 {
     std::vector<int> it;
 
@@ -533,7 +533,7 @@ void Controller::setDecoderToPlayerIndex()
 }
 
 // =====================================================================================================================
-std::shared_ptr<codec::BaseCodec> Controller::openFile(const library::File& file)
+std::shared_ptr<codec::BaseCodec> ControllerImpl::openFile(const zeppelin::library::File& file)
 {
     std::shared_ptr<codec::BaseCodec> input = codec::BaseCodec::create(file.m_path + "/" + file.m_name);
 

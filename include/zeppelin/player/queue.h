@@ -1,11 +1,15 @@
-#ifndef PLAYER_QUEUE_H_INCLUDED
-#define PLAYER_QUEUE_H_INCLUDED
+#ifndef ZEPPELIN_PLAYER_QUEUE_H_INCLUDED
+#define ZEPPELIN_PLAYER_QUEUE_H_INCLUDED
 
-#include <library/musiclibrary.h>
+#include <zeppelin/library/file.h>
+#include <zeppelin/library/directory.h>
+#include <zeppelin/library/album.h>
 
 #include <vector>
 #include <memory>
 
+namespace zeppelin
+{
 namespace player
 {
 
@@ -165,6 +169,7 @@ class Playlist : public ContainerQueueItem
 	std::shared_ptr<QueueItem> clone() const override;
 };
 
+}
 }
 
 #endif

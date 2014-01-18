@@ -4,20 +4,22 @@
 
 #include <logger.h>
 
+#include <zeppelin/plugin/plugin.h>
+
 #include <dlfcn.h>
 
-using plugin::PluginManager;
+using plugin::PluginManagerImpl;
 
 // =====================================================================================================================
-PluginManager::PluginManager(const std::shared_ptr<library::MusicLibrary>& library,
-			     const std::shared_ptr<player::Controller>& controller)
+PluginManagerImpl::PluginManagerImpl(const std::shared_ptr<zeppelin::library::MusicLibrary>& library,
+				     const std::shared_ptr<zeppelin::player::Controller>& controller)
     : m_library(library),
       m_controller(controller)
 {
 }
 
 // =====================================================================================================================
-void PluginManager::loadAll(const config::Config& config)
+void PluginManagerImpl::loadAll(const config::Config& config)
 {
     const config::Plugins& plugins = config.m_plugins;
 
@@ -29,25 +31,25 @@ void PluginManager::loadAll(const config::Config& config)
 }
 
 // =====================================================================================================================
-auto PluginManager::getInterface(const std::string& name) -> PluginInterface&
+zeppelin::plugin::PluginInterface& PluginManagerImpl::getInterface(const std::string& name)
 {
     auto it = m_interfaces.find(name);
 
     if (it == m_interfaces.end())
-	throw PluginInterfaceNotFoundException(name);
+	throw zeppelin::plugin::PluginInterfaceNotFoundException(name);
 
     return *it->second;
 }
 
 // =====================================================================================================================
-void PluginManager::registerInterface(const std::string& name, PluginInterface* pi)
+void PluginManagerImpl::registerInterface(const std::string& name, zeppelin::plugin::PluginInterface* pi)
 {
     LOG("plugin: registering " << name);
     m_interfaces[name] = pi;
 }
 
 // =====================================================================================================================
-void PluginManager::load(const std::string& path, const Json::Value& config)
+void PluginManagerImpl::load(const std::string& path, const Json::Value& config)
 {
     void* p;
 
@@ -70,7 +72,7 @@ void PluginManager::load(const std::string& path, const Json::Value& config)
 	return;
     }
 
-    Plugin* plugin = create(m_library, m_controller);
+    zeppelin::plugin::Plugin* plugin = create(m_library, m_controller);
 
     if (!plugin)
     {

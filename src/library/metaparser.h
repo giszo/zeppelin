@@ -8,31 +8,39 @@
 #include <deque>
 #include <memory>
 
+namespace zeppelin
+{
+namespace library
+{
+struct File;
+class Storage;
+}
+}
+
 namespace library
 {
 
-class File;
 class MusicLibrary;
 
 class MetaParser : public thread::Thread
 {
     public:
-	MetaParser(MusicLibrary& library);
+	MetaParser(zeppelin::library::Storage& storage);
 
-	void add(const std::shared_ptr<File>& file);
+	void add(const std::shared_ptr<zeppelin::library::File>& file);
 
 	void run() override;
 
     private:
-	void parse(File& file);
+	void parse(zeppelin::library::File& file);
 
     private:
-	std::deque<std::shared_ptr<File>> m_files;
+	std::deque<std::shared_ptr<zeppelin::library::File>> m_files;
 
 	thread::Mutex m_mutex;
 	thread::Condition m_cond;
 
-	MusicLibrary& m_library;
+	zeppelin::library::Storage& m_storage;
 };
 
 }

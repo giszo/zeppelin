@@ -21,7 +21,7 @@ std::map<std::string, std::string> FileServer::s_contentTypeMap = {
 };
 
 // =====================================================================================================================
-void FileServer::start(const Json::Value& config, plugin::PluginManager& pm)
+void FileServer::start(const Json::Value& config, zeppelin::plugin::PluginManager& pm)
 {
     if (!config.isMember("document-root") || !config["document-root"].isString())
     {
@@ -43,7 +43,7 @@ void FileServer::start(const Json::Value& config, plugin::PluginManager& pm)
 
 	httpServer.registerHandler("/", std::bind(&FileServer::processRequest, this, std::placeholders::_1));
     }
-    catch (const plugin::PluginInterfaceNotFoundException& e)
+    catch (const zeppelin::plugin::PluginInterfaceNotFoundException&)
     {
 	LOG("jsonrpc-remote: http-server interface not found");
     }

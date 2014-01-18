@@ -6,22 +6,23 @@
 #include <library/musiclibrary.h>
 #include <player/controller.h>
 #include <config/config.h>
-#include <plugin/plugin.h>
+
+#include <zeppelin/plugin/plugin.h>
 
 #include <jsoncpp/json/value.h>
 
 #include <unordered_map>
 
-class Server : public plugin::Plugin
+class Server : public zeppelin::plugin::Plugin
 {
     public:
-	Server(const std::shared_ptr<library::MusicLibrary>& library,
-	       const std::shared_ptr<player::Controller>& ctrl);
+	Server(const std::shared_ptr<zeppelin::library::MusicLibrary>& library,
+	       const std::shared_ptr<zeppelin::player::Controller>& ctrl);
 
 	std::string getName() const override
 	{ return "jsonrpc-remote"; }
 
-	void start(const Json::Value& config, plugin::PluginManager& pm) override;
+	void start(const Json::Value& config, zeppelin::plugin::PluginManager& pm) override;
 	void stop() override;
 
     private:
@@ -71,8 +72,8 @@ class Server : public plugin::Plugin
 	void playerDecVolume(const Json::Value& request, Json::Value& response);
 
     private:
-	std::shared_ptr<library::MusicLibrary> m_library;
-	std::shared_ptr<player::Controller> m_ctrl;
+	std::shared_ptr<zeppelin::library::MusicLibrary> m_library;
+	std::shared_ptr<zeppelin::player::Controller> m_ctrl;
 
 	typedef std::function<void(const Json::Value&, Json::Value&)> RpcMethod;
 

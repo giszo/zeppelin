@@ -1,11 +1,11 @@
-#include "queue.h"
+#include <zeppelin/player/queue.h>
 
-using player::QueueItem;
-using player::ContainerQueueItem;
-using player::File;
-using player::Directory;
-using player::Album;
-using player::Playlist;
+using zeppelin::player::QueueItem;
+using zeppelin::player::ContainerQueueItem;
+using zeppelin::player::File;
+using zeppelin::player::Directory;
+using zeppelin::player::Album;
+using zeppelin::player::Playlist;
 
 // =====================================================================================================================
 ContainerQueueItem::ContainerQueueItem()
@@ -154,7 +154,7 @@ bool ContainerQueueItem::next()
 }
 
 // =====================================================================================================================
-const std::shared_ptr<library::File>& ContainerQueueItem::file() const
+const std::shared_ptr<zeppelin::library::File>& ContainerQueueItem::file() const
 {
     return m_items[m_index]->file();
 }
@@ -166,7 +166,7 @@ std::vector<std::shared_ptr<QueueItem>> ContainerQueueItem::items() const
 }
 
 // =====================================================================================================================
-File::File(const std::shared_ptr<library::File>& f)
+File::File(const std::shared_ptr<zeppelin::library::File>& f)
     : m_file(f)
 {
 }
@@ -218,7 +218,7 @@ bool File::next()
 }
 
 // =====================================================================================================================
-const std::shared_ptr<library::File>& File::file() const
+const std::shared_ptr<zeppelin::library::File>& File::file() const
 {
     return m_file;
 }
@@ -236,8 +236,8 @@ std::vector<std::shared_ptr<QueueItem>> File::items() const
 }
 
 // =====================================================================================================================
-Directory::Directory(const std::shared_ptr<library::Directory>& d,
-		     const std::vector<std::shared_ptr<library::File>>& files)
+Directory::Directory(const std::shared_ptr<zeppelin::library::Directory>& d,
+		     const std::vector<std::shared_ptr<zeppelin::library::File>>& files)
     : m_directory(d)
 {
     for (const auto& f : files)
@@ -265,14 +265,14 @@ std::shared_ptr<QueueItem> Directory::clone() const
 }
 
 // =====================================================================================================================
-const library::Directory& Directory::directory() const
+const zeppelin::library::Directory& Directory::directory() const
 {
     return *m_directory;
 }
 
 // =====================================================================================================================
-Album::Album(const std::shared_ptr<library::Album>& a,
-	     const std::vector<std::shared_ptr<library::File>>& files)
+Album::Album(const std::shared_ptr<zeppelin::library::Album>& a,
+	     const std::vector<std::shared_ptr<zeppelin::library::File>>& files)
     : m_album(a)
 {
     for (const auto& f : files)
@@ -300,27 +300,27 @@ std::shared_ptr<QueueItem> Album::clone() const
 }
 
 // =====================================================================================================================
-const library::Album& Album::album() const
+const zeppelin::library::Album& Album::album() const
 {
     return *m_album;
 }
 
 // =====================================================================================================================
-void Playlist::add(const std::shared_ptr<library::File>& f)
+void Playlist::add(const std::shared_ptr<zeppelin::library::File>& f)
 {
     m_items.push_back(std::make_shared<File>(f));
 }
 
 // =====================================================================================================================
-void Playlist::add(const std::shared_ptr<library::Directory>& directory,
-		   const std::vector<std::shared_ptr<library::File>>& files)
+void Playlist::add(const std::shared_ptr<zeppelin::library::Directory>& directory,
+		   const std::vector<std::shared_ptr<zeppelin::library::File>>& files)
 {
     m_items.push_back(std::make_shared<Directory>(directory, files));
 }
 
 // =====================================================================================================================
-void Playlist::add(const std::shared_ptr<library::Album>& album,
-		   const std::vector<std::shared_ptr<library::File>>& files)
+void Playlist::add(const std::shared_ptr<zeppelin::library::Album>& album,
+		   const std::vector<std::shared_ptr<zeppelin::library::File>>& files)
 {
     m_items.push_back(std::make_shared<Album>(album, files));
 }

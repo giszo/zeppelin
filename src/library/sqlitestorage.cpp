@@ -1,14 +1,14 @@
 #include "sqlitestorage.h"
 
+#include <config/config.h>
 #include <thread/blocklock.h>
 #include <logger.h>
 
 using library::SqliteStorage;
 
 // =====================================================================================================================
-SqliteStorage::SqliteStorage(const config::Library& config)
-    : Storage(config),
-      m_db(NULL)
+SqliteStorage::SqliteStorage()
+    : m_db(NULL)
 {
 }
 
@@ -20,10 +20,10 @@ SqliteStorage::~SqliteStorage()
 }
 
 // =====================================================================================================================
-void SqliteStorage::open()
+void SqliteStorage::open(const config::Library& config)
 {
-    if (sqlite3_open(m_config.m_database.empty() ? "library.db" : m_config.m_database.c_str(), &m_db) != SQLITE_OK)
-	throw StorageException("unable to open database");
+    if (sqlite3_open(config.m_database.empty() ? "library.db" : config.m_database.c_str(), &m_db) != SQLITE_OK)
+	throw zeppelin::library::StorageException("unable to open database");
 
     // turn synchronous mode off and store journal data in memory to speed-up SQLite
     execute("PRAGMA synchronous = OFF");
@@ -159,9 +159,9 @@ void SqliteStorage::open()
 }
 
 // =====================================================================================================================
-std::shared_ptr<library::Directory> SqliteStorage::getDirectory(int id)
+std::shared_ptr<zeppelin::library::Directory> SqliteStorage::getDirectory(int id)
 {
-    std::shared_ptr<Directory> directory;
+    std::shared_ptr<zeppelin::library::Directory> directory;
 
     thread::BlockLock bl(m_mutex);
 
@@ -169,9 +169,9 @@ std::shared_ptr<library::Directory> SqliteStorage::getDirectory(int id)
     stmt.bindInt(1, id);
 
     if (stmt.step() != SQLITE_ROW)
-	throw FileNotFoundException("directory not found with ID");
+	throw zeppelin::library::FileNotFoundException("directory not found with ID");
 
-    directory = std::make_shared<Directory>(
+    directory = std::make_shared<zeppelin::library::Directory>(
 	id,
 	stmt.getText(0) // name
     );
@@ -220,9 +220,9 @@ int SqliteStorage::ensureDirectory(const std::string& name, int parentId)
 }
 
 // =====================================================================================================================
-std::vector<std::shared_ptr<library::Directory>> SqliteStorage::listSubdirectories(int id)
+std::vector<std::shared_ptr<zeppelin::library::Directory>> SqliteStorage::listSubdirectories(int id)
 {
-    std::vector<std::shared_ptr<library::Directory>> directories;
+    std::vector<std::shared_ptr<zeppelin::library::Directory>> directories;
 
     thread::BlockLock bl(m_mutex);
 
@@ -231,7 +231,7 @@ std::vector<std::shared_ptr<library::Directory>> SqliteStorage::listSubdirectori
 
     while (stmt.step() == SQLITE_ROW)
     {
-	directories.push_back(std::make_shared<Directory>(
+	directories.push_back(std::make_shared<zeppelin::library::Directory>(
 	    stmt.getInt(0),
 	    stmt.getText(1)
 	));
@@ -241,7 +241,7 @@ std::vector<std::shared_ptr<library::Directory>> SqliteStorage::listSubdirectori
 }
 
 // =====================================================================================================================
-bool SqliteStorage::addFile(File& file)
+bool SqliteStorage::addFile(zeppelin::library::File& file)
 {
     thread::BlockLock bl(m_mutex);
 
@@ -298,9 +298,9 @@ void SqliteStorage::deleteNonMarked()
 }
 
 // =====================================================================================================================
-std::shared_ptr<library::File> SqliteStorage::getFile(int id)
+std::shared_ptr<zeppelin::library::File> SqliteStorage::getFile(int id)
 {
-    std::shared_ptr<File> file;
+    std::shared_ptr<zeppelin::library::File> file;
 
     thread::BlockLock bl(m_mutex);
 
@@ -308,18 +308,18 @@ std::shared_ptr<library::File> SqliteStorage::getFile(int id)
     stmt.bindInt(1, id);
 
     if (stmt.step() != SQLITE_ROW)
-	throw FileNotFoundException("file not found with ID");
+	throw zeppelin::library::FileNotFoundException("file not found with ID");
 
-    file = std::make_shared<File>(id);
+    file = std::make_shared<zeppelin::library::File>(id);
     fillFile(stmt, *file);
 
     return file;
 }
 
 // =====================================================================================================================
-std::vector<std::shared_ptr<library::File>> SqliteStorage::getFilesWithoutMetadata()
+std::vector<std::shared_ptr<zeppelin::library::File>> SqliteStorage::getFilesWithoutMetadata()
 {
-    std::vector<std::shared_ptr<File>> files;
+    std::vector<std::shared_ptr<zeppelin::library::File>> files;
 
     thread::BlockLock bl(m_mutex);
 
@@ -327,7 +327,7 @@ std::vector<std::shared_ptr<library::File>> SqliteStorage::getFilesWithoutMetada
 
     while (stmt.step() == SQLITE_ROW)
     {
-	std::shared_ptr<File> file = std::make_shared<File>();
+	std::shared_ptr<zeppelin::library::File> file = std::make_shared<zeppelin::library::File>(-1);
 	fillFile(stmt, *file);
 	files.push_back(file);
     }
@@ -336,9 +336,9 @@ std::vector<std::shared_ptr<library::File>> SqliteStorage::getFilesWithoutMetada
 }
 
 // =====================================================================================================================
-std::vector<std::shared_ptr<library::File>> SqliteStorage::getFilesOfArtist(int artistId)
+std::vector<std::shared_ptr<zeppelin::library::File>> SqliteStorage::getFilesOfArtist(int artistId)
 {
-    std::vector<std::shared_ptr<File>> files;
+    std::vector<std::shared_ptr<zeppelin::library::File>> files;
 
     thread::BlockLock bl(m_mutex);
 
@@ -347,7 +347,7 @@ std::vector<std::shared_ptr<library::File>> SqliteStorage::getFilesOfArtist(int 
 
     while (stmt.step() == SQLITE_ROW)
     {
-	std::shared_ptr<File> file = std::make_shared<File>();
+	std::shared_ptr<zeppelin::library::File> file = std::make_shared<zeppelin::library::File>(-1);
 	fillFile(stmt, *file);
 	files.push_back(file);
     }
@@ -356,9 +356,9 @@ std::vector<std::shared_ptr<library::File>> SqliteStorage::getFilesOfArtist(int 
 }
 
 // =====================================================================================================================
-std::vector<std::shared_ptr<library::File>> SqliteStorage::getFilesOfAlbum(int albumId)
+std::vector<std::shared_ptr<zeppelin::library::File>> SqliteStorage::getFilesOfAlbum(int albumId)
 {
-    std::vector<std::shared_ptr<File>> files;
+    std::vector<std::shared_ptr<zeppelin::library::File>> files;
 
     thread::BlockLock bl(m_mutex);
 
@@ -367,7 +367,7 @@ std::vector<std::shared_ptr<library::File>> SqliteStorage::getFilesOfAlbum(int a
 
     while (stmt.step() == SQLITE_ROW)
     {
-	std::shared_ptr<File> file = std::make_shared<File>();
+	std::shared_ptr<zeppelin::library::File> file = std::make_shared<zeppelin::library::File>(-1);
 	fillFile(stmt, *file);
 	files.push_back(file);
     }
@@ -376,9 +376,9 @@ std::vector<std::shared_ptr<library::File>> SqliteStorage::getFilesOfAlbum(int a
 }
 
 // =====================================================================================================================
-std::vector<std::shared_ptr<library::File>> SqliteStorage::getFilesOfDirectory(int directoryId)
+std::vector<std::shared_ptr<zeppelin::library::File>> SqliteStorage::getFilesOfDirectory(int directoryId)
 {
-    std::vector<std::shared_ptr<File>> files;
+    std::vector<std::shared_ptr<zeppelin::library::File>> files;
 
     // root directory does not contain any files
     if (directoryId == -1)
@@ -391,7 +391,7 @@ std::vector<std::shared_ptr<library::File>> SqliteStorage::getFilesOfDirectory(i
 
     while (stmt.step() == SQLITE_ROW)
     {
-	std::shared_ptr<File> file = std::make_shared<File>();
+	std::shared_ptr<zeppelin::library::File> file = std::make_shared<zeppelin::library::File>(-1);
 	fillFile(stmt, *file);
 	files.push_back(file);
     }
@@ -400,7 +400,7 @@ std::vector<std::shared_ptr<library::File>> SqliteStorage::getFilesOfDirectory(i
 }
 
 // =====================================================================================================================
-void SqliteStorage::setFileMetadata(const library::File& file)
+void SqliteStorage::setFileMetadata(const zeppelin::library::File& file)
 {
     thread::BlockLock bl(m_mutex);
 
@@ -415,7 +415,7 @@ void SqliteStorage::setFileMetadata(const library::File& file)
     stmt.bindText(4, file.m_title);
     stmt.bindInt(5, file.m_year);
     stmt.bindInt(6, file.m_trackIndex);
-    stmt.bindInt(7, file.m_type);
+    stmt.bindInt(7, file.m_codec);
     stmt.bindInt(8, file.m_samplingRate);
     stmt.bindInt(9, file.m_id);
 
@@ -423,7 +423,7 @@ void SqliteStorage::setFileMetadata(const library::File& file)
 }
 
 // =====================================================================================================================
-void SqliteStorage::updateFileMetadata(const File& file)
+void SqliteStorage::updateFileMetadata(const zeppelin::library::File& file)
 {
     thread::BlockLock bl(m_mutex);
 
@@ -443,9 +443,9 @@ void SqliteStorage::updateFileMetadata(const File& file)
 }
 
 // =====================================================================================================================
-std::vector<std::shared_ptr<library::Artist>> SqliteStorage::getArtists()
+std::vector<std::shared_ptr<zeppelin::library::Artist>> SqliteStorage::getArtists()
 {
-    std::vector<std::shared_ptr<Artist>> artists;
+    std::vector<std::shared_ptr<zeppelin::library::Artist>> artists;
 
     thread::BlockLock bl(m_mutex);
 
@@ -453,7 +453,7 @@ std::vector<std::shared_ptr<library::Artist>> SqliteStorage::getArtists()
 
     while (stmt.step() == SQLITE_ROW)
     {
-	std::shared_ptr<Artist> artist = std::make_shared<Artist>(
+	std::shared_ptr<zeppelin::library::Artist> artist = std::make_shared<zeppelin::library::Artist>(
 	    stmt.columnType(0) == SQLITE_NULL ? -1 : stmt.getInt(0),
 	    stmt.getText(1),
 	    stmt.getInt(2));
@@ -464,9 +464,9 @@ std::vector<std::shared_ptr<library::Artist>> SqliteStorage::getArtists()
 }
 
 // =====================================================================================================================
-std::shared_ptr<library::Album> SqliteStorage::getAlbum(int id)
+std::shared_ptr<zeppelin::library::Album> SqliteStorage::getAlbum(int id)
 {
-    std::shared_ptr<Album> album;
+    std::shared_ptr<zeppelin::library::Album> album;
 
     thread::BlockLock bl(m_mutex);
 
@@ -474,9 +474,9 @@ std::shared_ptr<library::Album> SqliteStorage::getAlbum(int id)
     stmt.bindInt(1, id);
 
     if (stmt.step() != SQLITE_ROW)
-	throw FileNotFoundException("album not found"); // TODO: use a new exception here!
+	throw zeppelin::library::FileNotFoundException("album not found"); // TODO: use a new exception here!
 
-    album = std::make_shared<Album>(
+    album = std::make_shared<zeppelin::library::Album>(
 	id,
 	stmt.getText(1),
 	stmt.getInt(0),
@@ -487,9 +487,9 @@ std::shared_ptr<library::Album> SqliteStorage::getAlbum(int id)
 }
 
 // =====================================================================================================================
-std::vector<std::shared_ptr<library::Album>> SqliteStorage::getAlbums()
+std::vector<std::shared_ptr<zeppelin::library::Album>> SqliteStorage::getAlbums()
 {
-    std::vector<std::shared_ptr<Album>> albums;
+    std::vector<std::shared_ptr<zeppelin::library::Album>> albums;
 
     thread::BlockLock bl(m_mutex);
 
@@ -497,7 +497,7 @@ std::vector<std::shared_ptr<library::Album>> SqliteStorage::getAlbums()
 
     while (stmt.step() == SQLITE_ROW)
     {
-	std::shared_ptr<Album> album = std::make_shared<Album>(
+	std::shared_ptr<zeppelin::library::Album> album = std::make_shared<zeppelin::library::Album>(
 	    stmt.getInt(0),
 	    stmt.getText(1),
 	    stmt.getInt(2),
@@ -510,9 +510,9 @@ std::vector<std::shared_ptr<library::Album>> SqliteStorage::getAlbums()
 }
 
 // =====================================================================================================================
-std::vector<std::shared_ptr<library::Album>> SqliteStorage::getAlbumsByArtist(int artistId)
+std::vector<std::shared_ptr<zeppelin::library::Album>> SqliteStorage::getAlbumsByArtist(int artistId)
 {
-    std::vector<std::shared_ptr<Album>> albums;
+    std::vector<std::shared_ptr<zeppelin::library::Album>> albums;
 
     thread::BlockLock bl(m_mutex);
 
@@ -521,7 +521,7 @@ std::vector<std::shared_ptr<library::Album>> SqliteStorage::getAlbumsByArtist(in
 
     while (stmt.step() == SQLITE_ROW)
     {
-	std::shared_ptr<Album> album = std::make_shared<Album>(
+	std::shared_ptr<zeppelin::library::Album> album = std::make_shared<zeppelin::library::Album>(
 	    stmt.getInt(0),
 	    stmt.getText(1),
 	    artistId,
@@ -539,14 +539,14 @@ void SqliteStorage::execute(const std::string& sql)
     char* error;
 
     if (sqlite3_exec(m_db, sql.c_str(), NULL, NULL, &error) != SQLITE_OK)
-	throw StorageException("unable to execute query");
+	throw zeppelin::library::StorageException("unable to execute query");
 }
 
 // =====================================================================================================================
 void SqliteStorage::prepareStatement(sqlite3_stmt** stmt, const std::string& sql)
 {
     if (sqlite3_prepare_v2(m_db, sql.c_str(), sql.length() + 1, stmt, NULL) != SQLITE_OK)
-	throw StorageException("unable to prepare statement: " + sql);
+	throw zeppelin::library::StorageException("unable to prepare statement: " + sql);
 }
 
 // =====================================================================================================================
@@ -563,7 +563,7 @@ int SqliteStorage::getFileIdByPath(const std::string& path, const std::string& n
 }
 
 // =====================================================================================================================
-int SqliteStorage::getArtistId(const File& file)
+int SqliteStorage::getArtistId(const zeppelin::library::File& file)
 {
     if (file.m_artist.empty())
 	return -1;
@@ -573,7 +573,7 @@ int SqliteStorage::getArtistId(const File& file)
 	StatementHolder stmt(m_addArtist);
 	stmt.bindText(1, file.m_artist);
 	if (stmt.step() != SQLITE_DONE)
-	    throw StorageException("unable to insert artist");
+	    throw zeppelin::library::StorageException("unable to insert artist");
     }
 
     // get artist
@@ -581,13 +581,13 @@ int SqliteStorage::getArtistId(const File& file)
 	StatementHolder stmt(m_getArtistIdByName);
 	stmt.bindText(1, file.m_artist);
 	if (stmt.step() != SQLITE_ROW)
-	    throw StorageException("unable to get artist after inserting!");
+	    throw zeppelin::library::StorageException("unable to get artist after inserting!");
 	return stmt.getInt(0);
     }
 }
 
 // =====================================================================================================================
-int SqliteStorage::getAlbumId(const File& file, int artistId)
+int SqliteStorage::getAlbumId(const zeppelin::library::File& file, int artistId)
 {
     if (file.m_album.empty())
 	return -1;
@@ -598,7 +598,7 @@ int SqliteStorage::getAlbumId(const File& file, int artistId)
 	stmt.bindIndex(1, artistId);
 	stmt.bindText(2, file.m_album);
 	if (stmt.step() != SQLITE_DONE)
-	    throw StorageException("unable to insert album");
+	    throw zeppelin::library::StorageException("unable to insert album");
     }
 
     // get album
@@ -607,13 +607,13 @@ int SqliteStorage::getAlbumId(const File& file, int artistId)
 	stmt.bindIndex(1, artistId);
 	stmt.bindText(2, file.m_album);
 	if (stmt.step() != SQLITE_ROW)
-	    throw StorageException("unable to get album after inserting!");
+	    throw zeppelin::library::StorageException("unable to get album after inserting!");
 	return stmt.getInt(0);
     }
 }
 
 // =====================================================================================================================
-void SqliteStorage::fillFile(StatementHolder& stmt, File& file)
+void SqliteStorage::fillFile(StatementHolder& stmt, zeppelin::library::File& file)
 {
     for (int col = 0; col < stmt.columnCount(); ++col)
     {
@@ -645,7 +645,7 @@ void SqliteStorage::fillFile(StatementHolder& stmt, File& file)
 	    else if (colName == "track_index")
 		file.m_trackIndex = stmt.getInt(col);
 	    else if (colName == "type")
-		file.m_type = static_cast<codec::Type>(stmt.getInt(col));
+		file.m_codec = static_cast<zeppelin::library::Codec>(stmt.getInt(col));
 	    else if (colName == "sampling_rate")
 		file.m_samplingRate = stmt.getInt(col);
 	    else

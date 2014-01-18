@@ -1,11 +1,16 @@
 #ifndef LIBRARY_SQLITESTORAGE_H_INCLUDED
 #define LIBRARY_SQLITESTORAGE_H_INCLUDED
 
-#include "storage.h"
+#include <zeppelin/library/storage.h>
 
 #include <thread/mutex.h>
 
 #include <sqlite3.h>
+
+namespace config
+{
+struct Library;
+}
 
 namespace library
 {
@@ -13,45 +18,45 @@ namespace library
 /**
  * Storage backend for the music library based on SQLite3.
  */
-class SqliteStorage : public Storage
+class SqliteStorage : public zeppelin::library::Storage
 {
     public:
-	SqliteStorage(const config::Library& config);
+	SqliteStorage();
 	~SqliteStorage();
 
-	void open();
+	void open(const config::Library& config);
 
-	std::shared_ptr<Directory> getDirectory(int id) override;
+	std::shared_ptr<zeppelin::library::Directory> getDirectory(int id) override;
 	int ensureDirectory(const std::string& name, int parentId) override;
-	std::vector<std::shared_ptr<Directory>> listSubdirectories(int id) override;
+	std::vector<std::shared_ptr<zeppelin::library::Directory>> listSubdirectories(int id) override;
 
-	bool addFile(File& file) override;
+	bool addFile(zeppelin::library::File& file) override;
 
 	void clearMark() override;
 	void deleteNonMarked() override;
 
-	std::shared_ptr<File> getFile(int id) override;
-	std::vector<std::shared_ptr<File>> getFilesWithoutMetadata() override;
-	std::vector<std::shared_ptr<File>> getFilesOfArtist(int artistId) override;
-	std::vector<std::shared_ptr<File>> getFilesOfAlbum(int albumId) override;
-	std::vector<std::shared_ptr<File>> getFilesOfDirectory(int directoryId) override;
+	std::shared_ptr<zeppelin::library::File> getFile(int id) override;
+	std::vector<std::shared_ptr<zeppelin::library::File>> getFilesWithoutMetadata() override;
+	std::vector<std::shared_ptr<zeppelin::library::File>> getFilesOfArtist(int artistId) override;
+	std::vector<std::shared_ptr<zeppelin::library::File>> getFilesOfAlbum(int albumId) override;
+	std::vector<std::shared_ptr<zeppelin::library::File>> getFilesOfDirectory(int directoryId) override;
 
-	void setFileMetadata(const File& file) override;
-	void updateFileMetadata(const File& file) override;
+	void setFileMetadata(const zeppelin::library::File& file) override;
+	void updateFileMetadata(const zeppelin::library::File& file) override;
 
-	std::vector<std::shared_ptr<Artist>> getArtists() override;
+	std::vector<std::shared_ptr<zeppelin::library::Artist>> getArtists() override;
 
-	std::shared_ptr<Album> getAlbum(int id) override;
-	std::vector<std::shared_ptr<Album>> getAlbums() override;
-	std::vector<std::shared_ptr<Album>> getAlbumsByArtist(int artistId) override;
+	std::shared_ptr<zeppelin::library::Album> getAlbum(int id) override;
+	std::vector<std::shared_ptr<zeppelin::library::Album>> getAlbums() override;
+	std::vector<std::shared_ptr<zeppelin::library::Album>> getAlbumsByArtist(int artistId) override;
 
     private:
 	void execute(const std::string& sql);
 	void prepareStatement(sqlite3_stmt** stmt, const std::string& sql);
 
 	int getFileIdByPath(const std::string& path, const std::string& name);
-	int getArtistId(const File& file);
-	int getAlbumId(const File& file, int artistId);
+	int getArtistId(const zeppelin::library::File& file);
+	int getAlbumId(const zeppelin::library::File& file, int artistId);
 
     private:
 	struct StatementHolder
@@ -81,7 +86,7 @@ class SqliteStorage : public Storage
 	};
 
     private:
-	void fillFile(StatementHolder& stmt, File& file);
+	void fillFile(StatementHolder& stmt, zeppelin::library::File& file);
 
 	// the database to store the music library
 	sqlite3* m_db;

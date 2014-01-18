@@ -1,11 +1,10 @@
-#ifndef PLUGIN_PLUGIN_H_INCLUDED
-#define PLUGIN_PLUGIN_H_INCLUDED
-
-#include <library/musiclibrary.h>
-#include <player/controller.h>
+#ifndef ZEPPELIN_PLUGIN_PLUGIN_H_INCLUDED
+#define ZEPPELIN_PLUGIN_PLUGIN_H_INCLUDED
 
 #include <jsoncpp/json/value.h>
 
+namespace zeppelin
+{
 namespace plugin
 {
 
@@ -25,6 +24,7 @@ class Plugin
 	virtual void stop() = 0;
 };
 
+}
 }
 
 #endif

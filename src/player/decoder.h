@@ -16,7 +16,7 @@
 namespace player
 {
 
-class Controller;
+class ControllerImpl;
 
 class Decoder : public thread::Thread
 {
@@ -24,7 +24,7 @@ class Decoder : public thread::Thread
 	Decoder(size_t bufferSize,
 		const Format& outputFormat,
 		Fifo& fifo,
-		Controller& ctrl,
+		ControllerImpl& ctrl,
 		const config::Config& config);
 
 	void setInput(const std::shared_ptr<codec::BaseCodec>& input);
@@ -95,7 +95,7 @@ class Decoder : public thread::Thread
 	thread::Condition m_cond;
 	thread::Condition m_emptyCond;
 
-	Controller& m_ctrl;
+	ControllerImpl& m_ctrl;
 	const config::Config& m_config;
 };
 

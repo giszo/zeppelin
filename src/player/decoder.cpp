@@ -11,7 +11,7 @@ using player::Decoder;
 Decoder::Decoder(size_t bufferSize,
 		 const Format& outputFormat,
 		 Fifo& fifo,
-		 Controller& ctrl,
+		 ControllerImpl& ctrl,
 		 const config::Config& config)
     : m_bufferSize(bufferSize),
       m_fifo(fifo),
@@ -191,7 +191,7 @@ void Decoder::run()
 	    m_input.reset();
 
 	    // let the controller know that the decoder finished working
-	    m_ctrl.command(Controller::DECODER_FINISHED);
+	    m_ctrl.command(ControllerImpl::DECODER_FINISHED);
 
 	    continue;
 	}

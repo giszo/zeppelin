@@ -39,29 +39,30 @@ int main(int argc, char** argv)
     utils::SignalHandler signalHandler;
 
     // open the music library
-    library::SqliteStorage storage(config.m_library);
+    library::SqliteStorage storage;
 
     try
     {
-	storage.open();
+	storage.open(config.m_library);
     }
-    catch (const library::StorageException& e)
+    catch (const zeppelin::library::StorageException& e)
     {
 	std::cerr << "Unable to open music library storage: " << e.what() << std::endl;
 	return 1;
     }
 
-    std::shared_ptr<library::MusicLibrary> lib = std::make_shared<library::MusicLibrary>(storage, config.m_library);
+    std::shared_ptr<zeppelin::library::MusicLibrary> lib =
+	std::make_shared<library::MusicLibraryImpl>(storage, config.m_library);
 
     // create the main part of our wonderful player :)
-    std::shared_ptr<player::Controller> ctrl = std::make_shared<player::Controller>(config);
+    std::shared_ptr<zeppelin::player::Controller> ctrl = std::make_shared<player::ControllerImpl>(config);
 
     // initialize the plugin manager
-    plugin::PluginManager pm(lib, ctrl);
+    plugin::PluginManagerImpl pm(lib, ctrl);
     pm.loadAll(config);
 
     // start the main loop of the player
-    ctrl->start();
+    std::static_pointer_cast<player::ControllerImpl>(ctrl)->start();
 
     // run the signal handler
     signalHandler.run();

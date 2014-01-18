@@ -1,6 +1,8 @@
-#ifndef PLUGIN_PLUGININTERFACE_H_INCLUDED
-#define PLUGIN_PLUGININTERFACE_H_INCLUDED
+#ifndef ZEPPELIN_PLUGIN_PLUGININTERFACE_H_INCLUDED
+#define ZEPPELIN_PLUGIN_PLUGININTERFACE_H_INCLUDED
 
+namespace zeppelin
+{
 namespace plugin
 {
 
@@ -13,6 +15,7 @@ class PluginInterface
 	virtual int version() const = 0;
 };
 
+}
 }
 
 #endif

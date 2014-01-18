@@ -21,7 +21,7 @@ Server::~Server()
 }
 
 // =====================================================================================================================
-void Server::start(const Json::Value& config, plugin::PluginManager& pm)
+void Server::start(const Json::Value& config, zeppelin::plugin::PluginManager& pm)
 {
     // make sure we have a port configured
     if (!config.isMember("port") || !config["port"].isInt())

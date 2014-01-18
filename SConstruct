@@ -13,7 +13,7 @@ AddOption(
 env = Environment(PREFIX = GetOption("prefix"))
 
 env["CPPFLAGS"] = ["-O2", "-Wall", "-Werror", "-Wshadow", "-std=c++11", "-pthread"]
-env["CPPPATH"] = [Dir("src")]
+env["CPPPATH"] = [Dir("include"), Dir("src")]
 env["LINKFLAGS"] = ["-pthread", "-rdynamic"]
 
 env["CXXCOMSTR"] = "Compiling $SOURCE"
@@ -40,6 +40,10 @@ sources = [
     "library/scanner.cpp",
     "library/metaparser.cpp",
     "library/sqlitestorage.cpp",
+    "library/file.cpp",
+    "library/directory.cpp",
+    "library/artist.cpp",
+    "library/album.cpp",
     "player/player.cpp",
     "player/decoder.cpp",
     "player/controller.cpp",
@@ -98,3 +102,4 @@ env.Program(
 # install
 
 env.Alias("install", env.Install("$PREFIX/usr/bin", zep))
+env.Alias("install", env.Install("$PREFIX/usr/include", Dir("include/zeppelin")))

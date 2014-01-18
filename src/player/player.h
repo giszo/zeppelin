@@ -19,7 +19,7 @@ class Volume;
 namespace player
 {
 
-class Controller;
+class ControllerImpl;
 
 class Player : public thread::Thread
 {
@@ -27,7 +27,7 @@ class Player : public thread::Thread
 	Player(const std::shared_ptr<output::BaseOutput>& output,
 	       Fifo& fifo,
 	       filter::Volume& volFilter,
-	       Controller& ctrl);
+	       ControllerImpl& ctrl);
 
 	unsigned getPosition() const;
 
@@ -89,7 +89,7 @@ class Player : public thread::Thread
 
 	filter::Volume& m_volumeFilter;
 
-	Controller& m_ctrl;
+	ControllerImpl& m_ctrl;
 };
 
 }

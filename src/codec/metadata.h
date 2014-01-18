@@ -1,7 +1,8 @@
 #ifndef CODEC_METADATA_H_INCLUDED
 #define CODEC_METADATA_H_INCLUDED
 
-#include "type.h"
+// for Codec enum
+#include <zeppelin/library/file.h>
 
 #include <string>
 
@@ -22,7 +23,7 @@ class Metadata
 	void setTitle(const std::string& title);
 
     public:
-	Type m_type;
+	zeppelin::library::Codec m_codec;
 
 	/// sampling rate
 	int m_rate;

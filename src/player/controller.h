@@ -4,7 +4,9 @@
 #include "decoder.h"
 #include "player.h"
 #include "fifo.h"
-#include "queue.h"
+
+#include <zeppelin/player/controller.h>
+#include <zeppelin/player/queue.h>
 
 #include <thread/thread.h>
 #include <thread/condition.h>
@@ -13,28 +15,8 @@
 namespace player
 {
 
-enum State
-{
-    STOPPED,
-    PLAYING,
-    PAUSED
-};
-
-struct Status
-{
-    // the currently played file
-    std::shared_ptr<library::File> m_file;
-    // the tree index of the currently played file
-    std::vector<int> m_index;
-    // the state of the player
-    State m_state;
-    // position inside the current track in seconds
-    unsigned m_position;
-    // volume level (0 - 100)
-    int m_volume;
-};
-
-class Controller : public thread::Thread
+class ControllerImpl : public zeppelin::player::Controller,
+		       public thread::Thread
 {
     public:
 	/// availables commands for the controller
@@ -55,22 +37,22 @@ class Controller : public thread::Thread
 	    DECODER_FINISHED
 	};
 
-	Controller(const config::Config& config);
+	ControllerImpl(const config::Config& config);
 
 	/// returns the current play queue
-	std::shared_ptr<Playlist> getQueue() const;
+	std::shared_ptr<zeppelin::player::Playlist> getQueue() const;
 
 	/// returns the current status of the player
 	Status getStatus();
 
 	/// puts a new file onto the playback queue
-	void queue(const std::shared_ptr<library::File>& file);
+	void queue(const std::shared_ptr<zeppelin::library::File>& file);
 	/// puts a new directory onto the playback queue
-	void queue(const std::shared_ptr<library::Directory>& directory,
-		   const std::vector<std::shared_ptr<library::File>>& files);
+	void queue(const std::shared_ptr<zeppelin::library::Directory>& directory,
+		   const std::vector<std::shared_ptr<zeppelin::library::File>>& files);
 	/// puts a new album onto the playback queue
-	void queue(const std::shared_ptr<library::Album>& album,
-		   const std::vector<std::shared_ptr<library::File>>& files);
+	void queue(const std::shared_ptr<zeppelin::library::Album>& album,
+		   const std::vector<std::shared_ptr<zeppelin::library::File>>& files);
 	/// removes the referenced part of the queue
 	void remove(const std::vector<int>& index);
 	/// removes all members of the queue
@@ -109,16 +91,16 @@ class Controller : public thread::Thread
 	// sets the decoder queue index to the same position as the player queue
 	void setDecoderToPlayerIndex();
 
-	std::shared_ptr<codec::BaseCodec> openFile(const library::File& file);
+	std::shared_ptr<codec::BaseCodec> openFile(const zeppelin::library::File& file);
 
     private:
 	/// the state of the player
 	State m_state;
 
-	Playlist m_decoderQueue;
+	zeppelin::player::Playlist m_decoderQueue;
 	bool m_decoderInitialized;
 
-	Playlist m_playerQueue;
+	zeppelin::player::Playlist m_playerQueue;
 
 	struct CmdBase
 	{

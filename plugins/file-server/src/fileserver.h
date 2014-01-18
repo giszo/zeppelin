@@ -3,15 +3,15 @@
 
 #include <plugins/http-server/httpserver.h>
 
-#include <plugin/plugin.h>
+#include <zeppelin/plugin/plugin.h>
 
-class FileServer : public plugin::Plugin
+class FileServer : public zeppelin::plugin::Plugin
 {
     public:
 	std::string getName() const override
 	{ return "file-server"; }
 
-	void start(const Json::Value& config, plugin::PluginManager& pm) override;
+	void start(const Json::Value& config, zeppelin::plugin::PluginManager& pm) override;
 	void stop() override;
 
     private:

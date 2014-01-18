@@ -1,8 +1,9 @@
 #ifndef LIBRARY_MUSICLIBRARY_H_INCLUDED
 #define LIBRARY_MUSICLIBRARY_H_INCLUDED
 
+#include <zeppelin/library/musiclibrary.h>
+
 #include "scanner.h"
-#include "storage.h"
 #include "metaparser.h"
 
 #include <config/config.h>
@@ -10,18 +11,19 @@
 namespace library
 {
 
-class MusicLibrary : public ScannerListener
+class MusicLibraryImpl : public zeppelin::library::MusicLibrary,
+			 public ScannerListener
 {
     public:
-	MusicLibrary(Storage& storage, const config::Library& config);
+	MusicLibraryImpl(zeppelin::library::Storage& storage, const config::Library& config);
 
-	Storage& getStorage();
+	zeppelin::library::Storage& getStorage() override;
 
-	void scan();
+	void scan() override;
 
 	void scanningStarted() override;
 	void scanningFinished() override;
-	void musicFound(const File& file) override;
+	void musicFound(const zeppelin::library::File& file) override;
 
     private:
 	/// configured root directories for searching music files
@@ -31,7 +33,7 @@ class MusicLibrary : public ScannerListener
 	MetaParser m_metaParser;
 
 	/// music library storage
-	Storage& m_storage;
+	zeppelin::library::Storage& m_storage;
 };
 
 }

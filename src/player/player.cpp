@@ -13,7 +13,7 @@ using player::Player;
 Player::Player(const std::shared_ptr<output::BaseOutput>& output,
 	       Fifo& fifo,
 	       filter::Volume& volFilter,
-	       Controller& ctrl)
+	       ControllerImpl& ctrl)
     : m_fifo(fifo),
       m_output(output),
       m_format(output->getFormat()),
@@ -115,7 +115,7 @@ void Player::run()
 
 		case Fifo::MARKER :
 		    m_position = 0;
-		    m_ctrl.command(Controller::SONG_FINISHED);
+		    m_ctrl.command(ControllerImpl::SONG_FINISHED);
 		    break;
 
 		case Fifo::NONE :

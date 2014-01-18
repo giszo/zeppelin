@@ -1,7 +1,7 @@
 #ifndef PLUGINS_HTTPSERVER_HTTPSERVER_H_INCLUDED
 #define PLUGINS_HTTPSERVER_HTTPSERVER_H_INCLUDED
 
-#include <plugin/plugininterface.h>
+#include <zeppelin/plugin/plugininterface.h>
 
 #include <functional>
 #include <memory>
@@ -58,7 +58,7 @@ class FileHttpResponse : public HttpResponse
 	virtual int getFd() const = 0;
 };
 
-class HttpServer : public plugin::PluginInterface
+class HttpServer : public zeppelin::plugin::PluginInterface
 {
     public:
 	typedef std::function<std::unique_ptr<HttpResponse> (const HttpRequest&)> Handler;
