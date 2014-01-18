@@ -23,8 +23,6 @@ env["RANLIBCOMSTR"] = "Indexing $TARGET"
 env["LINKCOMSTR"] = "Linking $TARGET"
 env["SHLINKCOMSTR"] = "Linking $TARGET"
 
-env["PLUGINS"] = []
-
 ########################################################################################################################
 # application library
 
@@ -75,13 +73,8 @@ zep = env.Program(
     LIBS = ["asound", "mpg123", "FLAC", "samplerate", "sqlite3", "jsoncpp", "dl"]
 )
 
-########################################################################################################################
-# plugins
-
-SConscript(dirs = ["plugins"], exports = ["env"])
-
 # define the defualt target
-Default([zep] + env["PLUGINS"])
+Default(zep)
 
 ########################################################################################################################
 # testing

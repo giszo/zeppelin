@@ -1,17 +1,7 @@
 *.o
-*.os
-*.pyc
 
 /.sconsign.dblite
 
 /zeppelin
 /libzeppelin.a
 /unit_test
-
-/plugins/http-server/libhttp-server.so
-/plugins/jsonrpc-remote/libjsonrpc-remote.so
-/plugins/file-server/libfile-server.so
-
-/cli/__pycache__
-
-/library.db
