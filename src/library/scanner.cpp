@@ -2,8 +2,8 @@
 
 #include <thread/blocklock.h>
 #include <utils/stringutils.h>
-#include <logger.h>
 
+#include <zeppelin/logger.h>
 #include <zeppelin/library/storage.h>
 
 #include <dirent.h>

@@ -5,7 +5,8 @@
 #include <codec/mp3.h>
 #include <filter/volume.h>
 #include <thread/blocklock.h>
-#include <logger.h>
+
+#include <zeppelin/logger.h>
 
 using player::Player;
 

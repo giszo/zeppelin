@@ -1,7 +1,8 @@
 #include "flac.h"
 
 #include <utils/stringutils.h>
-#include <logger.h>
+
+#include <zeppelin/logger.h>
 
 #include <cstring>
 

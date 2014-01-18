@@ -1,4 +1,6 @@
-#include "logger.h"
+#include <thread/mutex.h>
+
+#include <zeppelin/logger.h>
 
 #include <iomanip>
 
@@ -6,6 +8,8 @@
 #include <time.h>
 
 Logger Logger::s_logger;
+
+static thread::Mutex s_mutex;
 
 // =====================================================================================================================
 Logger& Logger::get()
@@ -16,14 +20,14 @@ Logger& Logger::get()
 // =====================================================================================================================
 Logger& Logger::operator<<(const Lock&)
 {
-    m_mutex.lock();
+    s_mutex.lock();
     return *this;
 }
 
 // =====================================================================================================================
 Logger& Logger::operator<<(const Unlock&)
 {
-    m_mutex.unlock();
+    s_mutex.unlock();
     return *this;
 }
 

@@ -2,7 +2,8 @@
 
 #include <config/config.h>
 #include <thread/blocklock.h>
-#include <logger.h>
+
+#include <zeppelin/logger.h>
 
 using library::SqliteStorage;
 

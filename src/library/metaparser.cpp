@@ -3,8 +3,8 @@
 
 #include <codec/basecodec.h>
 #include <thread/blocklock.h>
-#include <logger.h>
 
+#include <zeppelin/logger.h>
 #include <zeppelin/library/storage.h>
 
 using library::MetaParser;

@@ -2,8 +2,7 @@
 
 #include "pluginmanager.h"
 
-#include <logger.h>
-
+#include <zeppelin/logger.h>
 #include <zeppelin/plugin/plugin.h>
 
 #include <dlfcn.h>

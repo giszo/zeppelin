@@ -1,7 +1,5 @@
-#ifndef LOGGER_H_INCLUDED
-#define LOGGER_H_INCLUDED
-
-#include <thread/mutex.h>
+#ifndef ZEPPELIN_LOGGER_H_INCLUDED
+#define ZEPPELIN_LOGGER_H_INCLUDED
 
 #include <iostream>
 
@@ -29,8 +27,6 @@ class Logger
 	Logger& operator<<(const Timestamp&);
 
     private:
-	thread::Mutex m_mutex;
-
 	static Logger s_logger;
 };
 

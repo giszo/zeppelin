@@ -3,7 +3,8 @@
 
 #include <thread/blocklock.h>
 #include <filter/resample.h>
-#include <logger.h>
+
+#include <zeppelin/logger.h>
 
 using player::Decoder;
 
