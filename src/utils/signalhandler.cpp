@@ -12,6 +12,7 @@ SignalHandler::SignalHandler()
     sigemptyset(&m_set);
     sigaddset(&m_set, SIGHUP);
     sigaddset(&m_set, SIGINT);
+    sigaddset(&m_set, SIGTERM);
     sigaddset(&m_set, SIGPIPE);
     pthread_sigmask(SIG_BLOCK, &m_set, NULL);
 }
@@ -31,6 +32,7 @@ void SignalHandler::run()
 	switch (number)
 	{
 	    case SIGINT :
+	    case SIGTERM :
 		// exit the application
 		running = false;
 		break;
