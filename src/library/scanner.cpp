@@ -1,5 +1,6 @@
 #include "scanner.h"
 
+#include <codec/basecodec.h>
 #include <thread/blocklock.h>
 #include <utils/stringutils.h>
 
@@ -11,11 +12,6 @@
 #include <sys/stat.h>
 
 using library::Scanner;
-
-const std::string Scanner::s_mediaExtensions[] = {
-    ".mp3",
-    ".flac"
-};
 
 // =====================================================================================================================
 Scanner::Scanner(zeppelin::library::Storage& storage, ScannerListener& listener)
@@ -124,7 +120,7 @@ void Scanner::scanDirectory(const Directory& path, std::deque<Directory>& paths)
 	    int directoryId = m_storage.ensureDirectory(name, path.m_id);
 	    paths.push_back({directoryId, p});
 	}
-	else if (isMediaFile(name))
+	else if (codec::BaseCodec::isMediaFile(name))
 	{
 	    zeppelin::library::File file(-1);
 	    file.m_directoryId = path.m_id;
@@ -139,18 +135,4 @@ void Scanner::scanDirectory(const Directory& path, std::deque<Directory>& paths)
     closedir(dir);
 
     LOG("Scanning of " << path.m_path << " finished");
-}
-
-// =====================================================================================================================
-bool Scanner::isMediaFile(const std::string& name)
-{
-    for (size_t i = 0; i < sizeof(s_mediaExtensions) / sizeof(s_mediaExtensions[0]); ++i)
-    {
-	const std::string& ext = s_mediaExtensions[i];
-
-	if (utils::StringUtils::endsWith(name, ext))
-	    return true;
-    }
-
-    return false;
 }

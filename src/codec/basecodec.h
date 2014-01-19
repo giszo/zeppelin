@@ -5,9 +5,13 @@
 
 #include <player/format.h>
 
+#include <boost/algorithm/string.hpp>
+
 #include <string>
 #include <stdexcept>
 #include <memory>
+#include <unordered_map>
+#include <functional>
 
 namespace codec
 {
@@ -48,10 +52,32 @@ class BaseCodec
 	/// returns informations about the media
 	virtual Metadata readMetadata() = 0;
 
+	static bool isMediaFile(const std::string& file);
+
 	static std::shared_ptr<BaseCodec> create(const std::string& file);
 
     protected:
 	std::string m_file;
+
+    private:
+	struct Hasher
+	{
+	    size_t operator()(const std::string& s) const
+	    { return std::hash<std::string>()(boost::algorithm::to_lower_copy(s)); }
+	};
+
+	struct Comparator
+	{
+	    bool operator()(const std::string& s1, const std::string& s2) const
+	    { return boost::iequals(s1, s2); }
+	};
+
+	typedef std::unordered_map<std::string,
+				   std::function<std::shared_ptr<BaseCodec>(const std::string&)>,
+				   Hasher,
+				   Comparator> CodecMap;
+
+	static CodecMap s_codecs;
 };
 
 }

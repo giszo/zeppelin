@@ -57,8 +57,6 @@ class Scanner : public thread::Thread
 
 	void scanDirectory(const Directory& path, std::deque<Directory>& paths);
 
-	bool isMediaFile(const std::string& name);
-
     private:
 	enum Command
 	{
@@ -76,8 +74,6 @@ class Scanner : public thread::Thread
 
 	zeppelin::library::Storage& m_storage;
 	ScannerListener& m_listener;
-
-	static const std::string s_mediaExtensions[];
 };
 
 }
