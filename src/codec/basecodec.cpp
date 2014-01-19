@@ -7,8 +7,8 @@
 using codec::BaseCodec;
 
 BaseCodec::CodecMap BaseCodec::s_codecs = {
-    {"mp3",  [](const std::string& file) { return std::make_shared<Mp3>(file); }},
-    {"flac", [](const std::string& file) { return std::make_shared<Flac>(file); }}
+    {"mp3",  [](const std::string& file) { return std::make_shared<codec::Mp3>(file); }},
+    {"flac", [](const std::string& file) { return std::make_shared<codec::Flac>(file); }}
 };
 
 // =====================================================================================================================
