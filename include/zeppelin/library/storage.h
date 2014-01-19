@@ -32,11 +32,26 @@ class StorageException : public std::runtime_error
 	{}
 };
 
+struct Statistics
+{
+    // number of artists
+    int m_numOfArtists;
+    // number of albums
+    int m_numOfAlbums;
+    // number of files
+    int m_numOfFiles;
+    // sum of song lengths
+    int m_sumOfSongLength;
+};
+
 class Storage
 {
     public:
 	virtual ~Storage()
 	{}
+
+	// returns statistics about the music library
+	virtual Statistics getStatistics() = 0;
 
 	/// returns the directory structure associated to the given ID
 	virtual std::shared_ptr<Directory> getDirectory(int id) = 0;

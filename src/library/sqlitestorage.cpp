@@ -114,9 +114,10 @@ void SqliteStorage::open(const config::Library& config)
                         FROM files
                         WHERE directory_id = ?
                         ORDER BY name)");
+    prepareStatement(&m_getFileStatistics, "SELECT COUNT(id), SUM(length) FROM files");
+
     prepareStatement(&m_setFileMark, "UPDATE files SET mark = 1 WHERE id = ?");
     prepareStatement(&m_setDirectoryMark, "UPDATE directories SET mark = 1 WHERE id = ?");
-
     prepareStatement(&m_setFileMeta,
                      R"(UPDATE files
                         SET artist_id = ?, album_id = ?, length = ?, title = ?, year = ?, track_index = ?, type = ?, sampling_rate = ?
@@ -132,8 +133,8 @@ void SqliteStorage::open(const config::Library& config)
                      R"(SELECT artists.id, artists.name, COUNT(DISTINCT files.album_id)
                         FROM files LEFT JOIN artists ON artists.id = files.artist_id
                         GROUP BY files.artist_id)");
-
     prepareStatement(&m_getArtistIdByName, "SELECT id FROM artists WHERE name = ?");
+    prepareStatement(&m_getNumOfArtists, "SELECT COUNT(id) FROM artists");
 
     // albums
     prepareStatement(&m_addAlbum, "INSERT OR IGNORE INTO albums(artist_id, name) VALUES(?, ?)");
@@ -150,6 +151,7 @@ void SqliteStorage::open(const config::Library& config)
                         WHERE files.artist_id = ?
                         GROUP BY files.album_id
                         ORDER BY albums.name)");
+    prepareStatement(&m_getNumOfAlbums, "SELECT COUNT(id) FROM albums");
 
     // mark
     prepareStatement(&m_clearFileMarks, "UPDATE files SET mark = 0");
@@ -157,6 +159,35 @@ void SqliteStorage::open(const config::Library& config)
 
     prepareStatement(&m_deleteNonMarkedFiles, "DELETE FROM files WHERE mark = 0");
     prepareStatement(&m_deleteNonMarkedDirectories, "DELETE FROM directories WHERE mark = 0");
+}
+
+// =====================================================================================================================
+zeppelin::library::Statistics SqliteStorage::getStatistics()
+{
+    zeppelin::library::Statistics stat;
+
+    thread::BlockLock bl(m_mutex);
+
+    {
+	StatementHolder stmt(m_getNumOfArtists);
+	stmt.step();
+	stat.m_numOfArtists = stmt.getInt(0);
+    }
+
+    {
+	StatementHolder stmt(m_getNumOfAlbums);
+	stmt.step();
+	stat.m_numOfAlbums = stmt.getInt(0);
+    }
+
+    {
+	StatementHolder stmt(m_getFileStatistics);
+	stmt.step();
+	stat.m_numOfFiles = stmt.getInt(0);
+	stat.m_sumOfSongLength = stmt.getInt(1);
+    }
+
+    return stat;
 }
 
 // =====================================================================================================================

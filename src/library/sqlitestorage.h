@@ -26,6 +26,8 @@ class SqliteStorage : public zeppelin::library::Storage
 
 	void open(const config::Library& config);
 
+	zeppelin::library::Statistics getStatistics() override;
+
 	std::shared_ptr<zeppelin::library::Directory> getDirectory(int id) override;
 	int ensureDirectory(const std::string& name, int parentId) override;
 	std::vector<std::shared_ptr<zeppelin::library::Directory>> listSubdirectories(int id) override;
@@ -104,6 +106,7 @@ class SqliteStorage : public zeppelin::library::Storage
 	sqlite3_stmt* m_getFilesOfArtist;
 	sqlite3_stmt* m_getFilesOfAlbum;
 	sqlite3_stmt* m_getFilesOfDirectory;
+	sqlite3_stmt* m_getFileStatistics;
 
 	sqlite3_stmt* m_setFileMark;
 	sqlite3_stmt* m_setDirectoryMark;
@@ -115,6 +118,7 @@ class SqliteStorage : public zeppelin::library::Storage
 	sqlite3_stmt* m_addArtist;
 	sqlite3_stmt* m_getArtists;
 	sqlite3_stmt* m_getArtistIdByName;
+	sqlite3_stmt* m_getNumOfArtists;
 
 	/// album handling
 	sqlite3_stmt* m_addAlbum;
@@ -122,6 +126,7 @@ class SqliteStorage : public zeppelin::library::Storage
 	sqlite3_stmt* m_getAlbumIdByName;
 	sqlite3_stmt* m_getAlbums;
 	sqlite3_stmt* m_getAlbumsByArtist;
+	sqlite3_stmt* m_getNumOfAlbums;
 
 	/// mark handling
 	sqlite3_stmt* m_clearFileMarks;
