@@ -4,6 +4,8 @@
 
 #include <zeppelin/logger.h>
 
+#include <boost/locale.hpp>
+
 #include <cstring>
 
 using codec::Mp3;
@@ -187,18 +189,21 @@ void Mp3::processID3v1(Metadata& info, const mpg123_id3v1& id3)
     if (info.getArtist().empty())
     {
 	readID3v1Field(id3.artist, 30, tmp);
+	tmp = boost::locale::conv::to_utf<char>(tmp, "ISO-8859-1");
 	info.setArtist(tmp);
     }
 
     if (info.getAlbum().empty())
     {
 	readID3v1Field(id3.album, 30, tmp);
+	tmp = boost::locale::conv::to_utf<char>(tmp, "ISO-8859-1");
 	info.setAlbum(tmp);
     }
 
     if (info.getTitle().empty())
     {
 	readID3v1Field(id3.title, 30, tmp);
+	tmp = boost::locale::conv::to_utf<char>(tmp, "ISO-8859-1");
 	info.setTitle(tmp);
     }
 
