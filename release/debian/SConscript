@@ -1,0 +1,60 @@
+Import("env")
+
+import os
+
+DEBNAME = "zeppelin"
+DEBVERSION = "0.1"
+DEBARCH = os.popen("dpkg --print-architecture").read()[:-1]
+
+DEBFILES = [
+    ("usr/bin/zeppelin", "#zeppelin"),
+    ("etc/zeppelin.conf", "#release/debian/zeppelin.conf"),
+    ("etc/init.d/zeppelin", "#release/debian/zeppelin")
+]
+
+PKG = "#%s_%s-1_%s.deb" % (DEBNAME, DEBVERSION, DEBARCH)
+
+# our release target
+env.Alias("release-debian", PKG)
+
+DEBCONTROLFILE = os.path.join("debian-release", "DEBIAN/control")
+env.Depends(PKG, DEBCONTROLFILE)
+
+for f in DEBFILES :
+    dest = os.path.join("debian-release", f[0])
+    env.Depends(PKG, dest)
+    env.Command(dest, f[1], Copy("$TARGET", "$SOURCE"))
+    env.Depends(DEBCONTROLFILE, dest)
+
+dest = os.path.join('debian-release', 'var', 'lib', 'zeppelin')
+env.Command(dest, None, Mkdir("$TARGET"))
+env.Depends(DEBCONTROLFILE, dest)
+
+# create control file
+CONTROL_TEMPLATE = """
+Package: zeppelin
+Version: %s
+Architecture: %s
+Installed-Size: %d
+Maintainer: Zoltan Kovacs <giszo.k@gmail.com>
+Homepage: http://zeppelin-player.com
+Description: Zeppelin is a highly customizable music player
+Depends: libasound2, libjsoncpp0, libmpg123-0, libflac8, libsamplerate0, libsqlite3-0, libboost-locale1.49.0, libboost-program-options1.49.0
+"""
+
+def _make_control(target, source, env) :
+    # compute installed size
+    installed_size = 0
+    for f in DEBFILES :
+        installed_size += os.stat(str(env.File(f[1])))[6]
+
+    # build control file contents
+    data = CONTROL_TEMPLATE % (DEBVERSION, DEBARCH, installed_size)
+
+    # write control file
+    f = open(str(target[0]), "w")
+    f.write(data)
+    f.close()
+
+env.Command(DEBCONTROLFILE, None, _make_control)
+env.Command(PKG, DEBCONTROLFILE, "fakeroot dpkg-deb -b release/debian/debian-release $TARGET")

@@ -5,3 +5,5 @@
 /zeppelin
 /libzeppelin.a
 /unit_test
+
+/release/debian/debian-release

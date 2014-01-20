@@ -97,3 +97,8 @@ env.Program(
 
 env.Alias("install", env.Install("$PREFIX/usr/bin", zep))
 env.Alias("install", env.Install("$PREFIX/usr/include", Dir("include/zeppelin")))
+
+########################################################################################################################
+# release
+
+SConscript(dirs = ["release"], exports = ["env"])

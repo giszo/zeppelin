@@ -1,0 +1,46 @@
+#!/bin/sh -e
+
+DAEMON=/usr/bin/zeppelin
+PIDFILE=/var/run/zeppelin.pid
+PATH=/sbin:/bin:/usr/sbin:/usr/bin
+
+test -x $DAEMON || exit 0
+
+. /lib/lsb/init-functions
+
+zeppelin_start() {
+	log_daemon_msg "Starting Zeppelin Daemon"
+	start-stop-daemon -x $DAEMON -p $PIDFILE --start -- -p $PIDFILE -d -c /etc/zeppelin.conf
+	log_end_msg $?
+}
+
+zeppelin_stop() {
+	log_daemon_msg "Stopping Zeppelin Daemon"
+	start-stop-daemon -p $PIDFILE --stop --retry 5 || echo -n "...which is not running"
+	log_end_msg $?
+}
+
+case "$1" in
+	start|stop)
+		zeppelin_${1}
+		;;
+	restart|reload|force-reload)
+		zeppelin_stop
+		zeppelin_start
+		;;
+	force-stop)
+		pulseaudio_stop
+		killall zeppelin || true
+		sleep 2
+		killall -9 zeppelin || true
+		;;
+	status)
+		status_of_proc -p $PIDFILE "$DAEMON" "Zeppelin" && exit 0 || exit $?
+		;;
+	*)
+		echo "Usage: /etc/init.d/pulseaudio {start|stop|force-stop|restart|reload|force-reload|status}"
+		exit 1
+		;;
+esac
+
+exit 0

@@ -1,0 +1,3 @@
+Import("env")
+
+SConscript(dirs = ["debian"], exports = ["env"])
