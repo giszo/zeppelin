@@ -6,16 +6,73 @@
 #include <config/parser.h>
 #include <plugin/pluginmanager.h>
 #include <utils/signalhandler.h>
+#include <utils/pidfile.h>
+
+#include <boost/program_options.hpp>
 
 #include <iostream>
+
+static bool s_daemonize = false;
+static std::string s_config;
+static std::string s_pidFile;
+
+static std::unique_ptr<utils::PidFile> s_pf;
+
+// =====================================================================================================================
+static bool parseArgs(int argc, char** argv)
+{
+    boost::program_options::options_description desc;
+    desc.add_options()
+	("help,h", "output help message")
+	("config,c", boost::program_options::value<std::string>(), "configuration file")
+	("pidfile,p", boost::program_options::value<std::string>(), "pid file")
+	("daemonize,d", "daemonize the process")
+    ;
+
+    boost::program_options::variables_map vm;
+    boost::program_options::store(boost::program_options::parse_command_line(argc, argv, desc), vm);
+    boost::program_options::notify(vm);
+
+    // display help if it was requested
+    if (vm.count("help"))
+    {
+	std::cout << desc << std::endl;
+	return false;
+    }
+
+    // make sure we have the path of the config from command line
+    if (!vm.count("config"))
+    {
+	std::cout << "missing configuration parameter" << std::endl;
+	return false;
+    }
+
+    s_config = vm["config"].as<std::string>();
+    s_daemonize = vm.count("daemonize");
+
+    if (vm.count("pidfile"))
+	s_pidFile = vm["pidfile"].as<std::string>();
+
+    return true;
+}
 
 // =====================================================================================================================
 int main(int argc, char** argv)
 {
-    if (argc != 2)
-    {
-	std::cerr << "Config parameter missing!" << std::endl;
+    if (!parseArgs(argc, argv))
 	return 1;
+
+    if (s_daemonize)
+    {
+	if (daemon(0, 1) != 0)
+	{
+	    std::cerr << "unable to daemonize!" << std::endl;
+	    return 1;
+	}
+
+	// create the PID file... the destructor of the object will delete it
+	if (!s_pidFile.empty())
+	    s_pf = utils::PidFile::create(s_pidFile);
     }
 
     // perform global initialization
@@ -23,7 +80,7 @@ int main(int argc, char** argv)
 
     // load configuration
     config::Config config;
-    config::Parser parser(argv[1]);
+    config::Parser parser(s_config);
 
     try
     {

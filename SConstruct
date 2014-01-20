@@ -52,6 +52,7 @@ sources = [
     "thread/condition.cpp",
     "utils/stringutils.cpp",
     "utils/signalhandler.cpp",
+    "utils/pidfile.cpp",
     "config/parser.cpp",
     "filter/basefilter.cpp",
     "filter/volume.cpp",
@@ -70,7 +71,7 @@ zep_lib = env.StaticLibrary(
 zep = env.Program(
     "zeppelin",
     source = ["src/main.cpp"] + zep_lib,
-    LIBS = ["asound", "mpg123", "FLAC", "samplerate", "sqlite3", "jsoncpp", "dl", "boost_locale"]
+    LIBS = ["asound", "mpg123", "FLAC", "samplerate", "sqlite3", "jsoncpp", "dl", "boost_locale", "boost_program_options"]
 )
 
 # define the defualt target
