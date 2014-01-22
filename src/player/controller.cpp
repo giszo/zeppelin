@@ -539,7 +539,10 @@ std::shared_ptr<codec::BaseCodec> ControllerImpl::openFile(const zeppelin::libra
     std::shared_ptr<codec::BaseCodec> input = codec::BaseCodec::create(file.m_path + "/" + file.m_name);
 
     if (!input)
+    {
+	LOG("controller: unable to create codec for " << file.m_path << "/" << file.m_name);
 	return nullptr;
+    }
 
     try
     {
@@ -547,6 +550,7 @@ std::shared_ptr<codec::BaseCodec> ControllerImpl::openFile(const zeppelin::libra
     }
     catch (const codec::CodecException& e)
     {
+	LOG("controller: unable to open " << file.m_path << "/" << file.m_name << ", error: " << e.what());
 	return nullptr;
     }
 
