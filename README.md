@@ -10,6 +10,7 @@ The list of the currently supported media formats is the following:
 
 - MP3
 - FLAC
+- OGG
 
 Supported output
 -
