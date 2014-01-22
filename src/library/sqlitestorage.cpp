@@ -131,7 +131,7 @@ void SqliteStorage::open(const config::Library& config)
     prepareStatement(&m_addArtist, "INSERT OR IGNORE INTO artists(name) VALUES(?)");
     prepareStatement(&m_getArtists,
                      R"(SELECT artists.id, artists.name, COUNT(DISTINCT files.album_id)
-                        FROM files LEFT JOIN artists ON artists.id = files.artist_id
+                        FROM artists LEFT JOIN files ON artists.id = files.artist_id
                         GROUP BY files.artist_id)");
     prepareStatement(&m_getArtistIdByName, "SELECT id FROM artists WHERE name = ?");
     prepareStatement(&m_getNumOfArtists, "SELECT COUNT(id) FROM artists");
@@ -142,7 +142,7 @@ void SqliteStorage::open(const config::Library& config)
     prepareStatement(&m_getAlbumIdByName, "SELECT id FROM albums WHERE artist_id IS ? AND name = ?");
     prepareStatement(&m_getAlbums,
                      R"(SELECT albums.id, albums.name, files.artist_id, COUNT(files.id), SUM(files.length)
-                        FROM files LEFT JOIN albums ON albums.id = files.album_id
+                        FROM albums LEFT JOIN files ON albums.id = files.album_id
                         GROUP BY files.album_id
                         ORDER BY albums.name)");
     prepareStatement(&m_getAlbumsByArtist,
