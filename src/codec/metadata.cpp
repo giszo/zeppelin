@@ -1,5 +1,9 @@
 #include "metadata.h"
 
+#include <utils/stringutils.h>
+
+#include <zeppelin/logger.h>
+
 #include <boost/algorithm/string/trim.hpp>
 
 using codec::Metadata;
@@ -52,4 +56,46 @@ void Metadata::setTitle(const std::string& title)
 {
     m_title = title;
     boost::algorithm::trim(m_title);
+}
+
+// =====================================================================================================================
+void Metadata::setVorbisComment(const std::string& vc)
+{
+    std::string::size_type p = vc.find('=');
+
+    if (p == std::string::npos)
+    {
+	LOG("metadata: invalid Vorbis comment");
+	return;
+    }
+
+    std::string key = vc.substr(0, p);
+    std::string value = vc.substr(p + 1);
+
+    if (key == "ARTIST")
+	setArtist(value);
+    else if (key == "ALBUM")
+	setAlbum(value);
+    else if (key == "TITLE")
+	setTitle(value);
+    else if (key == "DATE")
+    {
+	try
+	{
+	    m_year = utils::StringUtils::toInt(value);
+	}
+	catch (const utils::NumberFormatException&)
+	{
+	}
+    }
+    else if (key == "TRACKNUMBER")
+    {
+	try
+	{
+	    m_trackIndex = utils::StringUtils::toInt(value);
+	}
+	catch (const utils::NumberFormatException&)
+	{
+	}
+    }
 }

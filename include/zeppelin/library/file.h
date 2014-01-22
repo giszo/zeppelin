@@ -12,7 +12,8 @@ enum Codec
 {
     UNKNOWN,
     MP3,
-    FLAC
+    FLAC,
+    OGG
 };
 
 struct File

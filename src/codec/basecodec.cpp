@@ -1,6 +1,7 @@
 #include "basecodec.h"
 #include "mp3.h"
 #include "flac.h"
+#include "vorbis.h"
 
 #include <utils/stringutils.h>
 
@@ -8,7 +9,8 @@ using codec::BaseCodec;
 
 BaseCodec::CodecMap BaseCodec::s_codecs = {
     {"mp3",  [](const std::string& file) { return std::make_shared<codec::Mp3>(file); }},
-    {"flac", [](const std::string& file) { return std::make_shared<codec::Flac>(file); }}
+    {"flac", [](const std::string& file) { return std::make_shared<codec::Flac>(file); }},
+    {"ogg",  [](const std::string& file) { return std::make_shared<codec::Vorbis>(file); }}
 };
 
 // =====================================================================================================================

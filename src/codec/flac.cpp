@@ -1,7 +1,5 @@
 #include "flac.h"
 
-#include <utils/stringutils.h>
-
 #include <zeppelin/logger.h>
 
 #include <cstring>
@@ -245,41 +243,7 @@ void Flac::parseVorbisComment(const FLAC__StreamMetadata_VorbisComment& vc)
 	FLAC__StreamMetadata_VorbisComment_Entry* entry = &vc.comments[i];
 	const char* data = reinterpret_cast<const char*>(entry->entry);
 
-	// look for the separator '='
-	const char* p = strchr(data, '=');
-
-	if (!p)
-	    continue;
-
-	std::string key(data, p - data);
-	std::string value(p + 1);
-
-	if (key == "ARTIST")
-	    m_metadata.setArtist(value);
-	else if (key == "ALBUM")
-	    m_metadata.setAlbum(value);
-	else if (key == "TITLE")
-	    m_metadata.setTitle(value);
-	else if (key == "DATE")
-	{
-	    try
-	    {
-		m_metadata.m_year = utils::StringUtils::toInt(value);
-	    }
-	    catch (const utils::NumberFormatException&)
-	    {
-	    }
-	}
-	else if (key == "TRACKNUMBER")
-	{
-	    try
-	    {
-		m_metadata.m_trackIndex = utils::StringUtils::toInt(value);
-	    }
-	    catch (const utils::NumberFormatException&)
-	    {
-	    }
-	}
+	m_metadata.setVorbisComment(data);
     }
 }
 

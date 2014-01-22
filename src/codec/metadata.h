@@ -22,6 +22,8 @@ class Metadata
 	void setAlbum(const std::string& album);
 	void setTitle(const std::string& title);
 
+	void setVorbisComment(const std::string& vc);
+
     public:
 	zeppelin::library::Codec m_codec;
 
