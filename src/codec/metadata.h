@@ -1,9 +1,6 @@
 #ifndef CODEC_METADATA_H_INCLUDED
 #define CODEC_METADATA_H_INCLUDED
 
-// for Codec enum
-#include <zeppelin/library/file.h>
-
 #include <string>
 
 namespace codec
@@ -25,7 +22,7 @@ class Metadata
 	void setVorbisComment(const std::string& vc);
 
     public:
-	zeppelin::library::Codec m_codec;
+	std::string m_codec;
 
 	/// sampling rate
 	int m_rate;

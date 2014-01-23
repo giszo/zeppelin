@@ -72,7 +72,7 @@ void SqliteStorage::open(const config::Library& config)
 	    title TEXT DEFAULT NULL,
 	    year INTEGER DEFAULT NULL,
 	    track_index INTEGER DEFAULT NULL,
-	    type INTEGER DEFAULT NULL,
+	    codec TEXT DEFAULT NULL,
 	    sampling_rate INTEGER DEFAULT NULL,
 	    mark INTEGER DEFAULT 1,
 	    UNIQUE(path, name),
@@ -90,7 +90,7 @@ void SqliteStorage::open(const config::Library& config)
     prepareStatement(&m_newFile, "INSERT OR IGNORE INTO files(path, name, size, directory_id) VALUES(?, ?, ?, ?)");
     prepareStatement(&m_getFile,
                      R"(SELECT files.path, files.name, files.size, files.length, files.title, files.year,
-                               files.track_index, files.type, files.sampling_rate,
+                               files.track_index, files.codec, files.sampling_rate,
                                albums.name,
                                artists.name
                         FROM files LEFT JOIN albums  ON albums.id = files.album_id
@@ -99,18 +99,18 @@ void SqliteStorage::open(const config::Library& config)
     prepareStatement(&m_getFileByPath, "SELECT id FROM files WHERE path = ? AND name = ?");
     prepareStatement(&m_getFilesWithoutMeta, "SELECT id, path, name, size, directory_id FROM files WHERE length IS NULL");
     prepareStatement(&m_getFilesOfArtist,
-                     R"(SELECT id, path, name, size, length, artist_id, album_id, title, year, track_index, type, sampling_rate
+                     R"(SELECT id, path, name, size, length, artist_id, album_id, title, year, track_index, codec, sampling_rate
                         FROM files
                         WHERE artist_id IS ?)");
     // 'name' is used in ORDER BY to try to keep the order of tracks inside an album according to file naming because
     // it may contain information about the index of the track
     prepareStatement(&m_getFilesOfAlbum,
-                     R"(SELECT id, path, name, size, length, artist_id, album_id, title, year, track_index, type, sampling_rate
+                     R"(SELECT id, path, name, size, length, artist_id, album_id, title, year, track_index, codec, sampling_rate
                         FROM files
                         WHERE album_id = ?
                         ORDER BY track_index, name)");
     prepareStatement(&m_getFilesOfDirectory,
-                     R"(SELECT id, path, name, size, length, artist_id, album_id, title, year, track_index, type, sampling_rate
+                     R"(SELECT id, path, name, size, length, artist_id, album_id, title, year, track_index, codec, sampling_rate
                         FROM files
                         WHERE directory_id = ?
                         ORDER BY name)");
@@ -120,7 +120,7 @@ void SqliteStorage::open(const config::Library& config)
     prepareStatement(&m_setDirectoryMark, "UPDATE directories SET mark = 1 WHERE id = ?");
     prepareStatement(&m_setFileMeta,
                      R"(UPDATE files
-                        SET artist_id = ?, album_id = ?, length = ?, title = ?, year = ?, track_index = ?, type = ?, sampling_rate = ?
+                        SET artist_id = ?, album_id = ?, length = ?, title = ?, year = ?, track_index = ?, codec = ?, sampling_rate = ?
                         WHERE id = ?)");
     prepareStatement(&m_updateFileMeta,
                      R"(UPDATE files
@@ -447,7 +447,7 @@ void SqliteStorage::setFileMetadata(const zeppelin::library::File& file)
     stmt.bindText(4, file.m_title);
     stmt.bindInt(5, file.m_year);
     stmt.bindInt(6, file.m_trackIndex);
-    stmt.bindInt(7, file.m_codec);
+    stmt.bindText(7, file.m_codec);
     stmt.bindInt(8, file.m_samplingRate);
     stmt.bindInt(9, file.m_id);
 
@@ -676,8 +676,8 @@ void SqliteStorage::fillFile(StatementHolder& stmt, zeppelin::library::File& fil
 		file.m_year = stmt.getInt(col);
 	    else if (colName == "track_index")
 		file.m_trackIndex = stmt.getInt(col);
-	    else if (colName == "type")
-		file.m_codec = static_cast<zeppelin::library::Codec>(stmt.getInt(col));
+	    else if (colName == "codec")
+		file.m_codec = stmt.getText(col);
 	    else if (colName == "sampling_rate")
 		file.m_samplingRate = stmt.getInt(col);
 	    else

@@ -10,8 +10,7 @@ using codec::Metadata;
 
 // =====================================================================================================================
 Metadata::Metadata()
-    : m_codec(zeppelin::library::UNKNOWN),
-      m_rate(-1),
+    : m_rate(-1),
       m_channels(-1),
       m_samples(0),
       m_year(0),

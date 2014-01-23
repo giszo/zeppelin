@@ -136,7 +136,7 @@ codec::Metadata Flac::readMetadata()
 	}
     } while (FLAC__metadata_simple_iterator_next(m_iterator));
 
-    m_metadata.m_codec = zeppelin::library::FLAC;
+    m_metadata.m_codec = "flac";
 
     return m_metadata;
 }

@@ -8,14 +8,6 @@ namespace zeppelin
 namespace library
 {
 
-enum Codec
-{
-    UNKNOWN,
-    MP3,
-    FLAC,
-    OGG
-};
-
 struct File
 {
     File(int id);
@@ -39,7 +31,7 @@ struct File
     int m_trackIndex;
 
     // the audio codec of the file (mp3, flac, etc.)
-    Codec m_codec;
+    std::string m_codec;
     // sampling rate of the file (44100Hz, 48000Hz, etc.)
     int m_samplingRate;
 };

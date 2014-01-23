@@ -132,7 +132,7 @@ void Vorbis::seek(off_t sample)
 codec::Metadata Vorbis::readMetadata()
 {
     Metadata m;
-    m.m_codec = zeppelin::library::OGG;
+    m.m_codec = "ogg";
 
     if (ov_fopen(m_file.c_str(), &m_vf) != 0)
 	throw CodecException("unable to open file");

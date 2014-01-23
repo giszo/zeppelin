@@ -100,7 +100,7 @@ codec::Metadata Mp3::readMetadata()
     if (id3_v1)
 	processID3v1(info, *id3_v1);
 
-    info.m_codec = zeppelin::library::MP3;
+    info.m_codec = "mp3";
 
     return info;
 }
