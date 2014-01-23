@@ -1,5 +1,7 @@
 # -*- python -*-
 
+import os
+
 AddOption(
     "--prefix",
     dest = "prefix",
@@ -97,7 +99,10 @@ env.Program(
 # install
 
 env.Alias("install", env.Install("$PREFIX/usr/bin", zep))
-env.Alias("install", env.Install("$PREFIX/usr/include", Dir("include/zeppelin")))
+
+for root, dirs, files in os.walk(str(Dir("include/zeppelin"))) :
+    for fn in files :
+        env.Alias("install", env.InstallAs("$PREFIX/usr/%s/%s" % (root, fn), "%s/%s" % (root, fn)))
 
 ########################################################################################################################
 # release
