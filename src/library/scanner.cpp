@@ -1,6 +1,6 @@
 #include "scanner.h"
 
-#include <codec/basecodec.h>
+#include <codec/codecmanager.h>
 #include <thread/blocklock.h>
 #include <utils/stringutils.h>
 
@@ -14,9 +14,12 @@
 using library::Scanner;
 
 // =====================================================================================================================
-Scanner::Scanner(zeppelin::library::Storage& storage, ScannerListener& listener)
+Scanner::Scanner(const codec::CodecManager& codecManager,
+		 zeppelin::library::Storage& storage,
+		 ScannerListener& listener)
     : m_storage(storage),
-      m_listener(listener)
+      m_listener(listener),
+      m_codecManager(codecManager)
 {
 }
 
@@ -120,7 +123,7 @@ void Scanner::scanDirectory(const Directory& path, std::deque<Directory>& paths)
 	    int directoryId = m_storage.ensureDirectory(name, path.m_id);
 	    paths.push_back({directoryId, p});
 	}
-	else if (codec::BaseCodec::isMediaFile(name))
+	else if (m_codecManager.isMediaFile(name))
 	{
 	    zeppelin::library::File file(-1);
 	    file.m_directoryId = path.m_id;

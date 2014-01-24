@@ -5,10 +5,12 @@
 using library::MusicLibraryImpl;
 
 // =====================================================================================================================
-MusicLibraryImpl::MusicLibraryImpl(zeppelin::library::Storage& storage, const config::Library& config)
+MusicLibraryImpl::MusicLibraryImpl(const codec::CodecManager& codecManager,
+				   zeppelin::library::Storage& storage,
+				   const config::Library& config)
     : m_roots(config.m_roots),
-      m_scanner(storage, *this),
-      m_metaParser(storage),
+      m_scanner(codecManager, storage, *this),
+      m_metaParser(codecManager, storage),
       m_storage(storage)
 {
     m_scanner.start();

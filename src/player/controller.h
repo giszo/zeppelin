@@ -12,6 +12,11 @@
 #include <thread/condition.h>
 #include <filter/volume.h>
 
+namespace codec
+{
+class CodecManager;
+}
+
 namespace player
 {
 
@@ -37,7 +42,8 @@ class ControllerImpl : public zeppelin::player::Controller,
 	    DECODER_FINISHED
 	};
 
-	ControllerImpl(const config::Config& config);
+	ControllerImpl(const codec::CodecManager& codecManager,
+		       const config::Config& config);
 
 	/// returns the current play queue
 	std::shared_ptr<zeppelin::player::Playlist> getQueue() const;
@@ -91,8 +97,6 @@ class ControllerImpl : public zeppelin::player::Controller,
 	// sets the decoder queue index to the same position as the player queue
 	void setDecoderToPlayerIndex();
 
-	std::shared_ptr<codec::BaseCodec> openFile(const zeppelin::library::File& file);
-
     private:
 	/// the state of the player
 	State m_state;
@@ -145,6 +149,8 @@ class ControllerImpl : public zeppelin::player::Controller,
 
 	thread::Mutex m_mutex;
 	thread::Condition m_cond;
+
+	const codec::CodecManager& m_codecManager;
 };
 
 }

@@ -32,7 +32,7 @@ sources = [
     "logger.cpp",
     "output/baseoutput.cpp",
     "output/alsa.cpp",
-    "codec/basecodec.cpp",
+    "codec/codecmanager.cpp",
     "codec/mp3.cpp",
     "codec/flac.cpp",
     "codec/vorbis.cpp",
@@ -86,7 +86,8 @@ Default(zep)
 tests = [
     "fifo.cpp",
     "queue.cpp",
-    "format.cpp"
+    "format.cpp",
+    "controller.cpp"
 ]
 
 env.Program(

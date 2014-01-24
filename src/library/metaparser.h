@@ -17,6 +17,11 @@ class Storage;
 }
 }
 
+namespace codec
+{
+class CodecManager;
+}
+
 namespace library
 {
 
@@ -25,7 +30,8 @@ class MusicLibrary;
 class MetaParser : public thread::Thread
 {
     public:
-	MetaParser(zeppelin::library::Storage& storage);
+	MetaParser(const codec::CodecManager& codecManager,
+		   zeppelin::library::Storage& storage);
 
 	void add(const std::shared_ptr<zeppelin::library::File>& file);
 
@@ -41,6 +47,8 @@ class MetaParser : public thread::Thread
 	thread::Condition m_cond;
 
 	zeppelin::library::Storage& m_storage;
+
+	const codec::CodecManager& m_codecManager;
 };
 
 }

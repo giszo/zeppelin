@@ -1,5 +1,6 @@
 #include "controller.h"
 
+#include <codec/codecmanager.h>
 #include <output/alsa.h>
 #include <thread/blocklock.h>
 
@@ -10,10 +11,12 @@
 using player::ControllerImpl;
 
 // =====================================================================================================================
-ControllerImpl::ControllerImpl(const config::Config& config)
+ControllerImpl::ControllerImpl(const codec::CodecManager& codecManager,
+			       const config::Config& config)
     : m_state(STOPPED),
       m_decoderInitialized(false),
-      m_fifo(4 * 1024 /* 4kB for now */)
+      m_fifo(4 * 1024 /* 4kB for now */),
+      m_codecManager(codecManager)
 {
     // prepare the output
     std::shared_ptr<output::BaseOutput> output = std::make_shared<output::AlsaOutput>(config);
@@ -495,7 +498,7 @@ void ControllerImpl::setDecoderInput()
 	const zeppelin::library::File& file = *m_decoderQueue.file();
 
 	// open the file
-	std::shared_ptr<codec::BaseCodec> input = openFile(file);
+	std::shared_ptr<codec::BaseCodec> input = m_codecManager.openFile(file.m_path + "/" + file.m_name);
 
 	if (!input)
 	{
@@ -531,28 +534,4 @@ void ControllerImpl::setDecoderToPlayerIndex()
 
     m_playerQueue.get(it);
     m_decoderQueue.set(it);
-}
-
-// =====================================================================================================================
-std::shared_ptr<codec::BaseCodec> ControllerImpl::openFile(const zeppelin::library::File& file)
-{
-    std::shared_ptr<codec::BaseCodec> input = codec::BaseCodec::create(file.m_path + "/" + file.m_name);
-
-    if (!input)
-    {
-	LOG("controller: unable to create codec for " << file.m_path << "/" << file.m_name);
-	return nullptr;
-    }
-
-    try
-    {
-	input->open();
-    }
-    catch (const codec::CodecException& e)
-    {
-	LOG("controller: unable to open " << file.m_path << "/" << file.m_name << ", error: " << e.what());
-	return nullptr;
-    }
-
-    return input;
 }

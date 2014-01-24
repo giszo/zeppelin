@@ -1,6 +1,7 @@
 #include "metaparser.h"
 #include "musiclibrary.h"
 
+#include <codec/codecmanager.h>
 #include <codec/basecodec.h>
 #include <thread/blocklock.h>
 
@@ -10,8 +11,10 @@
 using library::MetaParser;
 
 // =====================================================================================================================
-MetaParser::MetaParser(zeppelin::library::Storage& storage)
-    : m_storage(storage)
+MetaParser::MetaParser(const codec::CodecManager& codecManager,
+		       zeppelin::library::Storage& storage)
+    : m_storage(storage),
+      m_codecManager(codecManager)
 {
 }
 
@@ -59,7 +62,7 @@ void MetaParser::parse(zeppelin::library::File& file)
 {
     LOG("Parsing meta information of " << file.m_path << "/" << file.m_name);
 
-    std::shared_ptr<codec::BaseCodec> codec = codec::BaseCodec::create(file.m_path + "/" + file.m_name);
+    std::shared_ptr<codec::BaseCodec> codec = m_codecManager.openFile(file.m_path + "/" + file.m_name);
 
     if (!codec)
 	return;

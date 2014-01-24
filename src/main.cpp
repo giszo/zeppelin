@@ -1,5 +1,5 @@
 #include <output/alsa.h>
-#include <codec/mp3.h>
+#include <codec/codecmanager.h>
 #include <library/musiclibrary.h>
 #include <library/sqlitestorage.h>
 #include <player/controller.h>
@@ -9,6 +9,7 @@
 #include <utils/pidfile.h>
 
 #include <boost/program_options.hpp>
+#include <mpg123.h>
 
 #include <iostream>
 
@@ -108,11 +109,13 @@ int main(int argc, char** argv)
 	return 1;
     }
 
+    codec::CodecManager codecManager;
+
     std::shared_ptr<zeppelin::library::MusicLibrary> lib =
-	std::make_shared<library::MusicLibraryImpl>(storage, config.m_library);
+	std::make_shared<library::MusicLibraryImpl>(codecManager, storage, config.m_library);
 
     // create the main part of our wonderful player :)
-    std::shared_ptr<zeppelin::player::Controller> ctrl = std::make_shared<player::ControllerImpl>(config);
+    std::shared_ptr<zeppelin::player::Controller> ctrl = std::make_shared<player::ControllerImpl>(codecManager, config);
 
     // initialize the plugin manager
     plugin::PluginManagerImpl pm(lib, ctrl);

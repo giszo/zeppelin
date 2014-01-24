@@ -17,6 +17,11 @@ class Storage;
 }
 }
 
+namespace codec
+{
+class CodecManager;
+}
+
 namespace library
 {
 
@@ -35,7 +40,9 @@ class ScannerListener
 class Scanner : public thread::Thread
 {
     public:
-	Scanner(zeppelin::library::Storage& storage, ScannerListener& listener);
+	Scanner(const codec::CodecManager& codecManager,
+		zeppelin::library::Storage& storage,
+		ScannerListener& listener);
 
 	void add(const std::string& path);
 
@@ -74,6 +81,8 @@ class Scanner : public thread::Thread
 
 	zeppelin::library::Storage& m_storage;
 	ScannerListener& m_listener;
+
+	const codec::CodecManager& m_codecManager;
 };
 
 }

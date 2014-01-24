@@ -1,12 +1,13 @@
 #ifndef LIBRARY_MUSICLIBRARY_H_INCLUDED
 #define LIBRARY_MUSICLIBRARY_H_INCLUDED
 
-#include <zeppelin/library/musiclibrary.h>
-
 #include "scanner.h"
 #include "metaparser.h"
 
+#include <codec/codecmanager.h>
 #include <config/config.h>
+
+#include <zeppelin/library/musiclibrary.h>
 
 namespace library
 {
@@ -15,7 +16,9 @@ class MusicLibraryImpl : public zeppelin::library::MusicLibrary,
 			 public ScannerListener
 {
     public:
-	MusicLibraryImpl(zeppelin::library::Storage& storage, const config::Library& config);
+	MusicLibraryImpl(const codec::CodecManager& codecManager,
+			 zeppelin::library::Storage& storage,
+			 const config::Library& config);
 
 	zeppelin::library::Storage& getStorage() override;
 
