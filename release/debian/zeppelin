@@ -29,7 +29,7 @@ case "$1" in
 		zeppelin_start
 		;;
 	force-stop)
-		pulseaudio_stop
+		zeppelin_stop
 		killall zeppelin || true
 		sleep 2
 		killall -9 zeppelin || true
@@ -38,7 +38,7 @@ case "$1" in
 		status_of_proc -p $PIDFILE "$DAEMON" "Zeppelin" && exit 0 || exit $?
 		;;
 	*)
-		echo "Usage: /etc/init.d/pulseaudio {start|stop|force-stop|restart|reload|force-reload|status}"
+		echo "Usage: /etc/init.d/zeppelin {start|stop|force-stop|restart|reload|force-reload|status}"
 		exit 1
 		;;
 esac
