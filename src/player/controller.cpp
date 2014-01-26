@@ -11,34 +11,36 @@
 using player::ControllerImpl;
 
 // =====================================================================================================================
+std::shared_ptr<ControllerImpl> ControllerImpl::create(const codec::CodecManager& codecManager,
+						       const std::shared_ptr<Decoder>& decoder,
+						       const std::shared_ptr<Player>& player,
+						       const config::Config& config)
+{
+    std::shared_ptr<ControllerImpl> ctrl(new ControllerImpl(codecManager, decoder, player, config));
+    ctrl->m_selfRef = ctrl;
+    ctrl->init();
+    return ctrl;
+}
+
+// =====================================================================================================================
 ControllerImpl::ControllerImpl(const codec::CodecManager& codecManager,
+			       const std::shared_ptr<Decoder>& decoder,
+			       const std::shared_ptr<Player>& player,
 			       const config::Config& config)
     : m_state(STOPPED),
       m_decoderInitialized(false),
-      m_fifo(4 * 1024 /* 4kB for now */),
+      m_decoder(decoder),
+      m_player(player),
       m_codecManager(codecManager)
 {
-    // prepare the output
-    std::shared_ptr<output::BaseOutput> output = std::make_shared<output::AlsaOutput>(config);
-    output->setup(44100, 2);
+}
 
-    Format fmt = output->getFormat();
-
-    // prepare decoder
-    m_decoder.reset(new Decoder(fmt.sizeOfSeconds(10 /* 10 seconds of samples */), fmt, m_fifo, *this, config));
-    m_fifo.setNotifyCallback(fmt.sizeOfSeconds(5 /* 5 second limit */), std::bind(&Decoder::notify, m_decoder.get()));
-
-    // prepare decoder - volume filter
-    m_volumeAdj.reset(new filter::Volume(config));
-    m_volumeAdj->init();
-    setVolume(100 /* max */);
-
-    // prepare player
-    m_player.reset(new Player(output, m_fifo, *m_volumeAdj, *this));
-
-    // start decoder and player threads
-    m_decoder->start();
-    m_player->start();
+// =====================================================================================================================
+void ControllerImpl::init()
+{
+    // set our reference to the decoder and player
+    m_decoder->setController(m_selfRef);
+    m_player->setController(m_selfRef);
 }
 
 // =====================================================================================================================
@@ -60,9 +62,10 @@ zeppelin::player::Controller::Status ControllerImpl::getStatus()
 	s.m_file = m_playerQueue.file();
 	m_playerQueue.get(s.m_index);
     }
+
     s.m_state = m_state;
     s.m_position = m_player->getPosition();
-    s.m_volume = m_volumeLevel;
+    s.m_volume = m_player->getVolumeFilter().getLevel();
 
     return s;
 }
@@ -160,44 +163,14 @@ void ControllerImpl::goTo(const std::vector<int>& index)
 int ControllerImpl::getVolume() const
 {
     thread::BlockLock bl(m_mutex);
-    return m_volumeLevel;
+    return m_player->getVolumeFilter().getLevel();
 }
 
 // =====================================================================================================================
 void ControllerImpl::setVolume(int level)
 {
-    // make sure volume level is valid
-    if (level < 0 || level > 100)
-	return;
-
     thread::BlockLock bl(m_mutex);
-
-    m_volumeLevel = level;
-    m_volumeAdj->setLevel(level / 100.0f);
-}
-
-// =====================================================================================================================
-void ControllerImpl::incVolume()
-{
-    thread::BlockLock bl(m_mutex);
-
-    if (m_volumeLevel == 100)
-	return;
-
-    ++m_volumeLevel;
-    m_volumeAdj->setLevel(m_volumeLevel / 100.0f);
-}
-
-// =====================================================================================================================
-void ControllerImpl::decVolume()
-{
-    thread::BlockLock bl(m_mutex);
-
-    if (m_volumeLevel == 0)
-	return;
-
-    --m_volumeLevel;
-    m_volumeAdj->setLevel(m_volumeLevel / 100.0f);
+    m_player->getVolumeFilter().setLevel(level);
 }
 
 // =====================================================================================================================

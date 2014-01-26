@@ -13,12 +13,17 @@ class Volume : public BaseFilter
     public:
 	Volume(const config::Config& config);
 
-	void setLevel(float level);
+	int getLevel() const;
+	void setLevel(int level);
 
 	void init() override;
 	void run(float*& samples, size_t& count, const player::Format& format) override;
 
     private:
+	// level of the volume on a linear scale
+	int m_linearLevel;
+
+	// the value used for scaling samples
 	std::atomic<float> m_level;
 };
 

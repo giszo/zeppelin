@@ -42,8 +42,10 @@ class ControllerImpl : public zeppelin::player::Controller,
 	    DECODER_FINISHED
 	};
 
-	ControllerImpl(const codec::CodecManager& codecManager,
-		       const config::Config& config);
+	static std::shared_ptr<ControllerImpl> create(const codec::CodecManager& codecManager,
+						      const std::shared_ptr<Decoder>& decoder,
+						      const std::shared_ptr<Player>& player,
+						      const config::Config& config);
 
 	/// returns the current play queue
 	std::shared_ptr<zeppelin::player::Playlist> getQueue() const;
@@ -76,10 +78,6 @@ class ControllerImpl : public zeppelin::player::Controller,
 	int getVolume() const;
 	/// sets the volume level (level must be between 0 and 100)
 	void setVolume(int level);
-	/// increases volume level
-	void incVolume();
-	/// decreases volume level
-	void decVolume();
 
 	void command(Command cmd);
 
@@ -87,6 +85,14 @@ class ControllerImpl : public zeppelin::player::Controller,
 	void run() override;
 
     private:
+	ControllerImpl(const codec::CodecManager& codecManager,
+		       const std::shared_ptr<Decoder>& decoder,
+		       const std::shared_ptr<Player>& player,
+		       const config::Config& config);
+
+	// called to initialize the controller after m_selfRef is usable
+	void init();
+
 	void startPlayback();
 	void stopPlayback();
 
@@ -133,24 +139,18 @@ class ControllerImpl : public zeppelin::player::Controller,
 	/// controller commands
 	std::deque<std::shared_ptr<CmdBase>> m_commands;
 
-	/// fifo for decoder and player threads
-	Fifo m_fifo;
-
 	/// input decoder thread filling the sample buffer
-	std::unique_ptr<Decoder> m_decoder;
+	std::shared_ptr<Decoder> m_decoder;
 
 	/// player thread putting decoded samples to the output device
-	std::unique_ptr<Player> m_player;
-
-	/// current volume level (between 0 and 100)
-	int m_volumeLevel;
-	/// volume adjuster filter
-	std::shared_ptr<filter::Volume> m_volumeAdj;
+	std::shared_ptr<Player> m_player;
 
 	thread::Mutex m_mutex;
 	thread::Condition m_cond;
 
 	const codec::CodecManager& m_codecManager;
+
+	std::weak_ptr<ControllerImpl> m_selfRef;
 };
 
 }

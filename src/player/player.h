@@ -6,15 +6,11 @@
 #include <output/baseoutput.h>
 #include <thread/thread.h>
 #include <thread/condition.h>
+#include <filter/volume.h>
 
 #include <deque>
 #include <memory>
 #include <atomic>
-
-namespace filter
-{
-class Volume;
-}
 
 namespace player
 {
@@ -26,10 +22,12 @@ class Player : public thread::Thread
     public:
 	Player(const std::shared_ptr<output::BaseOutput>& output,
 	       Fifo& fifo,
-	       filter::Volume& volFilter,
-	       ControllerImpl& ctrl);
+	       const config::Config& config);
+
+	void setController(const std::weak_ptr<ControllerImpl>& controller);
 
 	unsigned getPosition() const;
+	filter::Volume& getVolumeFilter();
 
 	void startPlayback();
 	void pausePlayback();
@@ -87,9 +85,9 @@ class Player : public thread::Thread
 	// true when the player is currently working
 	bool m_running;
 
-	filter::Volume& m_volumeFilter;
+	filter::Volume m_volumeFilter;
 
-	ControllerImpl& m_ctrl;
+	std::weak_ptr<ControllerImpl> m_ctrl;
 };
 
 }

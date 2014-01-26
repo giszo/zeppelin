@@ -24,10 +24,10 @@ class Decoder : public thread::Thread
 	Decoder(size_t bufferSize,
 		const Format& outputFormat,
 		Fifo& fifo,
-		ControllerImpl& ctrl,
 		const config::Config& config);
 
 	void setInput(const std::shared_ptr<codec::BaseCodec>& input);
+	void setController(const std::weak_ptr<ControllerImpl>& controller);
 
 	void startDecoding();
 	void stopDecoding();
@@ -95,8 +95,9 @@ class Decoder : public thread::Thread
 	thread::Condition m_cond;
 	thread::Condition m_emptyCond;
 
-	ControllerImpl& m_ctrl;
 	const config::Config& m_config;
+
+	std::weak_ptr<ControllerImpl> m_ctrl;
 };
 
 }

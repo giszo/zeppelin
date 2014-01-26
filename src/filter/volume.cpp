@@ -7,14 +7,27 @@ using filter::Volume;
 // =====================================================================================================================
 Volume::Volume(const config::Config& config)
     : BaseFilter(config, "volume"),
-      m_level(1.0)
+      m_linearLevel(100),
+      m_level(1.0f)
 {
 }
 
 // =====================================================================================================================
-void Volume::setLevel(float level)
+int Volume::getLevel() const
 {
-    m_level = (expf(level) - 1) / (M_E - 1);
+    return m_linearLevel;
+}
+
+// =====================================================================================================================
+void Volume::setLevel(int level)
+{
+    if (level < 0 || level > 100)
+	return;
+
+    float l = level / 100.0f;
+
+    m_linearLevel = level;
+    m_level = (expf(l) - 1) / (M_E - 1);
 }
 
 // =====================================================================================================================

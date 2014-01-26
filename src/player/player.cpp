@@ -13,22 +13,32 @@ using player::Player;
 // =====================================================================================================================
 Player::Player(const std::shared_ptr<output::BaseOutput>& output,
 	       Fifo& fifo,
-	       filter::Volume& volFilter,
-	       ControllerImpl& ctrl)
+	       const config::Config& config)
     : m_fifo(fifo),
       m_output(output),
       m_format(output->getFormat()),
       m_position(0),
       m_running(false),
-      m_volumeFilter(volFilter),
-      m_ctrl(ctrl)
+      m_volumeFilter(config)
 {
+}
+
+// =====================================================================================================================
+void Player::setController(const std::weak_ptr<ControllerImpl>& controller)
+{
+    m_ctrl = controller;
 }
 
 // =====================================================================================================================
 unsigned Player::getPosition() const
 {
     return m_position / m_format.getRate();
+}
+
+// =====================================================================================================================
+filter::Volume& Player::getVolumeFilter()
+{
+    return m_volumeFilter;
 }
 
 // =====================================================================================================================
@@ -115,9 +125,16 @@ void Player::run()
 		}
 
 		case Fifo::MARKER :
+		{
 		    m_position = 0;
-		    m_ctrl.command(ControllerImpl::SONG_FINISHED);
+
+		    auto ctrl = m_ctrl.lock();
+
+		    if (ctrl)
+			ctrl->command(ControllerImpl::SONG_FINISHED);
+
 		    break;
+		}
 
 		case Fifo::NONE :
 		    // this should be never reached because NONE terminates the loop

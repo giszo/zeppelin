@@ -12,14 +12,12 @@ using player::Decoder;
 Decoder::Decoder(size_t bufferSize,
 		 const Format& outputFormat,
 		 Fifo& fifo,
-		 ControllerImpl& ctrl,
 		 const config::Config& config)
     : m_bufferSize(bufferSize),
       m_fifo(fifo),
       m_format(0, 0),
       m_outputFormat(outputFormat),
       m_resampling(false),
-      m_ctrl(ctrl),
       m_config(config)
 {
 }
@@ -30,6 +28,12 @@ void Decoder::setInput(const std::shared_ptr<codec::BaseCodec>& input)
     thread::BlockLock bl(m_mutex);
     m_commands.push_back(std::make_shared<Input>(input));
     m_cond.signal();
+}
+
+// =====================================================================================================================
+void Decoder::setController(const std::weak_ptr<ControllerImpl>& controller)
+{
+    m_ctrl = controller;
 }
 
 // =====================================================================================================================
@@ -192,7 +196,10 @@ void Decoder::run()
 	    m_input.reset();
 
 	    // let the controller know that the decoder finished working
-	    m_ctrl.command(ControllerImpl::DECODER_FINISHED);
+	    auto ctrl = m_ctrl.lock();
+
+	    if (ctrl)
+		ctrl->command(ControllerImpl::DECODER_FINISHED);
 
 	    continue;
 	}

@@ -76,10 +76,6 @@ class Controller
 	virtual int getVolume() const = 0;
 	/// sets the volume level (level must be between 0 and 100)
 	virtual void setVolume(int level) = 0;
-	/// increases volume level
-	virtual void incVolume() = 0;
-	/// decreases volume level
-	virtual void decVolume() = 0;
 };
 
 }

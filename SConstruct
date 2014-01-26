@@ -86,8 +86,7 @@ Default(zep)
 tests = [
     "fifo.cpp",
     "queue.cpp",
-    "format.cpp",
-    "controller.cpp"
+    "format.cpp"
 ]
 
 env.Program(

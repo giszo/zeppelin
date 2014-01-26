@@ -114,8 +114,23 @@ int main(int argc, char** argv)
     std::shared_ptr<zeppelin::library::MusicLibrary> lib =
 	std::make_shared<library::MusicLibraryImpl>(codecManager, storage, config.m_library);
 
+    // prepare the audio output
+    std::shared_ptr<output::BaseOutput> output = std::make_shared<output::AlsaOutput>(config);
+    output->setup(44100, 2);
+
+    player::Fifo fifo(4 * 1024);
+    player::Format fmt = output->getFormat();
+
+    std::shared_ptr<player::Decoder> decoder(new player::Decoder(fmt.sizeOfSeconds(10 /* 10 seconds of samples */), fmt, fifo, config));
+    decoder->start();
+
+    std::shared_ptr<player::Player> player(new player::Player(output, fifo, config));
+    player->start();
+
+    fifo.setNotifyCallback(fmt.sizeOfSeconds(5 /* 5 second limit */), std::bind(&player::Decoder::notify, decoder.get()));
+
     // create the main part of our wonderful player :)
-    std::shared_ptr<zeppelin::player::Controller> ctrl = std::make_shared<player::ControllerImpl>(codecManager, config);
+    std::shared_ptr<zeppelin::player::Controller> ctrl = player::ControllerImpl::create(codecManager, decoder, player, config);
 
     // initialize the plugin manager
     plugin::PluginManagerImpl pm(lib, ctrl);
