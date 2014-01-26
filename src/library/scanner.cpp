@@ -91,14 +91,14 @@ void Scanner::scanDirectories()
 // =====================================================================================================================
 void Scanner::scanDirectory(const Directory& path, std::deque<Directory>& paths)
 {
-    LOG("Scanning directory: " << path.m_path);
+    LOG("scanner: scanning: " << path.m_path);
 
     // open the directory
     DIR* dir = opendir(path.m_path.c_str());
 
     if (!dir)
     {
-	LOG("Unable to open directory: " << path.m_path);
+	LOG("scanner: unable to open: " << path.m_path);
 	return;
     }
 
@@ -136,6 +136,4 @@ void Scanner::scanDirectory(const Directory& path, std::deque<Directory>& paths)
     }
 
     closedir(dir);
-
-    LOG("Scanning of " << path.m_path << " finished");
 }
