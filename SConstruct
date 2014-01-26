@@ -36,6 +36,7 @@ sources = [
     "codec/mp3.cpp",
     "codec/flac.cpp",
     "codec/vorbis.cpp",
+    "codec/wavpack.cpp",
     "codec/metadata.cpp",
     "library/musiclibrary.cpp",
     "library/scanner.cpp",
@@ -74,7 +75,7 @@ zep_lib = env.StaticLibrary(
 zep = env.Program(
     "zeppelin",
     source = ["src/main.cpp"] + zep_lib,
-    LIBS = ["asound", "mpg123", "FLAC", "vorbisfile", "samplerate", "sqlite3", "jsoncpp", "dl", "boost_locale", "boost_program_options"]
+    LIBS = ["asound", "mpg123", "FLAC", "vorbisfile", "wavpack", "samplerate", "sqlite3", "jsoncpp", "dl", "boost_locale", "boost_program_options"]
 )
 
 # define the defualt target
