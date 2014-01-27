@@ -16,26 +16,14 @@ CodecManager::CodecMap CodecManager::s_codecs = {
 };
 
 // =====================================================================================================================
-std::shared_ptr<codec::BaseCodec> CodecManager::openFile(const std::string& file) const
+std::shared_ptr<codec::BaseCodec> CodecManager::create(const std::string& file) const
 {
     auto it = findCodec(file);
 
     if (it == s_codecs.end())
 	return nullptr;
 
-    std::shared_ptr<codec::BaseCodec> codec = it->second(file);
-
-    try
-    {
-	codec->open();
-    }
-    catch (const codec::CodecException& e)
-    {
-	LOG("codecmanager: unable to open " << file << ", error: " << e.what());
-	return nullptr;
-    }
-
-    return codec;
+    return it->second(file);
 }
 
 // =====================================================================================================================

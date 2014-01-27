@@ -471,7 +471,7 @@ void ControllerImpl::setDecoderInput()
 	const zeppelin::library::File& file = *m_decoderQueue.file();
 
 	// open the file
-	std::shared_ptr<codec::BaseCodec> input = m_codecManager.openFile(file.m_path + "/" + file.m_name);
+	std::shared_ptr<codec::BaseCodec> input = open(file.m_path + "/" + file.m_name);
 
 	if (!input)
 	{
@@ -507,4 +507,27 @@ void ControllerImpl::setDecoderToPlayerIndex()
 
     m_playerQueue.get(it);
     m_decoderQueue.set(it);
+}
+
+// =====================================================================================================================
+std::shared_ptr<codec::BaseCodec> ControllerImpl::open(const std::string& file)
+{
+    // create the codec instance
+    std::shared_ptr<codec::BaseCodec> input = m_codecManager.create(file);
+
+    if (!input)
+	return nullptr;
+
+    // open the file
+    try
+    {
+	input->open();
+    }
+    catch (const codec::CodecException&)
+    {
+	LOG("controller: unable to open " << file);
+	return nullptr;
+    }
+
+    return input;
 }

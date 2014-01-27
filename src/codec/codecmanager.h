@@ -15,7 +15,7 @@ class BaseCodec;
 class CodecManager
 {
     public:
-	virtual std::shared_ptr<BaseCodec> openFile(const std::string& file) const;
+	virtual std::shared_ptr<BaseCodec> create(const std::string& file) const;
 
 	virtual bool isMediaFile(const std::string& file) const;
 

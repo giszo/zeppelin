@@ -62,7 +62,7 @@ void MetaParser::parse(zeppelin::library::File& file)
 {
     LOG("metaparser: parsing: " << file.m_path << "/" << file.m_name);
 
-    std::shared_ptr<codec::BaseCodec> codec = m_codecManager.openFile(file.m_path + "/" + file.m_name);
+    std::shared_ptr<codec::BaseCodec> codec = m_codecManager.create(file.m_path + "/" + file.m_name);
 
     if (!codec)
 	return;

@@ -103,6 +103,8 @@ class ControllerImpl : public zeppelin::player::Controller,
 	// sets the decoder queue index to the same position as the player queue
 	void setDecoderToPlayerIndex();
 
+	std::shared_ptr<codec::BaseCodec> open(const std::string& file);
+
     private:
 	/// the state of the player
 	State m_state;
