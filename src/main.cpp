@@ -4,6 +4,7 @@
 #include <codec/flac.h>
 #include <codec/vorbis.h>
 #include <codec/wavpack.h>
+#include <codec/mac.h>
 #include <library/musiclibrary.h>
 #include <library/sqlitestorage.h>
 #include <player/controller.h>
@@ -118,6 +119,7 @@ int main(int argc, char** argv)
     codecManager.registerCodec("flac", [](const std::string& file) { return std::make_shared<codec::Flac>(file); });
     codecManager.registerCodec("ogg",  [](const std::string& file) { return std::make_shared<codec::Vorbis>(file); });
     codecManager.registerCodec("wv",   [](const std::string& file) { return std::make_shared<codec::WavPack>(file); });
+    codecManager.registerCodec("ape",  [](const std::string& file) { return std::make_shared<codec::Mac>(file); });
 
     std::shared_ptr<zeppelin::library::MusicLibrary> lib =
 	std::make_shared<library::MusicLibraryImpl>(codecManager, storage, config.m_library);

@@ -50,9 +50,8 @@ void WavPack::open()
     {
 	case 8 :
 	case 16 :
-	case 24 :
 	case 32 :
-	    m_scale = (1 << (bps - 1) ) - 1;
+	    m_scale = (1 << (bps - 1)) - 1;
 	    break;
 
 	default :
