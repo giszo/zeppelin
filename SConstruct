@@ -2,21 +2,19 @@
 
 import os
 
-AddOption(
-    "--prefix",
-    dest = "prefix",
-    type = "string",
-    nargs = 1,
-    action = "store",
-    metavar = "DIR",
-    help = "installation prefix"
-)
+vars = Variables()
+vars.Add(PathVariable('PREFIX', 'prefix used to install files', '/'))
+vars.Add(BoolVariable('COVERAGE', 'set to 1 to measure coverage', 0))
 
-env = Environment(PREFIX = GetOption("prefix"))
+env = Environment(variables = vars)
 
 env["CPPFLAGS"] = ["-O2", "-Wall", "-Werror", "-Wshadow", "-std=c++11", "-pthread"]
 env["CPPPATH"] = [Dir("include"), Dir("src")]
 env["LINKFLAGS"] = ["-pthread", "-rdynamic"]
+
+if env["COVERAGE"] :
+    env["CPPFLAGS"] += ["-coverage"]
+    env["LINKFLAGS"] += ["-coverage"]
 
 env["CXXCOMSTR"] = "Compiling $SOURCE"
 env["SHCXXCOMSTR"] = "Compiling $SOURCE"

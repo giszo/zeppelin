@@ -1,9 +1,12 @@
 *.o
+*.gcda
+*.gcno
 
 /.sconsign.dblite
 
 /zeppelin
 /libzeppelin.a
 /unit_test
+/coverage
 
 /release/debian/debian-release
