@@ -10,7 +10,9 @@ The list of the currently supported media formats is the following:
 
 - MP3
 - FLAC
-- OGG
+- OGG Vorbis
+- Wavpack
+- Monkey's Audio
 
 Supported output
 -
