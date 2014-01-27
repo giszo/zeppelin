@@ -29,11 +29,11 @@ class Player : public thread::Thread
 	unsigned getPosition() const;
 	filter::Volume& getVolumeFilter();
 
-	void startPlayback();
-	void pausePlayback();
-	void stopPlayback();
+	virtual void startPlayback();
+	virtual void pausePlayback();
+	virtual void stopPlayback();
 
-	void seek(off_t seconds);
+	virtual void seek(off_t seconds);
 
 	void run();
 

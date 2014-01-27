@@ -191,6 +191,17 @@ void ControllerImpl::run()
 	while (m_commands.empty())
 	    m_cond.wait(m_mutex);
 
+	processCommands();
+
+	m_mutex.unlock();
+    }
+}
+
+// =====================================================================================================================
+void ControllerImpl::processCommands()
+{
+    while (!m_commands.empty())
+    {
 	std::shared_ptr<CmdBase> cmd = m_commands.front();
 	m_commands.pop_front();
 
@@ -208,6 +219,10 @@ void ControllerImpl::run()
 		    m_decoderQueue.reset(zeppelin::player::QueueItem::FIRST);
 		    m_playerQueue.reset(zeppelin::player::QueueItem::FIRST);
 		}
+
+		// do nothing in case of the queue is still invalid
+		if (!m_decoderQueue.isValid())
+		    break;
 
 		// initialize the decoder if it has no input
 		if (!m_decoderInitialized)
@@ -235,13 +250,13 @@ void ControllerImpl::run()
 
 	    case SEEK :
 	    {
-		// seeking is only allowed in playing and paused states
-		if (m_state != PLAYING && m_state != PAUSED)
-		    break;
-
 		Seek& s = static_cast<Seek&>(*cmd);
 
 		LOG("controller: seek " << s.m_seconds);
+
+		// seeking is only allowed in playing and paused states
+		if (m_state != PLAYING && m_state != PAUSED)
+		    break;
 
 		if (m_state == PLAYING)
 		    stopPlayback();
@@ -442,8 +457,6 @@ void ControllerImpl::run()
 
 		break;
 	}
-
-	m_mutex.unlock();
     }
 }
 
@@ -496,7 +509,9 @@ void ControllerImpl::setDecoderInput()
 // =====================================================================================================================
 void ControllerImpl::invalidateDecoder()
 {
-    m_decoder->setInput(nullptr);
+    if (m_decoderInitialized)
+	m_decoder->setInput(nullptr);
+
     m_decoderInitialized = false;
 }
 

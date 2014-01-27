@@ -26,14 +26,15 @@ class Decoder : public thread::Thread
 		Fifo& fifo,
 		const config::Config& config);
 
-	void setInput(const std::shared_ptr<codec::BaseCodec>& input);
 	void setController(const std::weak_ptr<ControllerImpl>& controller);
 
-	void startDecoding();
-	void stopDecoding();
+	virtual void setInput(const std::shared_ptr<codec::BaseCodec>& input);
 
-	void seek(off_t seconds);
-	void notify();
+	virtual void startDecoding();
+	virtual void stopDecoding();
+
+	virtual void seek(off_t seconds);
+	virtual void notify();
 
     private:
 	void run() override;

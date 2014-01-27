@@ -1,5 +1,9 @@
 #include <output/alsa.h>
 #include <codec/codecmanager.h>
+#include <codec/mp3.h>
+#include <codec/flac.h>
+#include <codec/vorbis.h>
+#include <codec/wavpack.h>
 #include <library/musiclibrary.h>
 #include <library/sqlitestorage.h>
 #include <player/controller.h>
@@ -110,6 +114,10 @@ int main(int argc, char** argv)
     }
 
     codec::CodecManager codecManager;
+    codecManager.registerCodec("mp3",  [](const std::string& file) { return std::make_shared<codec::Mp3>(file); });
+    codecManager.registerCodec("flac", [](const std::string& file) { return std::make_shared<codec::Flac>(file); });
+    codecManager.registerCodec("ogg",  [](const std::string& file) { return std::make_shared<codec::Vorbis>(file); });
+    codecManager.registerCodec("wv",   [](const std::string& file) { return std::make_shared<codec::WavPack>(file); });
 
     std::shared_ptr<zeppelin::library::MusicLibrary> lib =
 	std::make_shared<library::MusicLibraryImpl>(codecManager, storage, config.m_library);

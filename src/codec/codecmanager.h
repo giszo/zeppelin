@@ -15,9 +15,13 @@ class BaseCodec;
 class CodecManager
 {
     public:
+	typedef std::function<std::shared_ptr<BaseCodec>(const std::string&)> CreateCodec;
+
+	void registerCodec(const std::string& type, const CreateCodec& func);
+
 	virtual std::shared_ptr<BaseCodec> create(const std::string& file) const;
 
-	virtual bool isMediaFile(const std::string& file) const;
+	bool isMediaFile(const std::string& file) const;
 
     private:
 	struct Hasher
@@ -33,14 +37,14 @@ class CodecManager
 	};
 
 	typedef std::unordered_map<std::string,
-				   std::function<std::shared_ptr<BaseCodec>(const std::string&)>,
+				   CreateCodec,
 				   Hasher,
 				   Comparator> CodecMap;
 
     private:
 	CodecMap::const_iterator findCodec(const std::string& file) const;
 
-	static CodecMap s_codecs;
+	CodecMap m_codecs;
 };
 
 }

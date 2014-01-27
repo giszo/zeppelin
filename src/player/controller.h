@@ -93,6 +93,8 @@ class ControllerImpl : public zeppelin::player::Controller,
 	// called to initialize the controller after m_selfRef is usable
 	void init();
 
+	void processCommands();
+
 	void startPlayback();
 	void stopPlayback();
 

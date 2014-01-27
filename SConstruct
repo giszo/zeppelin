@@ -87,13 +87,14 @@ Default(zep)
 tests = [
     "fifo.cpp",
     "queue.cpp",
-    "format.cpp"
+    "format.cpp",
+    "controller.cpp"
 ]
 
 env.Program(
     "unit_test",
     source = ["tst/%s" % t for t in tests] + ["tst/main.cpp"] + zep_lib,
-    LIBS = ["boost_unit_test_framework"]
+    LIBS = ["jsoncpp", "samplerate", "boost_unit_test_framework"]
 )
 
 ########################################################################################################################
