@@ -17,6 +17,7 @@ namespace player
 {
 
 class Playlist;
+class EventListener;
 
 class Controller
 {
@@ -44,6 +45,8 @@ class Controller
 
 	virtual ~Controller()
 	{}
+
+	virtual void addListener(const std::shared_ptr<EventListener>& listener) = 0;
 
 	/// returns the current play queue
 	virtual std::shared_ptr<zeppelin::player::Playlist> getQueue() const = 0;

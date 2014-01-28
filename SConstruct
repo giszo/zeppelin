@@ -56,6 +56,7 @@ sources = [
     "player/fifo.cpp",
     "player/queue.cpp",
     "player/format.cpp",
+    "player/eventlistenerproxy.cpp",
     "thread/thread.cpp",
     "thread/condition.cpp",
     "utils/stringutils.cpp",

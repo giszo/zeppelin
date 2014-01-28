@@ -133,6 +133,31 @@ class FakeCodecManager : public codec::CodecManager
 	bool m_openShouldFail;
 };
 
+struct EventListener : public zeppelin::player::EventListener
+{
+    EventListener(std::vector<std::string>& events)
+	: m_events(events)
+    {}
+
+    // event listener implenentation
+    void started() override
+    { m_events.push_back("started"); }
+    void paused() override
+    { m_events.push_back("paused"); }
+    void stopped() override
+    { m_events.push_back("stopped"); }
+    void positionChanged() override
+    { m_events.push_back("position-changed"); }
+    void songChanged() override
+    { m_events.push_back("song-changed"); }
+    void queueChanged() override
+    { m_events.push_back("queue-changed"); }
+    void volumeChanged() override
+    { m_events.push_back("volume-changed"); }
+
+    std::vector<std::string>& m_events;
+};
+
 struct ControllerFixture
 {
     ControllerFixture()
@@ -141,7 +166,9 @@ struct ControllerFixture
 	  m_decoder(new FakeDecoder(m_fifo, m_config)),
 	  m_player(new FakePlayer(m_output, m_fifo, m_config)),
 	  m_ctrl(player::ControllerImpl::create(m_codecManager, m_decoder, m_player, m_config))
-    {}
+    {
+	m_ctrl->addListener(std::make_shared<EventListener>(m_events));
+    }
 
     void queueFile(int id, const std::string& name)
     {
@@ -172,6 +199,8 @@ struct ControllerFixture
     FakeCodecManager m_codecManager;
 
     std::shared_ptr<player::ControllerImpl> m_ctrl;
+
+    std::vector<std::string> m_events;
 };
 
 BOOST_FIXTURE_TEST_CASE(check_initial_state, ControllerFixture)
@@ -187,6 +216,7 @@ BOOST_FIXTURE_TEST_CASE(playback_not_started_without_queue, ControllerFixture)
     BOOST_CHECK_EQUAL(m_ctrl->m_state, Controller::STOPPED);
     BOOST_CHECK(m_decoder->m_cmds.empty());
     BOOST_CHECK(m_player->m_cmds.empty());
+    BOOST_CHECK(m_events.empty());
 }
 
 BOOST_FIXTURE_TEST_CASE(pause_not_working_in_stopped_state, ControllerFixture)
@@ -197,6 +227,7 @@ BOOST_FIXTURE_TEST_CASE(pause_not_working_in_stopped_state, ControllerFixture)
     BOOST_CHECK_EQUAL(m_ctrl->m_state, Controller::STOPPED);
     BOOST_CHECK(m_decoder->m_cmds.empty());
     BOOST_CHECK(m_player->m_cmds.empty());
+    BOOST_CHECK(m_events.empty());
 }
 
 BOOST_FIXTURE_TEST_CASE(seek_not_working_in_stopped_state, ControllerFixture)
@@ -207,6 +238,7 @@ BOOST_FIXTURE_TEST_CASE(seek_not_working_in_stopped_state, ControllerFixture)
     BOOST_CHECK_EQUAL(m_ctrl->m_state, Controller::STOPPED);
     BOOST_CHECK(m_decoder->m_cmds.empty());
     BOOST_CHECK(m_player->m_cmds.empty());
+    BOOST_CHECK(m_events.empty());
 }
 
 BOOST_FIXTURE_TEST_CASE(stop_not_working_in_stopped_state, ControllerFixture)
@@ -217,11 +249,16 @@ BOOST_FIXTURE_TEST_CASE(stop_not_working_in_stopped_state, ControllerFixture)
     BOOST_CHECK_EQUAL(m_ctrl->m_state, Controller::STOPPED);
     BOOST_CHECK(m_decoder->m_cmds.empty());
     BOOST_CHECK(m_player->m_cmds.empty());
+    BOOST_CHECK(m_events.empty());
 }
 
 BOOST_FIXTURE_TEST_CASE(playback_started_first_time, ControllerFixture)
 {
     queueFile(42, "hello.mp3");
+
+    BOOST_REQUIRE_EQUAL(m_events.size(), 1);
+    BOOST_CHECK_EQUAL(m_events[0], "queue-changed");
+
     m_ctrl->play();
     process();
 
@@ -232,6 +269,10 @@ BOOST_FIXTURE_TEST_CASE(playback_started_first_time, ControllerFixture)
     BOOST_CHECK_EQUAL(m_decoder->m_cmds[1], "start");
     BOOST_REQUIRE_EQUAL(m_player->m_cmds.size(), 1);
     BOOST_CHECK_EQUAL(m_player->m_cmds[0], "start");
+
+    BOOST_REQUIRE_EQUAL(m_events.size(), 3);
+    BOOST_CHECK_EQUAL(m_events[1], "song-changed");
+    BOOST_CHECK_EQUAL(m_events[2], "started");
 }
 
 BOOST_FIXTURE_TEST_CASE(playback_not_started_for_unknown_codec, ControllerFixture)
@@ -246,6 +287,9 @@ BOOST_FIXTURE_TEST_CASE(playback_not_started_for_unknown_codec, ControllerFixtur
     BOOST_CHECK_EQUAL(m_ctrl->m_state, Controller::STOPPED);
     BOOST_CHECK(m_decoder->m_cmds.empty());
     BOOST_CHECK(m_player->m_cmds.empty());
+
+    BOOST_REQUIRE_EQUAL(m_events.size(), 2);
+    BOOST_CHECK_EQUAL(m_events[1], "song-changed");
 }
 
 BOOST_FIXTURE_TEST_CASE(playback_not_started_for_unopenable_file, ControllerFixture)
@@ -260,6 +304,9 @@ BOOST_FIXTURE_TEST_CASE(playback_not_started_for_unopenable_file, ControllerFixt
     BOOST_CHECK_EQUAL(m_ctrl->m_state, Controller::STOPPED);
     BOOST_CHECK(m_decoder->m_cmds.empty());
     BOOST_CHECK(m_player->m_cmds.empty());
+
+    BOOST_REQUIRE_EQUAL(m_events.size(), 2);
+    BOOST_CHECK_EQUAL(m_events[1], "song-changed");
 }
 
 BOOST_FIXTURE_TEST_CASE(playback_paused, ControllerFixture)
@@ -277,6 +324,9 @@ BOOST_FIXTURE_TEST_CASE(playback_paused, ControllerFixture)
     BOOST_CHECK(m_decoder->m_cmds.empty());
     BOOST_REQUIRE_EQUAL(m_player->m_cmds.size(), 1);
     BOOST_CHECK_EQUAL(m_player->m_cmds[0], "pause");
+
+    BOOST_REQUIRE_EQUAL(m_events.size(), 4);
+    BOOST_CHECK_EQUAL(m_events[3], "paused");
 }
 
 BOOST_FIXTURE_TEST_CASE(playback_stopped, ControllerFixture)
@@ -296,4 +346,7 @@ BOOST_FIXTURE_TEST_CASE(playback_stopped, ControllerFixture)
     BOOST_CHECK_EQUAL(m_decoder->m_cmds[1], "input null");
     BOOST_REQUIRE_EQUAL(m_player->m_cmds.size(), 1);
     BOOST_CHECK_EQUAL(m_player->m_cmds[0], "stop");
+
+    BOOST_REQUIRE_EQUAL(m_events.size(), 4);
+    BOOST_CHECK_EQUAL(m_events[3], "stopped");
 }

@@ -4,6 +4,7 @@
 #include "decoder.h"
 #include "player.h"
 #include "fifo.h"
+#include "eventlistenerproxy.h"
 
 #include <zeppelin/player/controller.h>
 #include <zeppelin/player/queue.h>
@@ -46,6 +47,8 @@ class ControllerImpl : public zeppelin::player::Controller,
 						      const std::shared_ptr<Decoder>& decoder,
 						      const std::shared_ptr<Player>& player,
 						      const config::Config& config);
+
+	void addListener(const std::shared_ptr<zeppelin::player::EventListener>& listener) override;
 
 	/// returns the current play queue
 	std::shared_ptr<zeppelin::player::Playlist> getQueue() const;
@@ -153,6 +156,8 @@ class ControllerImpl : public zeppelin::player::Controller,
 	thread::Condition m_cond;
 
 	const codec::CodecManager& m_codecManager;
+
+	EventListenerProxy m_listenerProxy;
 
 	std::weak_ptr<ControllerImpl> m_selfRef;
 };

@@ -44,6 +44,12 @@ void ControllerImpl::init()
 }
 
 // =====================================================================================================================
+void ControllerImpl::addListener(const std::shared_ptr<zeppelin::player::EventListener>& listener)
+{
+    m_listenerProxy.add(listener);
+}
+
+// =====================================================================================================================
 std::shared_ptr<zeppelin::player::Playlist> ControllerImpl::getQueue() const
 {
     thread::BlockLock bl(m_mutex);
@@ -73,30 +79,43 @@ zeppelin::player::Controller::Status ControllerImpl::getStatus()
 // =====================================================================================================================
 void ControllerImpl::queue(const std::shared_ptr<zeppelin::library::File>& file)
 {
-    thread::BlockLock bl(m_mutex);
+    {
+	thread::BlockLock bl(m_mutex);
+	m_decoderQueue.add(file);
+	m_playerQueue.add(file);
+    }
 
-    m_decoderQueue.add(file);
-    m_playerQueue.add(file);
+    // send event
+    m_listenerProxy.queueChanged();
 }
 
 // =====================================================================================================================
 void ControllerImpl::queue(const std::shared_ptr<zeppelin::library::Directory>& directory,
 			   const std::vector<std::shared_ptr<zeppelin::library::File>>& files)
 {
-    thread::BlockLock bl(m_mutex);
+    {
+	thread::BlockLock bl(m_mutex);
+	m_decoderQueue.add(directory, files);
+	m_playerQueue.add(directory, files);
+    }
 
-    m_decoderQueue.add(directory, files);
-    m_playerQueue.add(directory, files);
+    // send event
+    m_listenerProxy.queueChanged();
 }
 
 // =====================================================================================================================
 void ControllerImpl::queue(const std::shared_ptr<zeppelin::library::Album>& album,
 			   const std::vector<std::shared_ptr<zeppelin::library::File>>& files)
 {
-    thread::BlockLock bl(m_mutex);
+    {
+	thread::BlockLock bl(m_mutex);
+	m_decoderQueue.add(album, files);
+	m_playerQueue.add(album, files);
+    }
 
-    m_decoderQueue.add(album, files);
-    m_playerQueue.add(album, files);
+
+    // send event
+    m_listenerProxy.queueChanged();
 }
 
 // =====================================================================================================================
@@ -169,8 +188,13 @@ int ControllerImpl::getVolume() const
 // =====================================================================================================================
 void ControllerImpl::setVolume(int level)
 {
-    thread::BlockLock bl(m_mutex);
-    m_player->getVolumeFilter().setLevel(level);
+    {
+	thread::BlockLock bl(m_mutex);
+	m_player->getVolumeFilter().setLevel(level);
+    }
+
+    // send event
+    m_listenerProxy.volumeChanged();
 }
 
 // =====================================================================================================================
@@ -224,6 +248,9 @@ void ControllerImpl::processCommands()
 		if (!m_decoderQueue.isValid())
 		    break;
 
+		// a new song was just loaded, send an event
+		m_listenerProxy.songChanged();
+
 		// initialize the decoder if it has no input
 		if (!m_decoderInitialized)
 		    setDecoderInput();
@@ -232,6 +259,9 @@ void ControllerImpl::processCommands()
 		{
 		    startPlayback();
 		    m_state = PLAYING;
+
+		    // send event
+		    m_listenerProxy.started();
 		}
 
 		break;
@@ -245,6 +275,9 @@ void ControllerImpl::processCommands()
 		m_player->pausePlayback();
 
 		m_state = PAUSED;
+
+		// send event
+		m_listenerProxy.paused();
 
 		break;
 
@@ -269,6 +302,9 @@ void ControllerImpl::processCommands()
 		// seek to the given position
 		m_decoder->seek(s.m_seconds);
 		m_player->seek(s.m_seconds);
+
+		// send event
+		m_listenerProxy.positionChanged();
 
 		if (m_state == PLAYING)
 		    startPlayback();
@@ -311,6 +347,9 @@ void ControllerImpl::processCommands()
 		// set the decoder to the same position
 		setDecoderToPlayerIndex();
 
+		// send event
+		m_listenerProxy.songChanged();
+
 		// resume playback if it was running before
 		if (m_state == PLAYING)
 		{
@@ -326,6 +365,8 @@ void ControllerImpl::processCommands()
 		    {
 			// unable to initialize the decoder
 			m_state = STOPPED;
+			// send event
+			m_listenerProxy.stopped();
 		    }
 		}
 
@@ -377,6 +418,10 @@ void ControllerImpl::processCommands()
 		index = rem.m_index;
 		m_playerQueue.remove(index);
 
+		// send events
+		m_listenerProxy.queueChanged();
+		m_listenerProxy.songChanged();
+
 		if (removingCurrent)
 		{
 		    // re-initialize the decoder
@@ -387,7 +432,12 @@ void ControllerImpl::processCommands()
 			if (m_decoderInitialized)
 			    startPlayback();
 			else
+			{
 			    m_state = STOPPED;
+
+			    // send event
+			    m_listenerProxy.stopped();
+			}
 		    }
 		}
 
@@ -405,10 +455,16 @@ void ControllerImpl::processCommands()
 		    invalidateDecoder();
 		    // update state
 		    m_state = STOPPED;
+		    // send event
+		    m_listenerProxy.stopped();
 		}
 
 		m_decoderQueue.clear();
 		m_playerQueue.clear();
+
+		// send events
+		m_listenerProxy.queueChanged();
+		m_listenerProxy.songChanged();
 
 		break;
 
@@ -427,6 +483,9 @@ void ControllerImpl::processCommands()
 		invalidateDecoder();
 
 		m_state = STOPPED;
+
+		// send event
+		m_listenerProxy.stopped();
 
 		break;
 	    }
@@ -453,7 +512,17 @@ void ControllerImpl::processCommands()
 
 		// step to the next song
 		if (!m_playerQueue.next())
+		{
 		    m_state = STOPPED;
+
+		    // send event
+		    m_listenerProxy.stopped();
+		}
+		else
+		{
+		    // send event
+		    m_listenerProxy.songChanged();
+		}
 
 		break;
 	}
