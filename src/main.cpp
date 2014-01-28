@@ -1,10 +1,5 @@
 #include <output/alsa.h>
 #include <codec/codecmanager.h>
-#include <codec/mp3.h>
-#include <codec/flac.h>
-#include <codec/vorbis.h>
-#include <codec/wavpack.h>
-#include <codec/mac.h>
 #include <library/musiclibrary.h>
 #include <library/sqlitestorage.h>
 #include <player/controller.h>
@@ -14,9 +9,29 @@
 #include <utils/pidfile.h>
 
 #include <boost/program_options.hpp>
-#include <mpg123.h>
 
 #include <iostream>
+
+#ifdef HAVE_MP3
+#include <mpg123.h>
+#include <codec/mp3.h>
+#endif
+
+#ifdef HAVE_FLAC
+#include <codec/flac.h>
+#endif
+
+#ifdef HAVE_OGG
+#include <codec/vorbis.h>
+#endif
+
+#ifdef HAVE_WAVPACK
+#include <codec/wavpack.h>
+#endif
+
+#ifdef HAVE_MONKEYSAUDIO
+#include <codec/mac.h>
+#endif
 
 static bool s_daemonize = false;
 static std::string s_config;
@@ -81,9 +96,6 @@ int main(int argc, char** argv)
 	    s_pf = utils::PidFile::create(s_pidFile);
     }
 
-    // perform global initialization
-    mpg123_init();
-
     // load configuration
     config::Config config;
     config::Parser parser(s_config);
@@ -117,6 +129,7 @@ int main(int argc, char** argv)
     codec::CodecManager codecManager;
 
 #ifdef HAVE_MP3
+    mpg123_init();
     codecManager.registerCodec("mp3",  [](const std::string& file) { return std::make_shared<codec::Mp3>(file); });
 #endif
 #ifdef HAVE_FLAC
@@ -163,7 +176,9 @@ int main(int argc, char** argv)
     // run the signal handler
     signalHandler.run();
 
+#ifdef HAVE_MP3
     mpg123_exit();
+#endif
 
     return 0;
 }
