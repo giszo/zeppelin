@@ -114,7 +114,7 @@ void SqliteStorage::open(const config::Library& config)
                         FROM files
                         WHERE directory_id = ?
                         ORDER BY name)");
-    prepareStatement(&m_getFileStatistics, "SELECT COUNT(id), SUM(length) FROM files");
+    prepareStatement(&m_getFileStatistics, "SELECT COUNT(id), SUM(length), SUM(size) FROM files");
 
     prepareStatement(&m_setFileMark, "UPDATE files SET mark = 1 WHERE id = ?");
     prepareStatement(&m_setDirectoryMark, "UPDATE directories SET mark = 1 WHERE id = ?");
@@ -184,7 +184,8 @@ zeppelin::library::Statistics SqliteStorage::getStatistics()
 	StatementHolder stmt(m_getFileStatistics);
 	stmt.step();
 	stat.m_numOfFiles = stmt.getInt(0);
-	stat.m_sumOfSongLength = stmt.getInt(1);
+	stat.m_sumOfSongLengths = stmt.getInt64(1);
+	stat.m_sumOfFileSizes = stmt.getInt64(2);
     }
 
     return stat;

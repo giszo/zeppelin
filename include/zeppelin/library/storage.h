@@ -41,7 +41,9 @@ struct Statistics
     // number of files
     int m_numOfFiles;
     // sum of song lengths
-    int m_sumOfSongLength;
+    int64_t m_sumOfSongLengths;
+    // sum of file sizes
+    int64_t m_sumOfFileSizes;
 };
 
 class Storage
