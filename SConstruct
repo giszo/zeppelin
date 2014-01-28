@@ -8,13 +8,15 @@ vars.Add(BoolVariable('COVERAGE', 'set to 1 to measure coverage', 0))
 
 env = Environment(variables = vars)
 
-env["CPPFLAGS"] = ["-O2", "-Wall", "-Werror", "-Wshadow", "-std=c++11", "-pthread"]
+env["CPPFLAGS"] = ["-Wall", "-Werror", "-Wshadow", "-std=c++11", "-pthread"]
 env["CPPPATH"] = [Dir("include"), Dir("src")]
 env["LINKFLAGS"] = ["-pthread", "-rdynamic"]
 
 if env["COVERAGE"] :
     env["CPPFLAGS"] += ["-coverage"]
     env["LINKFLAGS"] += ["-coverage"]
+else :
+    env["CPPFLAGS"] += ["-O2"]
 
 env["CXXCOMSTR"] = "Compiling $SOURCE"
 env["SHCXXCOMSTR"] = "Compiling $SOURCE"
