@@ -2,15 +2,23 @@
 
 import os
 
+########################################################################################################################
+# command line options
+
+CODECS = ['mp3', 'flac', 'ogg', 'wavpack', 'monkeysaudio']
+
 vars = Variables()
 vars.Add(PathVariable('PREFIX', 'prefix used to install files', '/'))
 vars.Add(BoolVariable('COVERAGE', 'set to 1 to measure coverage', 0))
+vars.Add(ListVariable('CODECS', 'list of compiled codecs', CODECS, CODECS))
 
 env = Environment(variables = vars)
 
 env["CPPFLAGS"] = ["-Wall", "-Werror", "-Wshadow", "-std=c++11", "-pthread"]
 env["CPPPATH"] = [Dir("include"), Dir("src")]
+env["CPPDEFINES"] = []
 env["LINKFLAGS"] = ["-pthread", "-rdynamic"]
+env["LIBS"] = ["asound", "samplerate", "sqlite3", "jsoncpp"]
 
 if env["COVERAGE"] :
     env["CPPFLAGS"] += ["-coverage"]
@@ -33,11 +41,6 @@ sources = [
     "output/baseoutput.cpp",
     "output/alsa.cpp",
     "codec/codecmanager.cpp",
-    "codec/mp3.cpp",
-    "codec/flac.cpp",
-    "codec/vorbis.cpp",
-    "codec/wavpack.cpp",
-    "codec/mac.cpp",
     "codec/metadata.cpp",
     "library/musiclibrary.cpp",
     "library/scanner.cpp",
@@ -65,6 +68,26 @@ sources = [
     "plugin/pluginmanager.cpp"
 ]
 
+# handle codec list
+for codec in env["CODECS"] :
+    if codec == "mp3" :
+        env["LIBS"] += ["mpg123"]
+        sources += ["codec/mp3.cpp"]
+    elif codec == "flac" :
+        env["LIBS"] += ["FLAC"]
+        sources += ["codec/flac.cpp"]
+    elif codec == "ogg" :
+        env["LIBS"] += ["vorbisfile"]
+        sources += ["codec/vorbis.cpp"]
+    elif codec == "wavpack" :
+        env["LIBS"] += ["wavpack"]
+        sources += ["codec/wavpack.cpp"]
+    elif codec == "monkeysaudio" :
+        env["LIBS"] += ["mac"]
+        sources += ["codec/mac.cpp"]
+
+    env["CPPDEFINES"] += [{"HAVE_%s" % codec.upper(): 1}]
+
 zep_lib = env.StaticLibrary(
     "zeppelin",
     source = ["src/%s" % s for s in sources]
@@ -76,7 +99,7 @@ zep_lib = env.StaticLibrary(
 zep = env.Program(
     "zeppelin",
     source = ["src/main.cpp"] + zep_lib,
-    LIBS = ["asound", "mpg123", "FLAC", "vorbisfile", "wavpack", "mac", "samplerate", "sqlite3", "jsoncpp", "dl", "boost_locale", "boost_program_options"]
+    LIBS = env["LIBS"] + ["dl", "boost_locale", "boost_program_options"]
 )
 
 # define the defualt target
