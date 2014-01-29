@@ -1,9 +1,8 @@
 #include "metadata.h"
 
-#include <utils/stringutils.h>
-
 #include <zeppelin/logger.h>
 
+#include <boost/lexical_cast.hpp>
 #include <boost/algorithm/string/trim.hpp>
 
 using codec::Metadata;
@@ -81,9 +80,9 @@ void Metadata::setVorbisComment(const std::string& vc)
     {
 	try
 	{
-	    m_year = utils::StringUtils::toInt(value);
+	    m_year = boost::lexical_cast<int>(value);
 	}
-	catch (const utils::NumberFormatException&)
+	catch (const boost::bad_lexical_cast&)
 	{
 	}
     }
@@ -91,9 +90,9 @@ void Metadata::setVorbisComment(const std::string& vc)
     {
 	try
 	{
-	    m_trackIndex = utils::StringUtils::toInt(value);
+	    m_trackIndex = boost::lexical_cast<int>(value);
 	}
-	catch (const utils::NumberFormatException&)
+	catch (const boost::bad_lexical_cast&)
 	{
 	}
     }

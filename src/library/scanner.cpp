@@ -2,7 +2,6 @@
 
 #include <codec/codecmanager.h>
 #include <thread/blocklock.h>
-#include <utils/stringutils.h>
 
 #include <zeppelin/logger.h>
 #include <zeppelin/library/storage.h>

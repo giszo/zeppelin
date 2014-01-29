@@ -59,7 +59,6 @@ sources = [
     "player/eventlistenerproxy.cpp",
     "thread/thread.cpp",
     "thread/condition.cpp",
-    "utils/stringutils.cpp",
     "utils/signalhandler.cpp",
     "utils/pidfile.cpp",
     "config/parser.cpp",

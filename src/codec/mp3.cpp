@@ -1,16 +1,14 @@
 #include "mp3.h"
 
-#include <utils/stringutils.h>
-
 #include <zeppelin/logger.h>
 
 #include <boost/locale.hpp>
+#include <boost/lexical_cast.hpp>
 
 #include <cstring>
 
 using codec::Mp3;
 using codec::CodecException;
-using utils::StringUtils;
 
 // =====================================================================================================================
 Mp3::Mp3(const std::string& file)
@@ -211,9 +209,9 @@ void Mp3::processID3v1(Metadata& info, const mpg123_id3v1& id3)
     {
 	try
 	{
-	    info.m_year = StringUtils::toInt(std::string(id3.year, 4));
+	    info.m_year = boost::lexical_cast<int>(std::string(id3.year, 4));
 	}
-	catch (const utils::NumberFormatException&)
+	catch (const boost::bad_lexical_cast&)
 	{
 	}
     }
@@ -237,9 +235,9 @@ void Mp3::processID3v2(Metadata& info, const mpg123_id3v2& id3)
     {
 	try
 	{
-	    info.m_year = StringUtils::toInt(id3.year->p);
+	    info.m_year = boost::lexical_cast<int>(id3.year->p);
 	}
-	catch (const utils::NumberFormatException&)
+	catch (const boost::bad_lexical_cast&)
 	{
 	}
     }
@@ -252,9 +250,9 @@ void Mp3::processID3v2(Metadata& info, const mpg123_id3v2& id3)
 	{
 	    try
 	    {
-		info.m_trackIndex = StringUtils::toInt(t.text.p);
+		info.m_trackIndex = boost::lexical_cast<int>(t.text.p);
 	    }
-	    catch (const utils::NumberFormatException&)
+	    catch (const boost::bad_lexical_cast&)
 	    {
 	    }
 	}
