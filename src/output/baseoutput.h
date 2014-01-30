@@ -33,6 +33,9 @@ class BaseOutput
 
 	virtual void setup(int rate, int channels) = 0;
 
+	// prepares the output for starting playback
+	virtual void prepare() = 0;
+	// drops already buffered samples from the output and stops playback
 	virtual void drop() = 0;
 
 	virtual void write(const float* samples, size_t count) = 0;

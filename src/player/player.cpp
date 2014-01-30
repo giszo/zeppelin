@@ -167,6 +167,7 @@ void Player::processCommands()
 	    case START :
 		LOG("player: start");
 		m_running = true;
+		m_output->prepare();
 		break;
 
 	    case STOP :

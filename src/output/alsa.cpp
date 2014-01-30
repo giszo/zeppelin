@@ -3,6 +3,8 @@
 #include <thread/thread.h>
 #include <utils/makestring.h>
 
+#include <zeppelin/logger.h>
+
 using output::AlsaOutput;
 using output::OutputException;
 
@@ -78,10 +80,17 @@ void AlsaOutput::setup(int rate, int channels)
 }
 
 // =====================================================================================================================
+void AlsaOutput::prepare()
+{
+    if (snd_pcm_prepare(m_handle) != 0)
+	LOG("alsa: unable to prepare output");
+}
+
+// =====================================================================================================================
 void AlsaOutput::drop()
 {
-    snd_pcm_drop(m_handle);
-    snd_pcm_prepare(m_handle);
+    if (snd_pcm_drop(m_handle) != 0)
+	LOG("alsa: unable to drop buffered samples");
 }
 
 // =====================================================================================================================

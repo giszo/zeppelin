@@ -20,6 +20,7 @@ class AlsaOutput : public BaseOutput
 
 	void setup(int rate, int channels) override;
 
+	void prepare() override;
 	void drop() override;
 
 	void write(const float* samples, size_t count) override;
