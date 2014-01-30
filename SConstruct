@@ -8,14 +8,16 @@ import os
 CODECS = ['mp3', 'flac', 'ogg', 'wavpack', 'monkeysaudio']
 
 vars = Variables()
-vars.Add(PathVariable('PREFIX', 'prefix used to install files', '/'))
+vars.Add(PathVariable('PREFIX', 'prefix used to install files', '/usr'))
+vars.Add(PathVariable('JSONCPP', 'path of jsoncpp library', None))
 vars.Add(BoolVariable('COVERAGE', 'set to 1 to measure coverage', 0))
 vars.Add(ListVariable('CODECS', 'list of compiled codecs', CODECS, CODECS))
 
 env = Environment(variables = vars)
 
-env["CPPFLAGS"] = ["-Wall", "-Werror", "-Wshadow", "-std=c++11", "-pthread"]
 env["CPPPATH"] = [Dir("include"), Dir("src")]
+env["LIBPATH"] = []
+env["CPPFLAGS"] = ["-Wall", "-Werror", "-Wshadow", "-std=c++11", "-pthread"]
 env["CPPDEFINES"] = []
 env["LINKFLAGS"] = ["-pthread", "-rdynamic"]
 env["LIBS"] = ["asound", "samplerate", "sqlite3", "jsoncpp"]
@@ -25,6 +27,11 @@ if env["COVERAGE"] :
     env["LINKFLAGS"] += ["-coverage"]
 else :
     env["CPPFLAGS"] += ["-O2"]
+
+# jsoncpp library
+if "JSONCPP" in env :
+    env["CPPPATH"] += ["%s/include" % env["JSONCPP"]]
+    env["LIBPATH"] += ["%s/lib" % env["JSONCPP"]]
 
 env["CXXCOMSTR"] = "Compiling $SOURCE"
 env["SHCXXCOMSTR"] = "Compiling $SOURCE"
@@ -124,11 +131,11 @@ env.Program(
 ########################################################################################################################
 # install
 
-env.Alias("install", env.Install("$PREFIX/usr/bin", zep))
+env.Alias("install", env.Install("$PREFIX/bin", zep))
 
 for root, dirs, files in os.walk(str(Dir("include/zeppelin"))) :
     for fn in files :
-        env.Alias("install", env.InstallAs("$PREFIX/usr/%s/%s" % (root, fn), "%s/%s" % (root, fn)))
+        env.Alias("install", env.InstallAs("$PREFIX/%s/%s" % (root, fn), "%s/%s" % (root, fn)))
 
 ########################################################################################################################
 # release
