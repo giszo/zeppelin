@@ -73,31 +73,27 @@ class Storage
 	/// deletes those files from the database having no mark
 	virtual void deleteNonMarked() = 0;
 
-	/// returns the file informations associated to the given ID
-	virtual std::shared_ptr<File> getFile(int id) = 0;
 	/// returns the given amount of files at most from the library having no metadata yet
 	virtual std::vector<std::shared_ptr<File>> getFilesWithoutMetadata() = 0;
-	/// returns the files of the given artist
-	virtual std::vector<std::shared_ptr<File>> getFilesOfArtist(int artistId) = 0;
+
+	/// returns the file informations associated to the given ID
+	virtual std::vector<std::shared_ptr<File>> getFiles(const std::vector<int>& ids) = 0;
 	/// returns the files of the given album
-	virtual std::vector<std::shared_ptr<File>> getFilesOfAlbum(int albumId) = 0;
+	virtual std::vector<int> getFileIdsOfAlbum(int albumId) = 0;
 	/// returns the files of the given directory
-	virtual std::vector<std::shared_ptr<File>> getFilesOfDirectory(int directoryId) = 0;
+	virtual std::vector<int> getFileIdsOfDirectory(int directoryId) = 0;
 
 	// Sets all metadata related fields of the file including length, sampling rate, etc.
 	virtual void setFileMetadata(const File& file) = 0;
 	// Updates only those parts of the metadata that can be edited by the user (artist, album, etc.)
 	virtual void updateFileMetadata(const File& file) = 0;
 
-	/// returns the available artists from the database
-	virtual std::vector<std::shared_ptr<Artist>> getArtists() = 0;
+	virtual std::vector<std::shared_ptr<Artist>> getArtists(const std::vector<int>&) = 0;
 
-	/// returns the album associated to the given ID
-	virtual std::shared_ptr<Album> getAlbum(int id) = 0;
+	/// returns the available album ids associated to the given artist
+	virtual std::vector<int> getAlbumIdsByArtist(int artistId) = 0;
 	/// returns the available albums from the database (without artist filtering)
-	virtual std::vector<std::shared_ptr<Album>> getAlbums() = 0;
-	/// returns the available albums associated to the given artist
-	virtual std::vector<std::shared_ptr<Album>> getAlbumsByArtist(int artistId) = 0;
+	virtual std::vector<std::shared_ptr<Album>> getAlbums(const std::vector<int>& ids) = 0;
 };
 
 }

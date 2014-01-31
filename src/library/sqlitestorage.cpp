@@ -5,6 +5,8 @@
 
 #include <zeppelin/logger.h>
 
+#include <sstream>
+
 using library::SqliteStorage;
 
 // =====================================================================================================================
@@ -88,32 +90,12 @@ void SqliteStorage::open(const config::Library& config)
     prepareStatement(&m_getSubdirectories, "SELECT id, name FROM directories WHERE parent_id IS ?");
 
     prepareStatement(&m_newFile, "INSERT OR IGNORE INTO files(path, name, size, directory_id) VALUES(?, ?, ?, ?)");
-    prepareStatement(&m_getFile,
-                     R"(SELECT files.path, files.name, files.size, files.length, files.title, files.year,
-                               files.track_index, files.codec, files.sampling_rate,
-                               albums.name,
-                               artists.name
-                        FROM files LEFT JOIN albums  ON albums.id = files.album_id
-                                   LEFT JOIN artists ON artists.id = files.artist_id
-                        WHERE files.id = ?)");
     prepareStatement(&m_getFileByPath, "SELECT id FROM files WHERE path = ? AND name = ?");
-    prepareStatement(&m_getFilesWithoutMeta, "SELECT id, path, name, size, directory_id FROM files WHERE length IS NULL");
-    prepareStatement(&m_getFilesOfArtist,
-                     R"(SELECT id, path, name, size, length, artist_id, album_id, title, year, track_index, codec, sampling_rate
-                        FROM files
-                        WHERE artist_id IS ?)");
+    prepareStatement(&m_getFilesWithoutMeta, "SELECT id, directory_id, path, name FROM files WHERE length IS NULL");
     // 'name' is used in ORDER BY to try to keep the order of tracks inside an album according to file naming because
     // it may contain information about the index of the track
-    prepareStatement(&m_getFilesOfAlbum,
-                     R"(SELECT id, path, name, size, length, artist_id, album_id, title, year, track_index, codec, sampling_rate
-                        FROM files
-                        WHERE album_id = ?
-                        ORDER BY track_index, name)");
-    prepareStatement(&m_getFilesOfDirectory,
-                     R"(SELECT id, path, name, size, length, artist_id, album_id, title, year, track_index, codec, sampling_rate
-                        FROM files
-                        WHERE directory_id = ?
-                        ORDER BY name)");
+    prepareStatement(&m_getFileIdsOfAlbum, "SELECT id FROM files WHERE album_id = ? ORDER BY track_index, name");
+    prepareStatement(&m_getFileIdsOfDirectory, "SELECT id FROM files WHERE directory_id = ? ORDER BY name");
     prepareStatement(&m_getFileStatistics, "SELECT COUNT(id), SUM(length), SUM(size) FROM files");
 
     prepareStatement(&m_setFileMark, "UPDATE files SET mark = 1 WHERE id = ?");
@@ -129,28 +111,13 @@ void SqliteStorage::open(const config::Library& config)
 
     // artists
     prepareStatement(&m_addArtist, "INSERT OR IGNORE INTO artists(name) VALUES(?)");
-    prepareStatement(&m_getArtists,
-                     R"(SELECT artists.id, artists.name, COUNT(DISTINCT files.album_id)
-                        FROM artists LEFT JOIN files ON artists.id = files.artist_id
-                        GROUP BY files.artist_id)");
     prepareStatement(&m_getArtistIdByName, "SELECT id FROM artists WHERE name = ?");
     prepareStatement(&m_getNumOfArtists, "SELECT COUNT(id) FROM artists");
 
     // albums
     prepareStatement(&m_addAlbum, "INSERT OR IGNORE INTO albums(artist_id, name) VALUES(?, ?)");
-    prepareStatement(&m_getAlbum, "SELECT artist_id, name FROM albums WHERE id = ?");
     prepareStatement(&m_getAlbumIdByName, "SELECT id FROM albums WHERE artist_id IS ? AND name = ?");
-    prepareStatement(&m_getAlbums,
-                     R"(SELECT albums.id, albums.name, files.artist_id, COUNT(files.id), SUM(files.length)
-                        FROM albums LEFT JOIN files ON albums.id = files.album_id
-                        GROUP BY files.album_id
-                        ORDER BY albums.name)");
-    prepareStatement(&m_getAlbumsByArtist,
-                     R"(SELECT albums.id, albums.name, COUNT(files.id), SUM(files.length)
-                        FROM files LEFT JOIN albums ON albums.id = files.album_id
-                        WHERE files.artist_id = ?
-                        GROUP BY files.album_id
-                        ORDER BY albums.name)");
+    prepareStatement(&m_getAlbumIdsByArtist, "SELECT id FROM albums WHERE artist_id = ?");
     prepareStatement(&m_getNumOfAlbums, "SELECT COUNT(id) FROM albums");
 
     // mark
@@ -331,25 +298,6 @@ void SqliteStorage::deleteNonMarked()
 }
 
 // =====================================================================================================================
-std::shared_ptr<zeppelin::library::File> SqliteStorage::getFile(int id)
-{
-    std::shared_ptr<zeppelin::library::File> file;
-
-    thread::BlockLock bl(m_mutex);
-
-    StatementHolder stmt(m_getFile);
-    stmt.bindInt(1, id);
-
-    if (stmt.step() != SQLITE_ROW)
-	throw zeppelin::library::FileNotFoundException("file not found with ID");
-
-    file = std::make_shared<zeppelin::library::File>(id);
-    fillFile(stmt, *file);
-
-    return file;
-}
-
-// =====================================================================================================================
 std::vector<std::shared_ptr<zeppelin::library::File>> SqliteStorage::getFilesWithoutMetadata()
 {
     std::vector<std::shared_ptr<zeppelin::library::File>> files;
@@ -360,8 +308,10 @@ std::vector<std::shared_ptr<zeppelin::library::File>> SqliteStorage::getFilesWit
 
     while (stmt.step() == SQLITE_ROW)
     {
-	std::shared_ptr<zeppelin::library::File> file = std::make_shared<zeppelin::library::File>(-1);
-	fillFile(stmt, *file);
+	std::shared_ptr<zeppelin::library::File> file = std::make_shared<zeppelin::library::File>(stmt.getInt(0));
+	file->m_directoryId = stmt.getInt(1);
+	file->m_path = stmt.getText(2);
+	file->m_name = stmt.getText(3);
 	files.push_back(file);
     }
 
@@ -369,19 +319,39 @@ std::vector<std::shared_ptr<zeppelin::library::File>> SqliteStorage::getFilesWit
 }
 
 // =====================================================================================================================
-std::vector<std::shared_ptr<zeppelin::library::File>> SqliteStorage::getFilesOfArtist(int artistId)
+std::vector<std::shared_ptr<zeppelin::library::File>> SqliteStorage::getFiles(const std::vector<int>& ids)
 {
     std::vector<std::shared_ptr<zeppelin::library::File>> files;
 
+    std::ostringstream query;
+
+    query << "SELECT id, path, name, artist_id, album_id, size, length, title, year, track_index, codec, sampling_rate ";
+    query << "FROM files ";
+    if (!ids.empty())
+    {
+	query << "WHERE id IN (";
+	serializeIntList(query, ids);
+	query << ") ";
+    }
+
     thread::BlockLock bl(m_mutex);
 
-    StatementHolder stmt(m_getFilesOfArtist);
-    stmt.bindIndex(1, artistId);
+    StatementHolder stmt(m_db, query.str());
 
     while (stmt.step() == SQLITE_ROW)
     {
-	std::shared_ptr<zeppelin::library::File> file = std::make_shared<zeppelin::library::File>(-1);
-	fillFile(stmt, *file);
+	std::shared_ptr<zeppelin::library::File> file = std::make_shared<zeppelin::library::File>(stmt.getInt(0));
+	file->m_path = stmt.getText(1);
+	file->m_name = stmt.getText(2);
+	file->m_artistId = stmt.getInt(3);
+	file->m_albumId = stmt.getInt(4);
+	file->m_size = stmt.getInt(5);
+	file->m_length = stmt.getInt(6);
+	file->m_title = stmt.getText(7);
+	file->m_year = stmt.getInt(8);
+	file->m_trackIndex = stmt.getInt(9);
+	file->m_codec = stmt.getText(10);
+	file->m_samplingRate = stmt.getInt(11);
 	files.push_back(file);
     }
 
@@ -389,47 +359,39 @@ std::vector<std::shared_ptr<zeppelin::library::File>> SqliteStorage::getFilesOfA
 }
 
 // =====================================================================================================================
-std::vector<std::shared_ptr<zeppelin::library::File>> SqliteStorage::getFilesOfAlbum(int albumId)
+std::vector<int> SqliteStorage::getFileIdsOfAlbum(int albumId)
 {
-    std::vector<std::shared_ptr<zeppelin::library::File>> files;
+    std::vector<int> fileIds;
 
     thread::BlockLock bl(m_mutex);
 
-    StatementHolder stmt(m_getFilesOfAlbum);
+    StatementHolder stmt(m_getFileIdsOfAlbum);
     stmt.bindInt(1, albumId);
 
     while (stmt.step() == SQLITE_ROW)
-    {
-	std::shared_ptr<zeppelin::library::File> file = std::make_shared<zeppelin::library::File>(-1);
-	fillFile(stmt, *file);
-	files.push_back(file);
-    }
+	fileIds.push_back(stmt.getInt(0));
 
-    return files;
+    return fileIds;
 }
 
 // =====================================================================================================================
-std::vector<std::shared_ptr<zeppelin::library::File>> SqliteStorage::getFilesOfDirectory(int directoryId)
+std::vector<int> SqliteStorage::getFileIdsOfDirectory(int directoryId)
 {
-    std::vector<std::shared_ptr<zeppelin::library::File>> files;
+    std::vector<int> fileIds;
 
     // root directory does not contain any files
     if (directoryId == -1)
-	return files;
+	return fileIds;
 
     thread::BlockLock bl(m_mutex);
 
-    StatementHolder stmt(m_getFilesOfDirectory);
+    StatementHolder stmt(m_getFileIdsOfDirectory);
     stmt.bindInt(1, directoryId);
 
     while (stmt.step() == SQLITE_ROW)
-    {
-	std::shared_ptr<zeppelin::library::File> file = std::make_shared<zeppelin::library::File>(-1);
-	fillFile(stmt, *file);
-	files.push_back(file);
-    }
+	fileIds.push_back(stmt.getInt(0));
 
-    return files;
+    return fileIds;
 }
 
 // =====================================================================================================================
@@ -476,18 +438,29 @@ void SqliteStorage::updateFileMetadata(const zeppelin::library::File& file)
 }
 
 // =====================================================================================================================
-std::vector<std::shared_ptr<zeppelin::library::Artist>> SqliteStorage::getArtists()
+std::vector<std::shared_ptr<zeppelin::library::Artist>> SqliteStorage::getArtists(const std::vector<int>& ids)
 {
     std::vector<std::shared_ptr<zeppelin::library::Artist>> artists;
 
+    std::ostringstream query;
+    query << "SELECT artists.id, artists.name, COUNT(DISTINCT files.album_id) ";
+    query << "FROM artists LEFT JOIN files ON artists.id = files.artist_id ";
+    if (!ids.empty())
+    {
+	query << "WHERE artists.id IN (";
+	serializeIntList(query, ids);
+	query << ") ";
+    }
+    query << "GROUP BY files.artist_id";
+
     thread::BlockLock bl(m_mutex);
 
-    StatementHolder stmt(m_getArtists);
+    StatementHolder stmt(m_db, query.str());
 
     while (stmt.step() == SQLITE_ROW)
     {
 	std::shared_ptr<zeppelin::library::Artist> artist = std::make_shared<zeppelin::library::Artist>(
-	    stmt.columnType(0) == SQLITE_NULL ? -1 : stmt.getInt(0),
+	    stmt.getInt(0),
 	    stmt.getText(1),
 	    stmt.getInt(2));
 	artists.push_back(artist);
@@ -497,67 +470,46 @@ std::vector<std::shared_ptr<zeppelin::library::Artist>> SqliteStorage::getArtist
 }
 
 // =====================================================================================================================
-std::shared_ptr<zeppelin::library::Album> SqliteStorage::getAlbum(int id)
+std::vector<int> SqliteStorage::getAlbumIdsByArtist(int artistId)
 {
-    std::shared_ptr<zeppelin::library::Album> album;
+    std::vector<int> ids;
 
     thread::BlockLock bl(m_mutex);
 
-    StatementHolder stmt(m_getAlbum);
-    stmt.bindInt(1, id);
-
-    if (stmt.step() != SQLITE_ROW)
-	throw zeppelin::library::FileNotFoundException("album not found"); // TODO: use a new exception here!
-
-    album = std::make_shared<zeppelin::library::Album>(
-	id,
-	stmt.getText(1),
-	stmt.getInt(0),
-	0,
-	0);
-
-    return album;
-}
-
-// =====================================================================================================================
-std::vector<std::shared_ptr<zeppelin::library::Album>> SqliteStorage::getAlbums()
-{
-    std::vector<std::shared_ptr<zeppelin::library::Album>> albums;
-
-    thread::BlockLock bl(m_mutex);
-
-    StatementHolder stmt(m_getAlbums);
-
-    while (stmt.step() == SQLITE_ROW)
-    {
-	std::shared_ptr<zeppelin::library::Album> album = std::make_shared<zeppelin::library::Album>(
-	    stmt.getInt(0),
-	    stmt.getText(1),
-	    stmt.getInt(2),
-	    stmt.getInt(3),
-	    stmt.getInt(4));
-	albums.push_back(album);
-    }
-
-    return albums;
-}
-
-// =====================================================================================================================
-std::vector<std::shared_ptr<zeppelin::library::Album>> SqliteStorage::getAlbumsByArtist(int artistId)
-{
-    std::vector<std::shared_ptr<zeppelin::library::Album>> albums;
-
-    thread::BlockLock bl(m_mutex);
-
-    StatementHolder stmt(m_getAlbumsByArtist);
+    StatementHolder stmt(m_getAlbumIdsByArtist);
     stmt.bindInt(1, artistId);
 
     while (stmt.step() == SQLITE_ROW)
+	ids.push_back(stmt.getInt(0));
+
+    return ids;
+}
+
+// =====================================================================================================================
+std::vector<std::shared_ptr<zeppelin::library::Album>> SqliteStorage::getAlbums(const std::vector<int>& ids)
+{
+    std::vector<std::shared_ptr<zeppelin::library::Album>> albums;
+
+    std::ostringstream query;
+    query << "SELECT albums.id, albums.name, albums.artist_id, COUNT(files.id) ";
+    query << "FROM albums LEFT JOIN files ON albums.id = files.album_id ";
+    if (!ids.empty())
+    {
+	query << "WHERE albums.id IN (";
+	serializeIntList(query, ids);
+	query << ") ";
+    }
+    query << "GROUP BY albums.id";
+
+    thread::BlockLock bl(m_mutex);
+
+    StatementHolder stmt(m_db, query.str());
+
+    while (stmt.step() == SQLITE_ROW)
     {
 	std::shared_ptr<zeppelin::library::Album> album = std::make_shared<zeppelin::library::Album>(
 	    stmt.getInt(0),
 	    stmt.getText(1),
-	    artistId,
 	    stmt.getInt(2),
 	    stmt.getInt(3));
 	albums.push_back(album);
@@ -646,73 +598,40 @@ int SqliteStorage::getAlbumId(const zeppelin::library::File& file, int artistId)
 }
 
 // =====================================================================================================================
-void SqliteStorage::fillFile(StatementHolder& stmt, zeppelin::library::File& file)
+void SqliteStorage::serializeIntList(std::ostringstream& stream, const std::vector<int>& list)
 {
-    for (int col = 0; col < stmt.columnCount(); ++col)
+    for (size_t i = 0; i < list.size(); ++i)
     {
-	std::string tableName = stmt.tableName(col);
-	std::string colName = stmt.columnName(col);
+	stream << list[i];
 
-	if (tableName == "files")
-	{
-	    if (colName == "id")
-		file.m_id = stmt.getInt(col);
-	    if (colName == "directory_id")
-		file.m_directoryId = stmt.getInt(col);
-	    else if (colName == "path")
-		file.m_path = stmt.getText(col);
-	    else if (colName == "name")
-		file.m_name = stmt.getText(col);
-	    else if (colName == "size")
-		file.m_size = stmt.getInt64(col);
-	    else if (colName == "length")
-		file.m_length = stmt.getInt(col);
-	    else if (colName == "artist_id")
-		file.m_artistId = stmt.getInt(col);
-	    else if (colName == "album_id")
-		file.m_albumId = stmt.getInt(col);
-	    else if (colName == "title")
-		file.m_title = stmt.getText(col);
-	    else if (colName == "year")
-		file.m_year = stmt.getInt(col);
-	    else if (colName == "track_index")
-		file.m_trackIndex = stmt.getInt(col);
-	    else if (colName == "codec")
-		file.m_codec = stmt.getText(col);
-	    else if (colName == "sampling_rate")
-		file.m_samplingRate = stmt.getInt(col);
-	    else
-		LOG("storage: unhandled files column: " << colName);
-	}
-	else if (tableName == "artists")
-	{
-	    if (colName == "name")
-		file.m_artist = stmt.getText(col);
-	    else
-		LOG("storage: unhandled artists column: " << colName);
-	}
-	else if (tableName == "albums")
-	{
-	    if (colName == "name")
-		file.m_album = stmt.getText(col);
-	    else
-		LOG("storage: unhandled albums column: " << colName);
-	}
-	else
-	    LOG("storage: unhandled table while filling file: " << tableName);
+	if (i != list.size() - 1)
+	    stream << ",";
     }
 }
 
 // =====================================================================================================================
+SqliteStorage::StatementHolder::StatementHolder(sqlite3* db, const std::string& query)
+{
+    if (sqlite3_prepare_v2(db, query.c_str(), query.length() + 1, &m_stmt, NULL) != SQLITE_OK)
+	throw zeppelin::library::StorageException("unable to prepare statement: " + query);
+
+    m_finalize = true;
+}
+
+// =====================================================================================================================
 SqliteStorage::StatementHolder::StatementHolder(sqlite3_stmt* stmt)
-    : m_stmt(stmt)
+    : m_finalize(false),
+      m_stmt(stmt)
 {
 }
 
 // =====================================================================================================================
 SqliteStorage::StatementHolder::~StatementHolder()
 {
-    sqlite3_reset(m_stmt);
+    if (m_finalize)
+	sqlite3_finalize(m_stmt);
+    else
+	sqlite3_reset(m_stmt);
 }
 
 // =====================================================================================================================

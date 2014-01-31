@@ -10,15 +10,13 @@ namespace library
 
 struct Album
 {
-    Album(int id, const std::string& name, int artist, int songs, int length);
+    Album(int id, const std::string& name, int artistId, int songs);
 
     int m_id;
     std::string m_name;
-    int m_artist;
+    int m_artistId;
     /// number of songs in this album
     int m_songs;
-    /// length of the album in seconds
-    int m_length;
 };
 
 }

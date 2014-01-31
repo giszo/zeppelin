@@ -22,8 +22,11 @@ struct File
     /// the length of the music file in seconds
     int m_length;
 
+    // TODO: now we are using these fields only for inserting metadata into the database... this should
+    // be replaced with some kind of public metadata structure
     std::string m_artist;
     std::string m_album;
+
     int m_artistId;
     int m_albumId;
     std::string m_title;

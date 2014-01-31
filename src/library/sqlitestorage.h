@@ -37,20 +37,19 @@ class SqliteStorage : public zeppelin::library::Storage
 	void clearMark() override;
 	void deleteNonMarked() override;
 
-	std::shared_ptr<zeppelin::library::File> getFile(int id) override;
 	std::vector<std::shared_ptr<zeppelin::library::File>> getFilesWithoutMetadata() override;
-	std::vector<std::shared_ptr<zeppelin::library::File>> getFilesOfArtist(int artistId) override;
-	std::vector<std::shared_ptr<zeppelin::library::File>> getFilesOfAlbum(int albumId) override;
-	std::vector<std::shared_ptr<zeppelin::library::File>> getFilesOfDirectory(int directoryId) override;
+
+	std::vector<std::shared_ptr<zeppelin::library::File>> getFiles(const std::vector<int>& ids) override;
+	std::vector<int> getFileIdsOfAlbum(int albumId) override;
+	std::vector<int> getFileIdsOfDirectory(int directoryId) override;
 
 	void setFileMetadata(const zeppelin::library::File& file) override;
 	void updateFileMetadata(const zeppelin::library::File& file) override;
 
-	std::vector<std::shared_ptr<zeppelin::library::Artist>> getArtists() override;
+	std::vector<std::shared_ptr<zeppelin::library::Artist>> getArtists(const std::vector<int>& ids) override;
 
-	std::shared_ptr<zeppelin::library::Album> getAlbum(int id) override;
-	std::vector<std::shared_ptr<zeppelin::library::Album>> getAlbums() override;
-	std::vector<std::shared_ptr<zeppelin::library::Album>> getAlbumsByArtist(int artistId) override;
+	std::vector<int> getAlbumIdsByArtist(int artistId) override;
+	std::vector<std::shared_ptr<zeppelin::library::Album>> getAlbums(const std::vector<int>& ids) override;
 
     private:
 	void execute(const std::string& sql);
@@ -60,9 +59,12 @@ class SqliteStorage : public zeppelin::library::Storage
 	int getArtistId(const zeppelin::library::File& file);
 	int getAlbumId(const zeppelin::library::File& file, int artistId);
 
+	static void serializeIntList(std::ostringstream& stream, const std::vector<int>& list);
+
     private:
 	struct StatementHolder
 	{
+	    StatementHolder(sqlite3* db, const std::string& query);
 	    StatementHolder(sqlite3_stmt* stmt);
 	    ~StatementHolder();
 
@@ -84,12 +86,12 @@ class SqliteStorage : public zeppelin::library::Storage
 	    int64_t getInt64(int col);
 	    std::string getText(int col);
 
+	    // true when the statement should be finalized by the holder
+	    bool m_finalize;
 	    sqlite3_stmt* m_stmt;
 	};
 
     private:
-	void fillFile(StatementHolder& stmt, zeppelin::library::File& file);
-
 	// the database to store the music library
 	sqlite3* m_db;
 
@@ -100,12 +102,10 @@ class SqliteStorage : public zeppelin::library::Storage
 
 	sqlite3_stmt* m_newFile;
 
-	sqlite3_stmt* m_getFile;
 	sqlite3_stmt* m_getFileByPath;
 	sqlite3_stmt* m_getFilesWithoutMeta;
-	sqlite3_stmt* m_getFilesOfArtist;
-	sqlite3_stmt* m_getFilesOfAlbum;
-	sqlite3_stmt* m_getFilesOfDirectory;
+	sqlite3_stmt* m_getFileIdsOfAlbum;
+	sqlite3_stmt* m_getFileIdsOfDirectory;
 	sqlite3_stmt* m_getFileStatistics;
 
 	sqlite3_stmt* m_setFileMark;
@@ -116,16 +116,13 @@ class SqliteStorage : public zeppelin::library::Storage
 
 	/// artist handling
 	sqlite3_stmt* m_addArtist;
-	sqlite3_stmt* m_getArtists;
 	sqlite3_stmt* m_getArtistIdByName;
 	sqlite3_stmt* m_getNumOfArtists;
 
 	/// album handling
 	sqlite3_stmt* m_addAlbum;
-	sqlite3_stmt* m_getAlbum;
 	sqlite3_stmt* m_getAlbumIdByName;
-	sqlite3_stmt* m_getAlbums;
-	sqlite3_stmt* m_getAlbumsByArtist;
+	sqlite3_stmt* m_getAlbumIdsByArtist;
 	sqlite3_stmt* m_getNumOfAlbums;
 
 	/// mark handling

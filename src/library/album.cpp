@@ -3,11 +3,10 @@
 using zeppelin::library::Album;
 
 // =====================================================================================================================
-Album::Album(int id, const std::string& name, int artist, int songs, int length)
+Album::Album(int id, const std::string& name, int artistId, int songs)
     : m_id(id),
       m_name(name),
-      m_artist(artist),
-      m_songs(songs),
-      m_length(length)
+      m_artistId(artistId),
+      m_songs(songs)
 {
 }
