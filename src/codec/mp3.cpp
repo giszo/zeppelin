@@ -86,6 +86,7 @@ codec::Metadata Mp3::readMetadata()
 	throw CodecException("unable to get media length");
 
     info.m_samples = samples;
+    info.m_sampleSize = 16; // currently we support only 16bit samples
 
     mpg123_id3v1* id3_v1;
     mpg123_id3v2* id3_v2;

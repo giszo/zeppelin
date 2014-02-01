@@ -86,5 +86,6 @@ void MetaParser::parse(zeppelin::library::File& file)
     file.m_year = meta.m_year;
     file.m_trackIndex = meta.m_trackIndex;
     file.m_codec = meta.m_codec;
-    file.m_samplingRate = meta.m_rate;
+    file.m_sampleRate = meta.m_rate;
+    file.m_sampleSize = meta.m_sampleSize;
 }

@@ -11,6 +11,7 @@ using codec::Metadata;
 Metadata::Metadata()
     : m_rate(-1),
       m_channels(-1),
+      m_sampleSize(0),
       m_samples(0),
       m_year(0),
       m_trackIndex(0)

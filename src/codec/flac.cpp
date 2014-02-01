@@ -111,6 +111,7 @@ codec::Metadata Flac::readMetadata()
 		m_metadata.m_rate = meta->data.stream_info.sample_rate;
 		m_metadata.m_channels = meta->data.stream_info.channels;
 		m_metadata.m_samples = meta->data.stream_info.total_samples;
+		m_metadata.m_sampleSize = meta->data.stream_info.bits_per_sample;
 
 		FLAC__metadata_object_delete(meta);
 

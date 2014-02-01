@@ -36,7 +36,9 @@ struct File
     // the audio codec of the file (mp3, flac, etc.)
     std::string m_codec;
     // sampling rate of the file (44100Hz, 48000Hz, etc.)
-    int m_samplingRate;
+    int m_sampleRate;
+    // size of a sample in bits
+    int m_sampleSize;
 };
 
 }

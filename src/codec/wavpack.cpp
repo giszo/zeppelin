@@ -97,6 +97,7 @@ codec::Metadata WavPack::readMetadata()
     m.m_codec = "WV";
     m.m_rate = WavpackGetSampleRate(m_context);
     m.m_channels = WavpackGetReducedChannels(m_context); // use GetNumChannels() once we support more than 2 ...
+    m.m_sampleSize = WavpackGetBitsPerSample(m_context);
     m.m_samples = WavpackGetNumSamples(m_context);
 
     return m;

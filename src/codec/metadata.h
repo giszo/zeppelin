@@ -28,6 +28,8 @@ class Metadata
 	int m_rate;
 	/// number of channels
 	int m_channels;
+	/// size of a sample (in bits)
+	int m_sampleSize;
 	/// the number of samples in the resource
 	size_t m_samples;
 

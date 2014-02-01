@@ -154,6 +154,7 @@ codec::Metadata Vorbis::readMetadata()
     if (samples == OV_EINVAL)
 	throw CodecException("unable to get number of samples");
 
+    m.m_sampleSize = 16;
     m.m_samples = samples;
 
     // vorbis comment

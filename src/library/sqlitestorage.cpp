@@ -75,7 +75,8 @@ void SqliteStorage::open(const config::Library& config)
 	    year INTEGER DEFAULT NULL,
 	    track_index INTEGER DEFAULT NULL,
 	    codec TEXT DEFAULT NULL,
-	    sampling_rate INTEGER DEFAULT NULL,
+	    sample_rate INTEGER DEFAULT NULL,
+	    sample_size INTEGER DEFAULT NULL,
 	    mark INTEGER DEFAULT 1,
 	    UNIQUE(path, name),
 	    FOREIGN KEY(artist_id) REFERENCES artists(id),
@@ -101,7 +102,7 @@ void SqliteStorage::open(const config::Library& config)
     prepareStatement(&m_setDirectoryMark, "UPDATE directories SET mark = 1 WHERE id = ?");
     prepareStatement(&m_setFileMeta,
                      R"(UPDATE files
-                        SET artist_id = ?, album_id = ?, length = ?, title = ?, year = ?, track_index = ?, codec = ?, sampling_rate = ?
+                        SET artist_id = ?, album_id = ?, length = ?, title = ?, year = ?, track_index = ?, codec = ?, sample_rate = ?, sample_size = ?
                         WHERE id = ?)");
     prepareStatement(&m_updateFileMeta,
                      R"(UPDATE files
@@ -333,7 +334,7 @@ std::vector<std::shared_ptr<zeppelin::library::File>> SqliteStorage::getFiles(co
 
     std::ostringstream query;
 
-    query << "SELECT id, path, name, directory_id, artist_id, album_id, size, length, title, year, track_index, codec, sampling_rate ";
+    query << "SELECT id, path, name, directory_id, artist_id, album_id, size, length, title, year, track_index, codec, sample_rate, sample_size ";
     query << "FROM files ";
     if (!ids.empty())
     {
@@ -360,7 +361,8 @@ std::vector<std::shared_ptr<zeppelin::library::File>> SqliteStorage::getFiles(co
 	file->m_year = stmt.getInt(9);
 	file->m_trackIndex = stmt.getInt(10);
 	file->m_codec = stmt.getText(11);
-	file->m_samplingRate = stmt.getInt(12);
+	file->m_sampleRate = stmt.getInt(12);
+	file->m_sampleSize = stmt.getInt(13);
 	files.push_back(file);
     }
 
@@ -420,8 +422,9 @@ void SqliteStorage::setFileMetadata(const zeppelin::library::File& file)
     stmt.bindInt(5, file.m_year);
     stmt.bindInt(6, file.m_trackIndex);
     stmt.bindText(7, file.m_codec);
-    stmt.bindInt(8, file.m_samplingRate);
-    stmt.bindInt(9, file.m_id);
+    stmt.bindInt(8, file.m_sampleRate);
+    stmt.bindInt(9, file.m_sampleSize);
+    stmt.bindInt(10, file.m_id);
 
     stmt.step();
 }

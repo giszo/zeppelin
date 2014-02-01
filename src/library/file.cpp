@@ -11,6 +11,6 @@ File::File(int id)
       m_albumId(-1),
       m_year(0),
       m_trackIndex(0),
-      m_samplingRate(0)
+      m_sampleRate(0)
 {
 }
