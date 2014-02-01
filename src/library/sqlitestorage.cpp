@@ -162,7 +162,7 @@ zeppelin::library::Statistics SqliteStorage::getStatistics()
 std::vector<std::shared_ptr<zeppelin::library::Directory>> SqliteStorage::getDirectories(const std::vector<int>& ids)
 {
     std::ostringstream query;
-    query << "SELECT id, name ";
+    query << "SELECT id, name, parent_id ";
     query << "FROM directories ";
     if (!ids.empty())
     {
@@ -181,7 +181,8 @@ std::vector<std::shared_ptr<zeppelin::library::Directory>> SqliteStorage::getDir
     {
 	directories.push_back(std::make_shared<zeppelin::library::Directory>(
 	    stmt.getInt(0),
-	    stmt.getText(1) // name
+	    stmt.getText(1), // name
+	    stmt.getInt(2) // parent_id
 	));
     }
 

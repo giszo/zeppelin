@@ -10,12 +10,14 @@ namespace library
 
 struct Directory
 {
-    Directory(int id, const std::string& name);
+    Directory(int id, const std::string& name, int parentId = 0);
 
     // the id of the directory
     int m_id;
     // the name of the directory
     std::string m_name;
+    // the parent id of the directory
+    int m_parentId;
 };
 
 }
