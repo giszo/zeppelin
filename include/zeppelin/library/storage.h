@@ -56,7 +56,7 @@ class Storage
 	virtual Statistics getStatistics() = 0;
 
 	/// returns the directory structure associated to the given ID
-	virtual std::shared_ptr<Directory> getDirectory(int id) = 0;
+	virtual std::vector<std::shared_ptr<Directory>> getDirectories(const std::vector<int>& ids) = 0;
 	/// ensures that the given directory with the parent exists in the database and returns its ID
 	virtual int ensureDirectory(const std::string& name, int parentId) = 0;
 	/// lists the subdirectories of the given directory

@@ -85,7 +85,6 @@ void SqliteStorage::open(const config::Library& config)
 
     // prepare statements
     prepareStatement(&m_getDirectory, "SELECT id FROM directories WHERE parent_id IS ? and NAME = ?");
-    prepareStatement(&m_getDirectoryById, "SELECT name FROM directories WHERE id = ?");
     prepareStatement(&m_addDirectory, "INSERT INTO directories(parent_id, name) VALUES(?, ?)");
     prepareStatement(&m_getSubdirectories, "SELECT id, name FROM directories WHERE parent_id IS ?");
 
@@ -159,24 +158,33 @@ zeppelin::library::Statistics SqliteStorage::getStatistics()
 }
 
 // =====================================================================================================================
-std::shared_ptr<zeppelin::library::Directory> SqliteStorage::getDirectory(int id)
+std::vector<std::shared_ptr<zeppelin::library::Directory>> SqliteStorage::getDirectories(const std::vector<int>& ids)
 {
-    std::shared_ptr<zeppelin::library::Directory> directory;
+    std::ostringstream query;
+    query << "SELECT id, name ";
+    query << "FROM directories ";
+    if (!ids.empty())
+    {
+	query << "WHERE id IN (";
+	serializeIntList(query, ids);
+	query << ") ";
+    }
+
+    std::vector<std::shared_ptr<zeppelin::library::Directory>> directories;
 
     thread::BlockLock bl(m_mutex);
 
-    StatementHolder stmt(m_getDirectoryById);
-    stmt.bindInt(1, id);
+    StatementHolder stmt(m_db, query.str());
 
-    if (stmt.step() != SQLITE_ROW)
-	throw zeppelin::library::FileNotFoundException("directory not found with ID");
+    while (stmt.step() == SQLITE_ROW)
+    {
+	directories.push_back(std::make_shared<zeppelin::library::Directory>(
+	    stmt.getInt(0),
+	    stmt.getText(1) // name
+	));
+    }
 
-    directory = std::make_shared<zeppelin::library::Directory>(
-	id,
-	stmt.getText(0) // name
-    );
-
-    return directory;
+    return directories;
 }
 
 // =====================================================================================================================
@@ -325,7 +333,7 @@ std::vector<std::shared_ptr<zeppelin::library::File>> SqliteStorage::getFiles(co
 
     std::ostringstream query;
 
-    query << "SELECT id, path, name, artist_id, album_id, size, length, title, year, track_index, codec, sampling_rate ";
+    query << "SELECT id, path, name, directory_id, artist_id, album_id, size, length, title, year, track_index, codec, sampling_rate ";
     query << "FROM files ";
     if (!ids.empty())
     {
@@ -343,15 +351,16 @@ std::vector<std::shared_ptr<zeppelin::library::File>> SqliteStorage::getFiles(co
 	std::shared_ptr<zeppelin::library::File> file = std::make_shared<zeppelin::library::File>(stmt.getInt(0));
 	file->m_path = stmt.getText(1);
 	file->m_name = stmt.getText(2);
-	file->m_artistId = stmt.getInt(3);
-	file->m_albumId = stmt.getInt(4);
-	file->m_size = stmt.getInt(5);
-	file->m_length = stmt.getInt(6);
-	file->m_title = stmt.getText(7);
-	file->m_year = stmt.getInt(8);
-	file->m_trackIndex = stmt.getInt(9);
-	file->m_codec = stmt.getText(10);
-	file->m_samplingRate = stmt.getInt(11);
+	file->m_directoryId = stmt.getInt(3);
+	file->m_artistId = stmt.getInt(4);
+	file->m_albumId = stmt.getInt(5);
+	file->m_size = stmt.getInt(6);
+	file->m_length = stmt.getInt(7);
+	file->m_title = stmt.getText(8);
+	file->m_year = stmt.getInt(9);
+	file->m_trackIndex = stmt.getInt(10);
+	file->m_codec = stmt.getText(11);
+	file->m_samplingRate = stmt.getInt(12);
 	files.push_back(file);
     }
 

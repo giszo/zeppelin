@@ -28,7 +28,7 @@ class SqliteStorage : public zeppelin::library::Storage
 
 	zeppelin::library::Statistics getStatistics() override;
 
-	std::shared_ptr<zeppelin::library::Directory> getDirectory(int id) override;
+	std::vector<std::shared_ptr<zeppelin::library::Directory>> getDirectories(const std::vector<int>& ids) override;
 	int ensureDirectory(const std::string& name, int parentId) override;
 	std::vector<std::shared_ptr<zeppelin::library::Directory>> listSubdirectories(int id) override;
 
@@ -96,7 +96,6 @@ class SqliteStorage : public zeppelin::library::Storage
 	sqlite3* m_db;
 
 	sqlite3_stmt* m_getDirectory;
-	sqlite3_stmt* m_getDirectoryById;
 	sqlite3_stmt* m_addDirectory;
 	sqlite3_stmt* m_getSubdirectories;
 
