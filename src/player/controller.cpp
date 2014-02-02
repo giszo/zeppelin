@@ -28,7 +28,9 @@ ControllerImpl::ControllerImpl(const codec::CodecManager& codecManager,
 			       const std::shared_ptr<Player>& player,
 			       const config::Config& config)
     : m_state(STOPPED),
+      m_decoderQueue(-1),
       m_decoderInitialized(false),
+      m_playerQueue(-1),
       m_decoder(decoder),
       m_player(player),
       m_codecManager(codecManager)

@@ -155,14 +155,21 @@ class Album : public ContainerQueueItem
 class Playlist : public ContainerQueueItem
 {
     public:
+	Playlist(int id);
+
 	void add(const std::shared_ptr<QueueItem>& item);
 
 	// removes all items from the playlist
 	void clear();
 
+	int getId() const;
+
 	Type type() const override;
 
 	std::shared_ptr<QueueItem> clone() const override;
+
+    private:
+	int m_id;
 };
 
 }

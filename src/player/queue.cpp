@@ -306,6 +306,12 @@ const zeppelin::library::Album& Album::album() const
 }
 
 // =====================================================================================================================
+Playlist::Playlist(int id)
+    : m_id(id)
+{
+}
+
+// =====================================================================================================================
 void Playlist::add(const std::shared_ptr<QueueItem>& item)
 {
     m_items.push_back(item);
@@ -319,6 +325,12 @@ void Playlist::clear()
 }
 
 // =====================================================================================================================
+int Playlist::getId() const
+{
+    return m_id;
+}
+
+// =====================================================================================================================
 QueueItem::Type Playlist::type() const
 {
     return PLAYLIST;
@@ -327,7 +339,7 @@ QueueItem::Type Playlist::type() const
 // =====================================================================================================================
 std::shared_ptr<QueueItem> Playlist::clone() const
 {
-    std::shared_ptr<Playlist> pl = std::make_shared<Playlist>();
+    std::shared_ptr<Playlist> pl = std::make_shared<Playlist>(m_id);
 
     pl->m_index = m_index;
 
