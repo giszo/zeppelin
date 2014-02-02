@@ -24,6 +24,9 @@ class FakeOutput : public output::BaseOutput
 	void setup(int rate, int channels) override
 	{}
 
+	void prepare() override
+	{}
+
 	void drop() override
 	{}
 
