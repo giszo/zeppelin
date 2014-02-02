@@ -607,9 +607,9 @@ std::shared_ptr<codec::BaseCodec> ControllerImpl::open(const std::string& file)
     {
 	input->open();
     }
-    catch (const codec::CodecException&)
+    catch (const codec::CodecException& e)
     {
-	LOG("controller: unable to open " << file);
+	LOG("controller: unable to open " << file << ": " << e.what());
 	return nullptr;
     }
 
