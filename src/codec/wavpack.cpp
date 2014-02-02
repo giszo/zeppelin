@@ -44,19 +44,14 @@ void WavPack::open()
 
     LOG("wavpack: using " << (m_floatMode ? "float" : "integer") << " mode");
 
-    int bps = WavpackGetBitsPerSample(m_context);
-
-    switch (bps)
+    if (!m_floatMode)
     {
-	case 8 :
-	case 16 :
-	case 32 :
-	    m_scale = (1 << (bps - 1)) - 1;
-	    break;
+	int bps = WavpackGetBitsPerSample(m_context);
 
-	default :
-	    // TODO: other bps value could also occur ...
-	    throw CodecException("invalid BPS value");
+	if ((bps % 8) != 0)
+	    bps = (bps + 7) & ~7;
+
+	m_scale = (1 << (bps - 1)) - 1;
     }
 }
 
