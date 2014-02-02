@@ -5,6 +5,7 @@
 #include <zeppelin/library/directory.h>
 #include <zeppelin/library/artist.h>
 #include <zeppelin/library/album.h>
+#include <zeppelin/library/playlist.h>
 
 #include <stdexcept>
 #include <string>
@@ -94,6 +95,17 @@ class Storage
 	virtual std::vector<int> getAlbumIdsByArtist(int artistId) = 0;
 	/// returns the available albums from the database (without artist filtering)
 	virtual std::vector<std::shared_ptr<Album>> getAlbums(const std::vector<int>& ids) = 0;
+
+	// creates a new playlist
+	virtual int createPlaylist(const std::string& name) = 0;
+	// deletes an existing playlist
+	virtual void deletePlaylist(int id) = 0;
+	// adds a new item to an existing playlist
+	virtual int addPlaylistItem(int id, const std::string& type, int itemId) = 0;
+	// removes an existing item from a playlist
+	virtual void deletePlaylistItem(int id) = 0;
+	// returns available playlists
+	virtual std::vector<std::shared_ptr<Playlist>> getPlaylists(const std::vector<int>& ids) = 0;
 };
 
 }

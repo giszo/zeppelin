@@ -83,6 +83,20 @@ void SqliteStorage::open(const config::Library& config)
 	    FOREIGN KEY(album_id) REFERENCES albums(id),
 	    FOREIGN KEY(directory_id) REFERENCES directories(id)))");
     execute("CREATE INDEX IF NOT EXISTS files_artist_id ON files(artist_id)");
+    execute("CREATE INDEX IF NOT EXISTS files_album_id ON files(album_id)");
+
+    // playlists
+    execute(
+	R"(CREATE TABLE IF NOT EXISTS playlists(
+	    id INTEGER PRIMARY KEY,
+	    name TEXT))");
+    execute(
+	R"(CREATE TABLE IF NOT EXISTS playlist_items(
+	    id INTEGER PRIMARY KEY,
+	    playlist_id INTEGER,
+	    type TEXT,
+	    item_id INTEGER,
+	    FOREIGN KEY(playlist_id) REFERENCES playlists(id)))");
 
     // prepare statements
     prepareStatement(&m_getDirectory, "SELECT id FROM directories WHERE parent_id IS ? and NAME = ?");
@@ -119,6 +133,12 @@ void SqliteStorage::open(const config::Library& config)
     prepareStatement(&m_getAlbumIdByName, "SELECT id FROM albums WHERE artist_id IS ? AND name = ?");
     prepareStatement(&m_getAlbumIdsByArtist, "SELECT id FROM albums WHERE artist_id = ?");
     prepareStatement(&m_getNumOfAlbums, "SELECT COUNT(id) FROM albums");
+
+    // playlists
+    prepareStatement(&m_createPlaylist, "INSERT INTO playlists(name) VALUES(?)");
+    prepareStatement(&m_deletePlaylist, "DELETE FROM playlists WHERE id = ?");
+    prepareStatement(&m_addPlaylistItem, "INSERT INTO playlist_items(playlist_id, type, item_id) VALUES(?, ?, ?)");
+    prepareStatement(&m_deletePlaylistItem, "DELETE FROM playlist_items WHERE id = ?");
 
     // mark
     prepareStatement(&m_clearFileMarks, "UPDATE files SET mark = 0");
@@ -529,6 +549,94 @@ std::vector<std::shared_ptr<zeppelin::library::Album>> SqliteStorage::getAlbums(
     }
 
     return albums;
+}
+
+// =====================================================================================================================
+int SqliteStorage::createPlaylist(const std::string& name)
+{
+    thread::BlockLock bl(m_mutex);
+
+    StatementHolder stmt(m_createPlaylist);
+    stmt.bindText(1, name);
+    stmt.step();
+
+    return sqlite3_last_insert_rowid(m_db);
+}
+
+// =====================================================================================================================
+void SqliteStorage::deletePlaylist(int id)
+{
+    thread::BlockLock bl(m_mutex);
+
+    StatementHolder stmt(m_deletePlaylist);
+    stmt.bindInt(1, id);
+    stmt.step();
+}
+
+// =====================================================================================================================
+int SqliteStorage::addPlaylistItem(int id, const std::string& type, int itemId)
+{
+    if (type != "album" && type != "file" && type != "directory")
+	return -1;
+
+    thread::BlockLock bl(m_mutex);
+
+    StatementHolder stmt(m_addPlaylistItem);
+    stmt.bindInt(1, id);
+    stmt.bindText(2, type);
+    stmt.bindInt(3, itemId);
+    stmt.step();
+
+    return sqlite3_last_insert_rowid(m_db);
+}
+
+// =====================================================================================================================
+void SqliteStorage::deletePlaylistItem(int id)
+{
+    thread::BlockLock bl(m_mutex);
+
+    StatementHolder stmt(m_deletePlaylistItem);
+    stmt.bindInt(1, id);
+    stmt.step();
+}
+
+// =====================================================================================================================
+std::vector<std::shared_ptr<zeppelin::library::Playlist>> SqliteStorage::getPlaylists(const std::vector<int>& ids)
+{
+    std::vector<std::shared_ptr<zeppelin::library::Playlist>> playlists;
+
+    std::ostringstream query;
+    query << "SELECT playlists.id, playlists.name, playlist_items.id, playlist_items.type, playlist_items.item_id ";
+    query << "FROM playlist_items LEFT JOIN playlists ON playlists.id = playlist_items.playlist_id ";
+    if (!ids.empty())
+    {
+	query << "WHERE playlists.id IN (";
+	serializeIntList(query, ids);
+	query << ") ";
+    }
+    // order by playlist id to help the following algorithm to create the result ...
+    query << "ORDER BY playlists.id";
+
+    thread::BlockLock bl(m_mutex);
+
+    StatementHolder stmt(m_db, query.str());
+
+    while (stmt.step() == SQLITE_ROW)
+    {
+	int id = stmt.getInt(0);
+
+	if (playlists.empty() || playlists.back()->m_id != id)
+	{
+	    std::shared_ptr<zeppelin::library::Playlist> playlist = std::make_shared<zeppelin::library::Playlist>();
+	    playlist->m_id = id;
+	    playlist->m_name = stmt.getText(1);
+	    playlists.push_back(playlist);
+	}
+
+	playlists.back()->m_items.push_back({stmt.getInt(2), stmt.getText(3), stmt.getInt(4)});
+    }
+
+    return playlists;
 }
 
 // =====================================================================================================================

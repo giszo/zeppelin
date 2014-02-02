@@ -51,6 +51,12 @@ class SqliteStorage : public zeppelin::library::Storage
 	std::vector<int> getAlbumIdsByArtist(int artistId) override;
 	std::vector<std::shared_ptr<zeppelin::library::Album>> getAlbums(const std::vector<int>& ids) override;
 
+	int createPlaylist(const std::string& name) override;
+	void deletePlaylist(int id) override;
+	int addPlaylistItem(int id, const std::string& type, int itemId) override;
+	void deletePlaylistItem(int id) override;
+	std::vector<std::shared_ptr<zeppelin::library::Playlist>> getPlaylists(const std::vector<int>& ids) override;
+
     private:
 	void execute(const std::string& sql);
 	void prepareStatement(sqlite3_stmt** stmt, const std::string& sql);
@@ -123,6 +129,12 @@ class SqliteStorage : public zeppelin::library::Storage
 	sqlite3_stmt* m_getAlbumIdByName;
 	sqlite3_stmt* m_getAlbumIdsByArtist;
 	sqlite3_stmt* m_getNumOfAlbums;
+
+	// playlist handling
+	sqlite3_stmt* m_createPlaylist;
+	sqlite3_stmt* m_deletePlaylist;
+	sqlite3_stmt* m_addPlaylistItem;
+	sqlite3_stmt* m_deletePlaylistItem;
 
 	/// mark handling
 	sqlite3_stmt* m_clearFileMarks;
