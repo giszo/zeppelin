@@ -77,42 +77,13 @@ zeppelin::player::Controller::Status ControllerImpl::getStatus()
 }
 
 // =====================================================================================================================
-void ControllerImpl::queue(const std::shared_ptr<zeppelin::library::File>& file)
+void ControllerImpl::queue(const std::shared_ptr<zeppelin::player::QueueItem>& item)
 {
     {
 	thread::BlockLock bl(m_mutex);
-	m_decoderQueue.add(file);
-	m_playerQueue.add(file);
+	m_decoderQueue.add(item);
+	m_playerQueue.add(item);
     }
-
-    // send event
-    m_listenerProxy.queueChanged();
-}
-
-// =====================================================================================================================
-void ControllerImpl::queue(const std::shared_ptr<zeppelin::library::Directory>& directory,
-			   const std::vector<std::shared_ptr<zeppelin::library::File>>& files)
-{
-    {
-	thread::BlockLock bl(m_mutex);
-	m_decoderQueue.add(directory, files);
-	m_playerQueue.add(directory, files);
-    }
-
-    // send event
-    m_listenerProxy.queueChanged();
-}
-
-// =====================================================================================================================
-void ControllerImpl::queue(const std::shared_ptr<zeppelin::library::Album>& album,
-			   const std::vector<std::shared_ptr<zeppelin::library::File>>& files)
-{
-    {
-	thread::BlockLock bl(m_mutex);
-	m_decoderQueue.add(album, files);
-	m_playerQueue.add(album, files);
-    }
-
 
     // send event
     m_listenerProxy.queueChanged();

@@ -306,23 +306,9 @@ const zeppelin::library::Album& Album::album() const
 }
 
 // =====================================================================================================================
-void Playlist::add(const std::shared_ptr<zeppelin::library::File>& f)
+void Playlist::add(const std::shared_ptr<QueueItem>& item)
 {
-    m_items.push_back(std::make_shared<File>(f));
-}
-
-// =====================================================================================================================
-void Playlist::add(const std::shared_ptr<zeppelin::library::Directory>& directory,
-		   const std::vector<std::shared_ptr<zeppelin::library::File>>& files)
-{
-    m_items.push_back(std::make_shared<Directory>(directory, files));
-}
-
-// =====================================================================================================================
-void Playlist::add(const std::shared_ptr<zeppelin::library::Album>& album,
-		   const std::vector<std::shared_ptr<zeppelin::library::File>>& files)
-{
-    m_items.push_back(std::make_shared<Album>(album, files));
+    m_items.push_back(item);
 }
 
 // =====================================================================================================================

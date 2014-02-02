@@ -56,14 +56,8 @@ class ControllerImpl : public zeppelin::player::Controller,
 	/// returns the current status of the player
 	Status getStatus();
 
-	/// puts a new file onto the playback queue
-	void queue(const std::shared_ptr<zeppelin::library::File>& file);
-	/// puts a new directory onto the playback queue
-	void queue(const std::shared_ptr<zeppelin::library::Directory>& directory,
-		   const std::vector<std::shared_ptr<zeppelin::library::File>>& files);
-	/// puts a new album onto the playback queue
-	void queue(const std::shared_ptr<zeppelin::library::Album>& album,
-		   const std::vector<std::shared_ptr<zeppelin::library::File>>& files);
+	/// puts a new item onto the playback queue
+	void queue(const std::shared_ptr<zeppelin::player::QueueItem>& item);
 	/// removes the referenced part of the queue
 	void remove(const std::vector<int>& index);
 	/// removes all members of the queue

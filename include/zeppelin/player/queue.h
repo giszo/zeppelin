@@ -155,11 +155,7 @@ class Album : public ContainerQueueItem
 class Playlist : public ContainerQueueItem
 {
     public:
-	void add(const std::shared_ptr<library::File>& f);
-	void add(const std::shared_ptr<library::Directory>& directory,
-		 const std::vector<std::shared_ptr<library::File>>& files);
-	void add(const std::shared_ptr<library::Album>& album,
-		 const std::vector<std::shared_ptr<library::File>>& files);
+	void add(const std::shared_ptr<QueueItem>& item);
 
 	// removes all items from the playlist
 	void clear();

@@ -8,9 +8,7 @@ namespace zeppelin
 {
 namespace library
 {
-class File;
-class Directory;
-class Album;
+struct File;
 }
 
 namespace player
@@ -18,6 +16,7 @@ namespace player
 
 class Playlist;
 class EventListener;
+class QueueItem;
 
 class Controller
 {
@@ -54,14 +53,8 @@ class Controller
 	/// returns the current status of the player
 	virtual Status getStatus() = 0;
 
-	/// puts a new file onto the playback queue
-	virtual void queue(const std::shared_ptr<zeppelin::library::File>& file) = 0;
-	/// puts a new directory onto the playback queue
-	virtual void queue(const std::shared_ptr<zeppelin::library::Directory>& directory,
-			   const std::vector<std::shared_ptr<zeppelin::library::File>>& files) = 0;
-	/// puts a new album onto the playback queue
-	virtual void queue(const std::shared_ptr<zeppelin::library::Album>& album,
-			   const std::vector<std::shared_ptr<zeppelin::library::File>>& files) = 0;
+	/// puts a new item onto the playback queue
+	virtual void queue(const std::shared_ptr<zeppelin::player::QueueItem>& item) = 0;
 	/// removes the referenced part of the queue
 	virtual void remove(const std::vector<int>& index) = 0;
 	/// removes all members of the queue
