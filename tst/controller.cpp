@@ -177,7 +177,7 @@ struct ControllerFixture
     {
 	std::shared_ptr<zeppelin::library::File> file(new zeppelin::library::File(id));
 	file->m_name = name;
-	m_ctrl->queue(file);
+	m_ctrl->queue(std::make_shared<zeppelin::player::File>(file));
     }
 
     void startPlayback()
