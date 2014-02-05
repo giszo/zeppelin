@@ -108,8 +108,8 @@ void SqliteStorage::open(const config::Library& config)
     prepareStatement(&m_getFilesWithoutMeta, "SELECT id, directory_id, path, name FROM files WHERE length IS NULL");
     // 'name' is used in ORDER BY to try to keep the order of tracks inside an album according to file naming because
     // it may contain information about the index of the track
-    prepareStatement(&m_getFileIdsOfAlbum, "SELECT id FROM files WHERE album_id = ? ORDER BY track_index, name");
-    prepareStatement(&m_getFileIdsOfDirectory, "SELECT id FROM files WHERE directory_id = ? ORDER BY name");
+    prepareStatement(&m_getFileIdsOfAlbum, "SELECT id FROM files WHERE album_id = ?");
+    prepareStatement(&m_getFileIdsOfDirectory, "SELECT id FROM files WHERE directory_id = ?");
     prepareStatement(&m_getFileStatistics, "SELECT COUNT(id), SUM(length), SUM(size) FROM files");
 
     prepareStatement(&m_setFileMark, "UPDATE files SET mark = 1 WHERE id = ?");
