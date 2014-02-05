@@ -173,11 +173,24 @@ struct ControllerFixture
 	m_ctrl->addListener(std::make_shared<EventListener>(m_events));
     }
 
-    void queueFile(int id, const std::string& name)
+    std::shared_ptr<zeppelin::library::File> createFile(int id, const std::string& name)
     {
 	std::shared_ptr<zeppelin::library::File> file(new zeppelin::library::File(id));
 	file->m_name = name;
-	m_ctrl->queue(std::make_shared<zeppelin::player::File>(file));
+	return file;
+    }
+
+    void queueFile(int id, const std::string& name)
+    {
+	m_ctrl->queue(std::make_shared<zeppelin::player::File>(createFile(id, name)));
+    }
+
+    void queueAlbum(int id, const std::string& name, const std::vector<std::shared_ptr<zeppelin::library::File>>& files)
+    {
+	m_ctrl->queue(
+	    std::make_shared<zeppelin::player::Album>(
+		std::make_shared<zeppelin::library::Album>(id, name, 0, 0),
+		files));
     }
 
     void startPlayback()
@@ -352,4 +365,46 @@ BOOST_FIXTURE_TEST_CASE(playback_stopped, ControllerFixture)
 
     BOOST_REQUIRE_EQUAL(m_events.size(), 4);
     BOOST_CHECK_EQUAL(m_events[3], "stopped");
+}
+
+BOOST_FIXTURE_TEST_CASE(queue_updated_at_decoder_and_song_finished, ControllerFixture)
+{
+    // I hope you like these :)
+    queueAlbum(1, "Led Zeppelin", {createFile(2, "good_times_bad_times.mp3"), createFile(3, "ramble_on.mp3")});
+    startPlayback();
+
+    BOOST_REQUIRE_EQUAL(m_ctrl->m_state, Controller::PLAYING);
+
+    // check status
+    auto s = m_ctrl->getStatus();
+    BOOST_REQUIRE_EQUAL(s.m_index.size(), 2);
+    BOOST_CHECK_EQUAL(s.m_index[0], 0);
+    BOOST_CHECK_EQUAL(s.m_index[1], 0);
+
+    // decoder finished on the first track
+    m_ctrl->command(player::ControllerImpl::DECODER_FINISHED);
+    process();
+
+    // check status - it should be the same as before
+    s = m_ctrl->getStatus();
+    BOOST_REQUIRE_EQUAL(s.m_index.size(), 2);
+    BOOST_CHECK_EQUAL(s.m_index[0], 0);
+    BOOST_CHECK_EQUAL(s.m_index[1], 0);
+
+    // make sure this generated no new event (current: queue-changed, song-changed, started)
+    BOOST_CHECK_EQUAL(m_events.size(), 3);
+
+    // player finished on the first track
+    m_ctrl->command(player::ControllerImpl::SONG_FINISHED);
+    process();
+
+    // check status - it should be at the second track now
+    s = m_ctrl->getStatus();
+    BOOST_REQUIRE_EQUAL(s.m_index.size(), 2);
+    BOOST_CHECK_EQUAL(s.m_index[0], 0);
+    BOOST_CHECK_EQUAL(s.m_index[1], 1);
+
+    // make sure a song-changed event is generated now
+    BOOST_REQUIRE_EQUAL(m_events.size(), 4);
+    BOOST_CHECK_EQUAL(m_events[3], "song-changed");
 }
