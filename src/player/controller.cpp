@@ -84,7 +84,7 @@ void ControllerImpl::queue(const std::shared_ptr<zeppelin::player::QueueItem>& i
     {
 	thread::BlockLock bl(m_mutex);
 	m_decoderQueue.add(item);
-	m_playerQueue.add(item);
+	m_playerQueue.add(item->clone());
     }
 
     // send event
