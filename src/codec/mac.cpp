@@ -142,7 +142,7 @@ codec::Metadata Mac::readMetadata()
     m.m_rate = m_decompress->GetInfo(APE_INFO_SAMPLE_RATE);
     m.m_channels = m_decompress->GetInfo(APE_INFO_CHANNELS);
     m.m_sampleSize = m_decompress->GetInfo(APE_INFO_BITS_PER_SAMPLE);
-    m.m_samples = (size_t)m_decompress->GetInfo(APE_DECOMPRESS_LENGTH_MS) * m.m_rate / 1000;
+    m.m_samples = (int64_t)m_decompress->GetInfo(APE_DECOMPRESS_LENGTH_MS) * m.m_rate / 1000;
 
     return m;
 }
