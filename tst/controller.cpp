@@ -393,6 +393,13 @@ BOOST_FIXTURE_TEST_CASE(queue_updated_at_decoder_and_song_finished, ControllerFi
 
     // make sure this generated no new event (current: queue-changed, song-changed, started)
     BOOST_CHECK_EQUAL(m_events.size(), 3);
+    m_events.clear();
+
+    // the second file should be loaded into the decoder
+    BOOST_REQUIRE_EQUAL(m_decoder->m_cmds.size(), 2);
+    BOOST_CHECK_EQUAL(m_decoder->m_cmds[0], "input file");
+    BOOST_CHECK_EQUAL(m_decoder->m_cmds[1], "start");
+    m_decoder->m_cmds.clear();
 
     // player finished on the first track
     m_ctrl->command(player::ControllerImpl::SONG_FINISHED);
@@ -405,6 +412,32 @@ BOOST_FIXTURE_TEST_CASE(queue_updated_at_decoder_and_song_finished, ControllerFi
     BOOST_CHECK_EQUAL(s.m_index[1], 1);
 
     // make sure a song-changed event is generated now
-    BOOST_REQUIRE_EQUAL(m_events.size(), 4);
-    BOOST_CHECK_EQUAL(m_events[3], "song-changed");
+    BOOST_REQUIRE_EQUAL(m_events.size(), 1);
+    BOOST_CHECK_EQUAL(m_events[0], "song-changed");
+    m_events.clear();
+
+    // decoder finished on the second track - it should be invalidated now
+    m_ctrl->command(player::ControllerImpl::DECODER_FINISHED);
+    process();
+
+    // make sure it is really invalidated
+    BOOST_REQUIRE_EQUAL(m_decoder->m_cmds.size(), 1);
+    BOOST_CHECK_EQUAL(m_decoder->m_cmds[0], "input null");
+
+    // make sure no new event has been generated
+    BOOST_CHECK(m_events.empty());
+
+    // player finished the second track too
+    m_ctrl->command(player::ControllerImpl::SONG_FINISHED);
+    process();
+
+    // player should receive no commands at this point
+    BOOST_CHECK(m_player->m_cmds.empty());
+
+    // playback should be stopped by now
+    BOOST_CHECK_EQUAL(m_ctrl->m_state, Controller::STOPPED);
+
+    // check the generated stopped event
+    BOOST_REQUIRE_EQUAL(m_events.size(), 1);
+    BOOST_CHECK_EQUAL(m_events[0], "stopped");
 }
