@@ -96,7 +96,7 @@ void SqliteStorage::open(const config::Library& config)
 	    playlist_id INTEGER,
 	    type TEXT,
 	    item_id INTEGER,
-	    FOREIGN KEY(playlist_id) REFERENCES playlists(id)))");
+	    FOREIGN KEY(playlist_id) REFERENCES playlists(id) ON DELETE CASCADE))");
 
     // prepare statements
     prepareStatement(&m_getDirectory, "SELECT id FROM directories WHERE parent_id IS ? and NAME = ?");
