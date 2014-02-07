@@ -8,6 +8,7 @@ import os
 CODECS = ['mp3', 'flac', 'ogg', 'wavpack', 'monkeysaudio']
 
 vars = Variables()
+vars.Add(PathVariable('CXX', 'path of the C++ compiler used for building', None))
 vars.Add(PathVariable('PREFIX', 'prefix used to install files', '/usr'))
 vars.Add(PathVariable('JSONCPP', 'path of jsoncpp library', None))
 vars.Add(BoolVariable('COVERAGE', 'set to 1 to measure coverage', 0))
