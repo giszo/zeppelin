@@ -92,6 +92,8 @@ class SqliteStorage : public zeppelin::library::Storage
 	    int64_t getInt64(int col);
 	    std::string getText(int col);
 
+	    bool isNull(int col);
+
 	    // true when the statement should be finalized by the holder
 	    bool m_finalize;
 	    sqlite3_stmt* m_stmt;

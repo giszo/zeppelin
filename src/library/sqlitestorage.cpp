@@ -607,7 +607,7 @@ std::vector<std::shared_ptr<zeppelin::library::Playlist>> SqliteStorage::getPlay
 
     std::ostringstream query;
     query << "SELECT playlists.id, playlists.name, playlist_items.id, playlist_items.type, playlist_items.item_id ";
-    query << "FROM playlist_items LEFT JOIN playlists ON playlists.id = playlist_items.playlist_id ";
+    query << "FROM playlists LEFT JOIN playlist_items ON playlists.id = playlist_items.playlist_id ";
     if (!ids.empty())
     {
 	query << "WHERE playlists.id IN (";
@@ -632,8 +632,9 @@ std::vector<std::shared_ptr<zeppelin::library::Playlist>> SqliteStorage::getPlay
 	    playlist->m_name = stmt.getText(1);
 	    playlists.push_back(playlist);
 	}
-
-	playlists.back()->m_items.push_back({stmt.getInt(2), stmt.getText(3), stmt.getInt(4)});
+	//in case of empty playlist col 2 is null
+	if (!stmt.isNull(2))
+	    playlists.back()->m_items.push_back({stmt.getInt(2), stmt.getText(3), stmt.getInt(4)});
     }
 
     return playlists;
@@ -839,4 +840,10 @@ std::string SqliteStorage::StatementHolder::getText(int col)
 	return "";
 
     return s;
+}
+
+// =====================================================================================================================
+bool SqliteStorage::StatementHolder::isNull(int col)
+{
+	return sqlite3_column_type(m_stmt, col) == SQLITE_NULL;
 }
