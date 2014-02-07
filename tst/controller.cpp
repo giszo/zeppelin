@@ -367,6 +367,60 @@ BOOST_FIXTURE_TEST_CASE(playback_stopped, ControllerFixture)
     BOOST_CHECK_EQUAL(m_events[3], "stopped");
 }
 
+BOOST_FIXTURE_TEST_CASE(remove_all_while_playing, ControllerFixture)
+{
+    queueFile(42, "hello.mp3");
+    startPlayback();
+    m_events.clear();
+
+    BOOST_REQUIRE_EQUAL(m_ctrl->m_state, Controller::PLAYING);
+
+    m_ctrl->removeAll();
+    process();
+
+    BOOST_CHECK_EQUAL(m_ctrl->m_state, Controller::STOPPED);
+
+    // check decoder commands
+    BOOST_REQUIRE_EQUAL(m_decoder->m_cmds.size(), 2);
+    BOOST_CHECK_EQUAL(m_decoder->m_cmds[0], "stop");
+    BOOST_CHECK_EQUAL(m_decoder->m_cmds[1], "input null");
+    BOOST_REQUIRE_EQUAL(m_player->m_cmds.size(), 1);
+    BOOST_CHECK_EQUAL(m_player->m_cmds[0], "stop");
+
+    BOOST_REQUIRE_EQUAL(m_events.size(), 3);
+    BOOST_CHECK_EQUAL(m_events[0], "stopped");
+    BOOST_CHECK_EQUAL(m_events[1], "queue-changed");
+    BOOST_CHECK_EQUAL(m_events[2], "song-changed");
+}
+
+BOOST_FIXTURE_TEST_CASE(remove_all_while_stopped, ControllerFixture)
+{
+    queueFile(42, "hello.mp3");
+    // issue play and stop to make the queue index valid
+    m_ctrl->play();
+    m_ctrl->stop();
+    process();
+    m_events.clear();
+    m_decoder->m_cmds.clear();
+    m_player->m_cmds.clear();
+
+    BOOST_REQUIRE_EQUAL(m_ctrl->m_state, Controller::STOPPED);
+
+    m_ctrl->removeAll();
+    process();
+
+    BOOST_CHECK_EQUAL(m_ctrl->m_state, Controller::STOPPED);
+
+    // make sure decoder and player were not touched
+    BOOST_CHECK(m_decoder->m_cmds.empty());
+    BOOST_CHECK(m_player->m_cmds.empty());
+
+    // check events
+    BOOST_REQUIRE_EQUAL(m_events.size(), 2);
+    BOOST_CHECK_EQUAL(m_events[0], "queue-changed");
+    BOOST_CHECK_EQUAL(m_events[1], "song-changed");
+}
+
 BOOST_FIXTURE_TEST_CASE(queue_updated_at_decoder_and_song_finished, ControllerFixture)
 {
     // I hope you like these :)
