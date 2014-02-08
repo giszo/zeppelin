@@ -380,6 +380,9 @@ void ControllerImpl::processCommands()
 		    {
 			// stop the decoder and the player because we are removing the currently played song
 			stopPlayback();
+
+			// send event
+			m_listenerProxy.stopped();
 		    }
 
 		    invalidateDecoder();
@@ -393,25 +396,23 @@ void ControllerImpl::processCommands()
 
 		// send events
 		m_listenerProxy.queueChanged();
-		m_listenerProxy.songChanged();
+		if (removingCurrent)
+		    m_listenerProxy.songChanged();
 
 		if (removingCurrent)
 		{
 		    // re-initialize the decoder
 		    setDecoderInput();
 
-		    if (m_state == PLAYING)
+		    if (m_state == PLAYING && m_decoderInitialized)
 		    {
-			if (m_decoderInitialized)
-			    startPlayback();
-			else
-			{
-			    m_state = STOPPED;
+			startPlayback();
 
-			    // send event
-			    m_listenerProxy.stopped();
-			}
+			// send event
+			m_listenerProxy.started();
 		    }
+		    else
+			m_state = STOPPED;
 		}
 
 		break;
