@@ -1,10 +1,12 @@
 #include <boost/test/unit_test.hpp>
 
+#include "librarybuilder.h"
+
 #include <zeppelin/player/queue.h>
 
 using zeppelin::player::Playlist;
 
-struct PlaylistFixture
+struct PlaylistFixture : public LibraryBuilder
 {
     PlaylistFixture()
 	: m_playlist(-1)
@@ -15,19 +17,10 @@ struct PlaylistFixture
 	m_playlist.add(std::make_shared<zeppelin::player::File>(file));
     }
 
-    void queueAlbum(int id, const std::string& name, const std::vector<std::shared_ptr<zeppelin::library::File>>& files)
+    void queueAlbum(const std::shared_ptr<zeppelin::library::Album>& album,
+		    const std::vector<std::shared_ptr<zeppelin::library::File>>& files)
     {
-	m_playlist.add(
-		std::make_shared<zeppelin::player::Album>(
-		    std::make_shared<zeppelin::library::Album>(id, name, 0, 0),
-		    files));
-    }
-
-    std::shared_ptr<zeppelin::library::File> createFile(int id, const std::string& name)
-    {
-	std::shared_ptr<zeppelin::library::File> file(new zeppelin::library::File(id));
-	file->m_name = name;
-	return file;
+	m_playlist.add(std::make_shared<zeppelin::player::Album>(album, files));
     }
 
     zeppelin::player::Playlist m_playlist;
@@ -44,7 +37,8 @@ BOOST_FIXTURE_TEST_CASE(TestPlaylist, PlaylistFixture)
 
     // queue 2 files and an album
     queueFile(createFile(1, "a.mp3"));
-    queueAlbum(57, "Album", {createFile(3, "1.mp3"), createFile(4, "2.mp3")});
+    queueAlbum(createAlbum(57, "Album"),
+	       {createFile(3, "1.mp3"), createFile(4, "2.mp3")});
     queueFile(createFile(2, "b.mp3"));
 
     // the playlist should be invalid still
@@ -172,7 +166,8 @@ BOOST_FIXTURE_TEST_CASE(TestActiveFileDeletionInsideAlbum, PlaylistFixture)
 {
     std::vector<int> iter;
 
-    queueAlbum(42, "Album", {createFile(1, "1.mp3"), createFile(2, "2.mp3"), createFile(3, "3.mp3")});
+    queueAlbum(createAlbum(42, "Album"),
+	       {createFile(1, "1.mp3"), createFile(2, "2.mp3"), createFile(3, "3.mp3")});
 
     // go to the second song of the album
     m_playlist.reset(zeppelin::player::QueueItem::FIRST);
@@ -200,8 +195,10 @@ BOOST_FIXTURE_TEST_CASE(TestActiveFileDeletionAtTheEndOfAlbum, PlaylistFixture)
 {
     std::vector<int> iter;
 
-    queueAlbum(42, "Album", {createFile(1, "1.mp3"), createFile(2, "2.mp3")});
-    queueAlbum(57, "Album2", {createFile(3, "a.mp3"), createFile(4, "b.mp3")});
+    queueAlbum(createAlbum(42, "Album"),
+	       {createFile(1, "1.mp3"), createFile(2, "2.mp3")});
+    queueAlbum(createAlbum(57, "Album2"),
+	       {createFile(3, "a.mp3"), createFile(4, "b.mp3")});
 
     // go to the second song of the first album
     m_playlist.reset(zeppelin::player::QueueItem::FIRST);
@@ -249,7 +246,8 @@ BOOST_FIXTURE_TEST_CASE(TestRemovalOfEmptyAlbum, PlaylistFixture)
 {
     std::vector<int> iter = {0, 0};
 
-    queueAlbum(42, "Album", {createFile(1, "1.mp3")});
+    queueAlbum(createAlbum(42, "Album"),
+	       {createFile(1, "1.mp3")});
     m_playlist.reset(zeppelin::player::QueueItem::FIRST);
 
     BOOST_CHECK(m_playlist.isValid());
@@ -265,7 +263,8 @@ BOOST_FIXTURE_TEST_CASE(TestInvalidIndexSet, PlaylistFixture)
 {
     std::vector<int> iter = {2, 1, 0};
 
-    queueAlbum(42, "Album", {createFile(1, "1.mp3"), createFile(2, "2.mp3")});
+    queueAlbum(createAlbum(42, "Album"),
+	       {createFile(1, "1.mp3"), createFile(2, "2.mp3")});
     m_playlist.reset(zeppelin::player::QueueItem::FIRST);
 
     BOOST_CHECK(m_playlist.isValid());

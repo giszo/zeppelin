@@ -1,5 +1,7 @@
 #include <boost/test/unit_test.hpp>
 
+#include "librarybuilder.h"
+
 #define private public
 
 #include <output/baseoutput.h>
@@ -161,7 +163,7 @@ struct EventListener : public zeppelin::player::EventListener
     std::vector<std::string>& m_events;
 };
 
-struct ControllerFixture
+struct ControllerFixture : public LibraryBuilder
 {
     ControllerFixture()
 	: m_fifo(1024),
@@ -173,24 +175,15 @@ struct ControllerFixture
 	m_ctrl->addListener(std::make_shared<EventListener>(m_events));
     }
 
-    std::shared_ptr<zeppelin::library::File> createFile(int id, const std::string& name)
+    void queueFile(const std::shared_ptr<zeppelin::library::File>& file)
     {
-	std::shared_ptr<zeppelin::library::File> file(new zeppelin::library::File(id));
-	file->m_name = name;
-	return file;
+	m_ctrl->queue(std::make_shared<zeppelin::player::File>(file));
     }
 
-    void queueFile(int id, const std::string& name)
+    void queueAlbum(const std::shared_ptr<zeppelin::library::Album>& album,
+		    const std::vector<std::shared_ptr<zeppelin::library::File>>& files)
     {
-	m_ctrl->queue(std::make_shared<zeppelin::player::File>(createFile(id, name)));
-    }
-
-    void queueAlbum(int id, const std::string& name, const std::vector<std::shared_ptr<zeppelin::library::File>>& files)
-    {
-	m_ctrl->queue(
-	    std::make_shared<zeppelin::player::Album>(
-		std::make_shared<zeppelin::library::Album>(id, name, 0, 0),
-		files));
+	m_ctrl->queue(std::make_shared<zeppelin::player::Album>(album,files));
     }
 
     void startPlayback()
@@ -270,7 +263,7 @@ BOOST_FIXTURE_TEST_CASE(stop_not_working_in_stopped_state, ControllerFixture)
 
 BOOST_FIXTURE_TEST_CASE(playback_started_first_time, ControllerFixture)
 {
-    queueFile(42, "hello.mp3");
+    queueFile(createFile(42, "hello.mp3"));
 
     BOOST_REQUIRE_EQUAL(m_events.size(), 1);
     BOOST_CHECK_EQUAL(m_events[0], "queue-changed");
@@ -296,7 +289,7 @@ BOOST_FIXTURE_TEST_CASE(playback_not_started_for_unknown_codec, ControllerFixtur
     // make the codec of the  input file invalid
     m_codecManager.m_codecValid = false;
 
-    queueFile(42, "hello.mp3");
+    queueFile(createFile(42, "hello.mp3"));
     m_ctrl->play();
     process();
 
@@ -313,7 +306,7 @@ BOOST_FIXTURE_TEST_CASE(playback_not_started_for_unopenable_file, ControllerFixt
     // make the open() function of the codec fail
     m_codecManager.m_openShouldFail = true;
 
-    queueFile(42, "hello.mp3");
+    queueFile(createFile(42, "hello.mp3"));
     m_ctrl->play();
     process();
 
@@ -327,7 +320,7 @@ BOOST_FIXTURE_TEST_CASE(playback_not_started_for_unopenable_file, ControllerFixt
 
 BOOST_FIXTURE_TEST_CASE(playback_paused, ControllerFixture)
 {
-    queueFile(42, "hello.mp3");
+    queueFile(createFile(42, "hello.mp3"));
     startPlayback();
 
     BOOST_REQUIRE_EQUAL(m_ctrl->m_state, Controller::PLAYING);
@@ -347,7 +340,7 @@ BOOST_FIXTURE_TEST_CASE(playback_paused, ControllerFixture)
 
 BOOST_FIXTURE_TEST_CASE(playback_stopped, ControllerFixture)
 {
-    queueFile(42, "hello.mp3");
+    queueFile(createFile(42, "hello.mp3"));
     startPlayback();
 
     BOOST_REQUIRE_EQUAL(m_ctrl->m_state, Controller::PLAYING);
@@ -369,7 +362,7 @@ BOOST_FIXTURE_TEST_CASE(playback_stopped, ControllerFixture)
 
 BOOST_FIXTURE_TEST_CASE(remove_all_while_playing, ControllerFixture)
 {
-    queueFile(42, "hello.mp3");
+    queueFile(createFile(42, "hello.mp3"));
     startPlayback();
     m_events.clear();
 
@@ -395,7 +388,7 @@ BOOST_FIXTURE_TEST_CASE(remove_all_while_playing, ControllerFixture)
 
 BOOST_FIXTURE_TEST_CASE(remove_all_while_stopped, ControllerFixture)
 {
-    queueFile(42, "hello.mp3");
+    queueFile(createFile(42, "hello.mp3"));
     // issue play and stop to make the queue index valid
     m_ctrl->play();
     m_ctrl->stop();
@@ -424,7 +417,8 @@ BOOST_FIXTURE_TEST_CASE(remove_all_while_stopped, ControllerFixture)
 BOOST_FIXTURE_TEST_CASE(queue_updated_at_decoder_and_song_finished, ControllerFixture)
 {
     // I hope you like these :)
-    queueAlbum(1, "Led Zeppelin", {createFile(2, "good_times_bad_times.mp3"), createFile(3, "ramble_on.mp3")});
+    queueAlbum(createAlbum(1, "Led Zeppelin"),
+	       {createFile(2, "good_times_bad_times.mp3"), createFile(3, "ramble_on.mp3")});
     startPlayback();
 
     BOOST_REQUIRE_EQUAL(m_ctrl->m_state, Controller::PLAYING);
