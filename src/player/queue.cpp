@@ -48,8 +48,12 @@ void ContainerQueueItem::remove(std::vector<int>& i)
     int idx = i[0];
     i.erase(i.begin());
 
+    // make sure the index is valid
     if (idx < 0 || static_cast<size_t>(idx) >= m_items.size())
 	return;
+
+    // true when the current item on this level changed
+    bool currentChanged = false;
 
     if (i.empty())
     {
@@ -59,6 +63,8 @@ void ContainerQueueItem::remove(std::vector<int>& i)
 	// decrement the index if we removed the item before it
 	if (idx < m_index)
 	    --m_index;
+	else if (idx == m_index)
+	    currentChanged = true;
     }
     else
     {
@@ -82,17 +88,22 @@ void ContainerQueueItem::remove(std::vector<int>& i)
 	    // here we return to avoid running the code at the end of the function
 	    return;
 	}
+
+	currentChanged = true;
     }
 
-    // at this point the item pointed by m_index is changed so we have to either reset the new item if the index is
-    // valid or invalidate the index properly
-    if (isValid())
-	m_items[m_index]->reset(FIRST);
-    else
+    if (currentChanged)
     {
-	// Reset the index to -1 if the item is invalid to prevent making it "valid" once a new item is added to
-	// this position. That new item would be valid without calling reset() on it.
-	m_index = -1;
+	// at this point the item pointed by m_index is changed so we have to either reset the new item if the index is
+	// valid or invalidate the index properly
+	if (isValid())
+	    m_items[m_index]->reset(FIRST);
+	else
+	{
+	    // Reset the index to -1 if the item is invalid to prevent making it "valid" once a new item is added to
+	    // this position. That new item would be valid without calling reset() on it.
+	    m_index = -1;
+	}
     }
 }
 

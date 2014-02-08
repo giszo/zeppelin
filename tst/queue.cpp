@@ -132,24 +132,28 @@ BOOST_FIXTURE_TEST_CASE(TestPlaylist, PlaylistFixture)
     BOOST_CHECK_EQUAL(m_playlist.file()->m_name, "1.mp3");
 }
 
-BOOST_FIXTURE_TEST_CASE(TestFileDeletionBeforeActive, PlaylistFixture)
+BOOST_FIXTURE_TEST_CASE(delete_album_before_active_item, PlaylistFixture)
 {
     std::vector<int> iter;
 
-    queueFile(createFile(1, "a.mp3"));
-    queueFile(createFile(2, "b.mp3"));
-    queueFile(createFile(3, "c.mp3"));
+    queueAlbum(createAlbum(42, "stuff"),
+	       {createFile(1, "a.mp3"), createFile(2, "b.mp3")});
+    queueAlbum(createAlbum(57, "stuff2"),
+	       {createFile(1, "c.mp3"), createFile(2, "d.mp3")});
 
-    // go to the second song
+    // go to the second song of the second album
     m_playlist.reset(zeppelin::player::QueueItem::FIRST);
+    m_playlist.next();
+    m_playlist.next();
     m_playlist.next();
 
     // validate the iterator
     m_playlist.get(iter);
-    BOOST_REQUIRE_EQUAL(iter.size(), 1);
+    BOOST_REQUIRE_EQUAL(iter.size(), 2);
     BOOST_CHECK_EQUAL(iter[0], 1);
+    BOOST_CHECK_EQUAL(iter[1], 1);
 
-    // remove the first song
+    // remove the first album
     iter.clear();
     iter.push_back(0);
     m_playlist.remove(iter);
@@ -157,9 +161,10 @@ BOOST_FIXTURE_TEST_CASE(TestFileDeletionBeforeActive, PlaylistFixture)
     // validate the iterator again
     iter.clear();
     m_playlist.get(iter);
-    BOOST_REQUIRE_EQUAL(iter.size(), 1);
+    BOOST_REQUIRE_EQUAL(iter.size(), 2);
     BOOST_CHECK_EQUAL(iter[0], 0);
-    BOOST_CHECK_EQUAL(m_playlist.file()->m_name, "b.mp3");
+    BOOST_CHECK_EQUAL(iter[1], 1);
+    BOOST_CHECK_EQUAL(m_playlist.file()->m_name, "d.mp3");
 }
 
 BOOST_FIXTURE_TEST_CASE(TestActiveFileDeletionInsideAlbum, PlaylistFixture)
