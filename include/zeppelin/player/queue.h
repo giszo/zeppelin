@@ -61,7 +61,7 @@ class QueueItem
 class ContainerQueueItem : public QueueItem
 {
     public:
-	ContainerQueueItem();
+	void add(const std::shared_ptr<QueueItem>& item);
 
 	void get(std::vector<int>& i) override;
 	bool set(std::vector<int>& i) override;
@@ -76,6 +76,9 @@ class ContainerQueueItem : public QueueItem
 	const std::shared_ptr<library::File>& file() const override;
 
 	std::vector<std::shared_ptr<QueueItem>> items() const override;
+
+    protected:
+	ContainerQueueItem();
 
     protected:
 	// the index of the currently active item in the playlit
@@ -115,8 +118,7 @@ class File : public QueueItem
 class Directory : public ContainerQueueItem
 {
     public:
-	Directory(const std::shared_ptr<library::Directory>& directory,
-		  const std::vector<std::shared_ptr<library::File>>& files);
+	Directory(const std::shared_ptr<library::Directory>& directory);
 
 	Type type() const override;
 

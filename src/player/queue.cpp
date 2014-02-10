@@ -14,6 +14,12 @@ ContainerQueueItem::ContainerQueueItem()
 }
 
 // =====================================================================================================================
+void ContainerQueueItem::add(const std::shared_ptr<QueueItem>& item)
+{
+    m_items.push_back(item);
+}
+
+// =====================================================================================================================
 void ContainerQueueItem::get(std::vector<int>& i)
 {
     i.push_back(m_index);
@@ -247,12 +253,9 @@ std::vector<std::shared_ptr<QueueItem>> File::items() const
 }
 
 // =====================================================================================================================
-Directory::Directory(const std::shared_ptr<zeppelin::library::Directory>& d,
-		     const std::vector<std::shared_ptr<zeppelin::library::File>>& files)
+Directory::Directory(const std::shared_ptr<zeppelin::library::Directory>& d)
     : m_directory(d)
 {
-    for (const auto& f : files)
-	m_items.push_back(std::make_shared<File>(f));
 }
 
 // =====================================================================================================================
