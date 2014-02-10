@@ -101,7 +101,7 @@ void SqliteStorage::open(const config::Library& config)
     // prepare statements
     prepareStatement(&m_getDirectory, "SELECT id FROM directories WHERE parent_id IS ? and NAME = ?");
     prepareStatement(&m_addDirectory, "INSERT INTO directories(parent_id, name) VALUES(?, ?)");
-    prepareStatement(&m_getSubdirectories, "SELECT id, name FROM directories WHERE parent_id IS ?");
+    prepareStatement(&m_getSubdirectoryIds, "SELECT id FROM directories WHERE parent_id = ?");
 
     prepareStatement(&m_newFile, "INSERT OR IGNORE INTO files(path, name, size, directory_id) VALUES(?, ?, ?, ?)");
     prepareStatement(&m_getFileByPath, "SELECT id FROM files WHERE path = ? AND name = ?");
@@ -210,6 +210,22 @@ std::vector<std::shared_ptr<zeppelin::library::Directory>> SqliteStorage::getDir
 }
 
 // =====================================================================================================================
+std::vector<int> SqliteStorage::getSubdirectoryIdsOfDirectory(int id)
+{
+    std::vector<int> ids;
+
+    thread::BlockLock bl(m_mutex);
+
+    StatementHolder stmt(m_getSubdirectoryIds);
+    stmt.bindInt(1, id);
+
+    while (stmt.step() == SQLITE_ROW)
+	ids.push_back(stmt.getInt(0));
+
+    return ids;
+}
+
+// =====================================================================================================================
 int SqliteStorage::ensureDirectory(const std::string& name, int parentId)
 {
     thread::BlockLock bl(m_mutex);
@@ -247,27 +263,6 @@ int SqliteStorage::ensureDirectory(const std::string& name, int parentId)
     }
 
     return sqlite3_last_insert_rowid(m_db);
-}
-
-// =====================================================================================================================
-std::vector<std::shared_ptr<zeppelin::library::Directory>> SqliteStorage::listSubdirectories(int id)
-{
-    std::vector<std::shared_ptr<zeppelin::library::Directory>> directories;
-
-    thread::BlockLock bl(m_mutex);
-
-    StatementHolder stmt(m_getSubdirectories);
-    stmt.bindIndex(1, id);
-
-    while (stmt.step() == SQLITE_ROW)
-    {
-	directories.push_back(std::make_shared<zeppelin::library::Directory>(
-	    stmt.getInt(0),
-	    stmt.getText(1)
-	));
-    }
-
-    return directories;
 }
 
 // =====================================================================================================================
