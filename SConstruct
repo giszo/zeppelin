@@ -13,6 +13,7 @@ vars.Add(PathVariable('PREFIX', 'prefix used to install files', '/usr'))
 vars.Add(PathVariable('JSONCPP', 'path of jsoncpp library', None))
 vars.Add(BoolVariable('COVERAGE', 'set to 1 to measure coverage', 0))
 vars.Add(ListVariable('CODECS', 'list of compiled codecs', CODECS, CODECS))
+vars.Add(EnumVariable('OUTPUT', 'name of the output driver to use', 'alsa', ('alsa')))
 
 env = Environment(variables = vars)
 
@@ -21,7 +22,7 @@ env["LIBPATH"] = []
 env["CPPFLAGS"] = ["-Wall", "-Werror", "-Wshadow", "-std=c++11", "-pthread"]
 env["CPPDEFINES"] = []
 env["LINKFLAGS"] = ["-pthread", "-rdynamic"]
-env["LIBS"] = ["asound", "samplerate", "sqlite3", "jsoncpp"]
+env["LIBS"] = ["samplerate", "sqlite3", "jsoncpp"]
 
 if env["COVERAGE"] :
     env["CPPFLAGS"] += ["-coverage"]
@@ -47,7 +48,6 @@ env["SHLINKCOMSTR"] = "Linking $TARGET"
 sources = [
     "logger.cpp",
     "output/baseoutput.cpp",
-    "output/alsa.cpp",
     "codec/codecmanager.cpp",
     "codec/metadata.cpp",
     "library/musiclibrary.cpp",
@@ -95,6 +95,13 @@ for codec in env["CODECS"] :
         sources += ["codec/mac.cpp"]
 
     env["CPPDEFINES"] += [{"HAVE_%s" % codec.upper(): 1}]
+
+# handle output driver
+if env["OUTPUT"] == "alsa" :
+    env["LIBS"] += ["asound"]
+    sources += ["output/alsa.cpp"]
+
+env["CPPDEFINES"] += [{"HAVE_%s" % env["OUTPUT"].upper(): 1}]
 
 zep_lib = env.StaticLibrary(
     "zeppelin",

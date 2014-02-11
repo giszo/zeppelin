@@ -1,7 +1,6 @@
 #include "controller.h"
 
 #include <codec/codecmanager.h>
-#include <output/alsa.h>
 #include <thread/blocklock.h>
 
 #include <zeppelin/logger.h>

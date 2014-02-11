@@ -149,7 +149,14 @@ int main(int argc, char** argv)
 	std::make_shared<library::MusicLibraryImpl>(codecManager, storage, config.m_library);
 
     // prepare the audio output
-    std::shared_ptr<output::BaseOutput> output = std::make_shared<output::AlsaOutput>(config);
+    std::shared_ptr<output::BaseOutput> output;
+
+#if defined(HAVE_ALSA)
+    output = std::make_shared<output::AlsaOutput>(config);
+#else
+#error "There is no configured audio output driver!"
+#endif
+
     output->setup(44100, 2);
 
     player::Fifo fifo(4 * 1024);

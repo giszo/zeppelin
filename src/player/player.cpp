@@ -1,8 +1,6 @@
 #include "player.h"
 #include "controller.h"
 
-#include <output/alsa.h>
-#include <codec/mp3.h>
 #include <filter/volume.h>
 #include <thread/blocklock.h>
 
