@@ -13,7 +13,7 @@ vars.Add(PathVariable('PREFIX', 'prefix used to install files', '/usr'))
 vars.Add(PathVariable('JSONCPP', 'path of jsoncpp library', None))
 vars.Add(BoolVariable('COVERAGE', 'set to 1 to measure coverage', 0))
 vars.Add(ListVariable('CODECS', 'list of compiled codecs', CODECS, CODECS))
-vars.Add(EnumVariable('OUTPUT', 'name of the output driver to use', 'alsa', ('alsa')))
+vars.Add(EnumVariable('OUTPUT', 'name of the output driver to use', 'alsa', ('alsa', 'pulseaudio')))
 
 env = Environment(variables = vars)
 
@@ -100,6 +100,9 @@ for codec in env["CODECS"] :
 if env["OUTPUT"] == "alsa" :
     env["LIBS"] += ["asound"]
     sources += ["output/alsa.cpp"]
+elif env["OUTPUT"] == "pulseaudio" :
+    env["LIBS"] += ["pulse"]
+    sources += ["output/pulseaudio.cpp"]
 
 env["CPPDEFINES"] += [{"HAVE_%s" % env["OUTPUT"].upper(): 1}]
 

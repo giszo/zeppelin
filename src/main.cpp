@@ -1,4 +1,3 @@
-#include <output/alsa.h>
 #include <codec/codecmanager.h>
 #include <library/musiclibrary.h>
 #include <library/sqlitestorage.h>
@@ -31,6 +30,14 @@
 
 #ifdef HAVE_MONKEYSAUDIO
 #include <codec/mac.h>
+#endif
+
+#ifdef HAVE_ALSA
+#include <output/alsa.h>
+#endif
+
+#ifdef HAVE_PULSEAUDIO
+#include <output/pulseaudio.h>
 #endif
 
 static bool s_daemonize = false;
@@ -153,6 +160,8 @@ int main(int argc, char** argv)
 
 #if defined(HAVE_ALSA)
     output = std::make_shared<output::AlsaOutput>(config);
+#elif defined(HAVE_PULSEAUDIO)
+    output = std::make_shared<output::PulseAudio>(config);
 #else
 #error "There is no configured audio output driver!"
 #endif

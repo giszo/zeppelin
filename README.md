@@ -14,10 +14,11 @@ The list of the currently supported media formats is the following:
 - Wavpack
 - Monkey's Audio
 
-Supported output
+Supported outputs
 -
 
 - ALSA (Advanced Linux Sound Architecture)
+- PulseAudio
 
 Remote control
 -
