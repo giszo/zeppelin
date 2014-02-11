@@ -18,12 +18,12 @@ class EventListenerProxy : public zeppelin::player::EventListener
 	void paused() override;
 	void stopped() override;
 
-	void positionChanged() override;
-	void songChanged() override;
+	void positionChanged(unsigned pos) override;
+	void songChanged(const std::vector<int>& idx) override;
 
 	void queueChanged() override;
 
-	void volumeChanged() override;
+	void volumeChanged(int vol) override;
 
     private:
 	std::set<std::shared_ptr<zeppelin::player::EventListener>> m_listeners;

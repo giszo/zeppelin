@@ -19,15 +19,17 @@ int Volume::getLevel() const
 }
 
 // =====================================================================================================================
-void Volume::setLevel(int level)
+bool Volume::setLevel(int level)
 {
     if (level < 0 || level > 100)
-	return;
+	return false;
 
     float l = level / 100.0f;
 
     m_linearLevel = level;
     m_level = (expf(l) - 1) / (M_E - 1);
+
+    return true;
 }
 
 // =====================================================================================================================

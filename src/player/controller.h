@@ -104,6 +104,9 @@ class ControllerImpl : public zeppelin::player::Controller,
 
 	std::shared_ptr<codec::BaseCodec> open(const std::string& file);
 
+	void sendSongChanged();
+	void sendSongChanged(const std::vector<int>& idx);
+
     private:
 	/// the state of the player
 	State m_state;

@@ -22,10 +22,11 @@ void ContainerQueueItem::add(const std::shared_ptr<QueueItem>& item)
 // =====================================================================================================================
 void ContainerQueueItem::get(std::vector<int>& i)
 {
-    i.push_back(m_index);
+    if (!isValid())
+	return;
 
-    if (isValid())
-	m_items[m_index]->get(i);
+    i.push_back(m_index);
+    m_items[m_index]->get(i);
 }
 
 // =====================================================================================================================

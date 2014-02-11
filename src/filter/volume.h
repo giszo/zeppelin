@@ -14,7 +14,7 @@ class Volume : public BaseFilter
 	Volume(const config::Config& config);
 
 	int getLevel() const;
-	void setLevel(int level);
+	bool setLevel(int level);
 
 	void init() override;
 	void run(float*& samples, size_t& count, const player::Format& format) override;

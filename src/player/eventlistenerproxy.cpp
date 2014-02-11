@@ -30,17 +30,17 @@ void EventListenerProxy::stopped()
 }
 
 // =====================================================================================================================
-void EventListenerProxy::positionChanged()
+void EventListenerProxy::positionChanged(unsigned pos)
 {
     for (const auto& l : m_listeners)
-	l->positionChanged();
+	l->positionChanged(pos);
 }
 
 // =====================================================================================================================
-void EventListenerProxy::songChanged()
+void EventListenerProxy::songChanged(const std::vector<int>& idx)
 {
     for (const auto& l : m_listeners)
-	l->songChanged();
+	l->songChanged(idx);
 }
 
 // =====================================================================================================================
@@ -51,8 +51,8 @@ void EventListenerProxy::queueChanged()
 }
 
 // =====================================================================================================================
-void EventListenerProxy::volumeChanged()
+void EventListenerProxy::volumeChanged(int vol)
 {
     for (const auto& l : m_listeners)
-	l->volumeChanged();
+	l->volumeChanged(vol);
 }

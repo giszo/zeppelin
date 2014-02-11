@@ -161,13 +161,18 @@ int ControllerImpl::getVolume() const
 // =====================================================================================================================
 void ControllerImpl::setVolume(int level)
 {
+    bool ret;
+
     {
 	thread::BlockLock bl(m_mutex);
-	m_player->getVolumeFilter().setLevel(level);
+	ret = m_player->getVolumeFilter().setLevel(level);
     }
 
-    // send event
-    m_listenerProxy.volumeChanged();
+    if (ret)
+    {
+	// send event
+	m_listenerProxy.volumeChanged(level);
+    }
 }
 
 // =====================================================================================================================
@@ -222,7 +227,7 @@ void ControllerImpl::processCommands()
 		    break;
 
 		// a new song was just loaded, send an event
-		m_listenerProxy.songChanged();
+		sendSongChanged();
 
 		// initialize the decoder if it has no input
 		if (!m_decoderInitialized)
@@ -277,7 +282,7 @@ void ControllerImpl::processCommands()
 		m_player->seek(s.m_seconds);
 
 		// send event
-		m_listenerProxy.positionChanged();
+		m_listenerProxy.positionChanged(s.m_seconds);
 
 		if (m_state == PLAYING)
 		    startPlayback();
@@ -321,7 +326,7 @@ void ControllerImpl::processCommands()
 		setDecoderToPlayerIndex();
 
 		// send event
-		m_listenerProxy.songChanged();
+		sendSongChanged();
 
 		// resume playback if it was running before
 		if (m_state == PLAYING)
@@ -397,7 +402,7 @@ void ControllerImpl::processCommands()
 		// send events
 		m_listenerProxy.queueChanged();
 		if (removingCurrent)
-		    m_listenerProxy.songChanged();
+		    sendSongChanged();
 
 		if (removingCurrent)
 		{
@@ -438,7 +443,7 @@ void ControllerImpl::processCommands()
 
 		// send events
 		m_listenerProxy.queueChanged();
-		m_listenerProxy.songChanged();
+		sendSongChanged({});
 
 		break;
 
@@ -495,7 +500,7 @@ void ControllerImpl::processCommands()
 		else
 		{
 		    // send event
-		    m_listenerProxy.songChanged();
+		    sendSongChanged();
 		}
 
 		break;
@@ -588,4 +593,18 @@ std::shared_ptr<codec::BaseCodec> ControllerImpl::open(const std::string& file)
     }
 
     return input;
+}
+
+// =====================================================================================================================
+void ControllerImpl::sendSongChanged()
+{
+    std::vector<int> idx;
+    m_playerQueue.get(idx);
+    sendSongChanged(idx);
+}
+
+// =====================================================================================================================
+void ControllerImpl::sendSongChanged(const std::vector<int>& idx)
+{
+    m_listenerProxy.songChanged(idx);
 }

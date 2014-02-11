@@ -7,6 +7,7 @@
 #include <output/baseoutput.h>
 #include <player/controller.h>
 #include <codec/codecmanager.h>
+#include <utils/makestring.h>
 
 using zeppelin::player::Controller;
 
@@ -151,14 +152,20 @@ struct EventListener : public zeppelin::player::EventListener
     { m_events.push_back("paused"); }
     void stopped() override
     { m_events.push_back("stopped"); }
-    void positionChanged() override
-    { m_events.push_back("position-changed"); }
-    void songChanged() override
-    { m_events.push_back("song-changed"); }
+    void positionChanged(unsigned pos) override
+    { m_events.push_back(utils::MakeString() << "position-changed " << pos); }
+    void songChanged(const std::vector<int>& idx) override
+    {
+	std::ostringstream ss;
+	for (int i : idx)
+	    ss << "," << i;
+	std::string idxstr = ss.str().empty() ? "" : ss.str().substr(1);
+	m_events.push_back(utils::MakeString() << "song-changed " << idxstr);
+    }
     void queueChanged() override
     { m_events.push_back("queue-changed"); }
-    void volumeChanged() override
-    { m_events.push_back("volume-changed"); }
+    void volumeChanged(int level) override
+    { m_events.push_back(utils::MakeString() << "volume-changed " << level); }
 
     std::vector<std::string>& m_events;
 };
@@ -280,7 +287,7 @@ BOOST_FIXTURE_TEST_CASE(playback_started_first_time, ControllerFixture)
     BOOST_CHECK_EQUAL(m_player->m_cmds[0], "start");
 
     BOOST_REQUIRE_EQUAL(m_events.size(), 3);
-    BOOST_CHECK_EQUAL(m_events[1], "song-changed");
+    BOOST_CHECK_EQUAL(m_events[1], "song-changed 0");
     BOOST_CHECK_EQUAL(m_events[2], "started");
 }
 
@@ -298,7 +305,7 @@ BOOST_FIXTURE_TEST_CASE(playback_not_started_for_unknown_codec, ControllerFixtur
     BOOST_CHECK(m_player->m_cmds.empty());
 
     BOOST_REQUIRE_EQUAL(m_events.size(), 2);
-    BOOST_CHECK_EQUAL(m_events[1], "song-changed");
+    BOOST_CHECK_EQUAL(m_events[1], "song-changed 0");
 }
 
 BOOST_FIXTURE_TEST_CASE(playback_not_started_for_unopenable_file, ControllerFixture)
@@ -315,7 +322,7 @@ BOOST_FIXTURE_TEST_CASE(playback_not_started_for_unopenable_file, ControllerFixt
     BOOST_CHECK(m_player->m_cmds.empty());
 
     BOOST_REQUIRE_EQUAL(m_events.size(), 2);
-    BOOST_CHECK_EQUAL(m_events[1], "song-changed");
+    BOOST_CHECK_EQUAL(m_events[1], "song-changed 0");
 }
 
 BOOST_FIXTURE_TEST_CASE(playback_paused, ControllerFixture)
@@ -413,7 +420,7 @@ BOOST_FIXTURE_TEST_CASE(remove_current_while_paused, ControllerFixture)
     BOOST_REQUIRE_EQUAL(m_events.size(), 3);
     BOOST_CHECK_EQUAL(m_events[0], "stopped");
     BOOST_CHECK_EQUAL(m_events[1], "queue-changed");
-    BOOST_CHECK_EQUAL(m_events[2], "song-changed");
+    BOOST_CHECK_EQUAL(m_events[2], "song-changed 0");
 }
 
 BOOST_FIXTURE_TEST_CASE(remove_current_while_playing, ControllerFixture)
@@ -445,7 +452,7 @@ BOOST_FIXTURE_TEST_CASE(remove_current_while_playing, ControllerFixture)
     BOOST_REQUIRE_EQUAL(m_events.size(), 4);
     BOOST_CHECK_EQUAL(m_events[0], "stopped");
     BOOST_CHECK_EQUAL(m_events[1], "queue-changed");
-    BOOST_CHECK_EQUAL(m_events[2], "song-changed");
+    BOOST_CHECK_EQUAL(m_events[2], "song-changed 0");
     BOOST_CHECK_EQUAL(m_events[3], "started");
 }
 
@@ -474,7 +481,7 @@ BOOST_FIXTURE_TEST_CASE(remove_last_while_playing, ControllerFixture)
     BOOST_REQUIRE_EQUAL(m_events.size(), 3);
     BOOST_CHECK_EQUAL(m_events[0], "stopped");
     BOOST_CHECK_EQUAL(m_events[1], "queue-changed");
-    BOOST_CHECK_EQUAL(m_events[2], "song-changed");
+    BOOST_CHECK_EQUAL(m_events[2], "song-changed ");
 }
 
 BOOST_FIXTURE_TEST_CASE(remove_all_while_playing, ControllerFixture)
@@ -500,7 +507,7 @@ BOOST_FIXTURE_TEST_CASE(remove_all_while_playing, ControllerFixture)
     BOOST_REQUIRE_EQUAL(m_events.size(), 3);
     BOOST_CHECK_EQUAL(m_events[0], "stopped");
     BOOST_CHECK_EQUAL(m_events[1], "queue-changed");
-    BOOST_CHECK_EQUAL(m_events[2], "song-changed");
+    BOOST_CHECK_EQUAL(m_events[2], "song-changed ");
 }
 
 BOOST_FIXTURE_TEST_CASE(remove_all_while_stopped, ControllerFixture)
@@ -528,7 +535,7 @@ BOOST_FIXTURE_TEST_CASE(remove_all_while_stopped, ControllerFixture)
     // check events
     BOOST_REQUIRE_EQUAL(m_events.size(), 2);
     BOOST_CHECK_EQUAL(m_events[0], "queue-changed");
-    BOOST_CHECK_EQUAL(m_events[1], "song-changed");
+    BOOST_CHECK_EQUAL(m_events[1], "song-changed ");
 }
 
 BOOST_FIXTURE_TEST_CASE(queue_updated_at_decoder_and_song_finished, ControllerFixture)
@@ -578,7 +585,7 @@ BOOST_FIXTURE_TEST_CASE(queue_updated_at_decoder_and_song_finished, ControllerFi
 
     // make sure a song-changed event is generated now
     BOOST_REQUIRE_EQUAL(m_events.size(), 1);
-    BOOST_CHECK_EQUAL(m_events[0], "song-changed");
+    BOOST_CHECK_EQUAL(m_events[0], "song-changed 0,1");
     m_events.clear();
 
     // decoder finished on the second track - it should be invalidated now
