@@ -67,25 +67,12 @@ void MetaParser::parse(zeppelin::library::File& file)
     if (!codec)
 	return;
 
-    codec::Metadata meta;
-
     try
     {
-	meta = codec->readMetadata();
+	file.m_metadata = codec->readMetadata();
     }
     catch (const codec::CodecException& e)
     {
 	LOG("metaparser: error: " << e.what());
-	return;
     }
-
-    file.m_length = meta.m_samples / meta.m_rate;
-    file.m_artist = meta.getArtist();
-    file.m_album = meta.getAlbum();
-    file.m_title = meta.getTitle();
-    file.m_year = meta.m_year;
-    file.m_trackIndex = meta.m_trackIndex;
-    file.m_codec = meta.m_codec;
-    file.m_sampleRate = meta.m_rate;
-    file.m_sampleSize = meta.m_sampleSize;
 }

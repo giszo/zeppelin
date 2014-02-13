@@ -24,7 +24,7 @@ class Mac : public BaseCodec
 
 	void seek(off_t sample) override;
 
-	Metadata readMetadata() override;
+	std::unique_ptr<zeppelin::library::Metadata> readMetadata() override;
 
     private:
 	IAPEDecompress* m_decompress;

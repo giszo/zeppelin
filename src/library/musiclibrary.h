@@ -26,7 +26,7 @@ class MusicLibraryImpl : public zeppelin::library::MusicLibrary,
 
 	void scanningStarted() override;
 	void scanningFinished() override;
-	void musicFound(const zeppelin::library::File& file) override;
+	void musicFound(const std::shared_ptr<zeppelin::library::File>& file) override;
 
     private:
 	/// configured root directories for searching music files

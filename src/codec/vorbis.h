@@ -24,7 +24,7 @@ class Vorbis : public BaseCodec
 
 	void seek(off_t sample) override;
 
-	Metadata readMetadata() override;
+	std::unique_ptr<zeppelin::library::Metadata> readMetadata() override;
 
     private:
 	// true when a vorbis file is currently opened

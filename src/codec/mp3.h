@@ -24,14 +24,14 @@ class Mp3 : public BaseCodec
 
 	void seek(off_t sample) override;
 
-	Metadata readMetadata() override;
+	std::unique_ptr<zeppelin::library::Metadata> readMetadata() override;
 
     private:
 	// creates the mpg123 handle for the given file
 	void create();
 
-	void processID3v1(Metadata& info, const mpg123_id3v1& id3);
-	void processID3v2(Metadata& info, const mpg123_id3v2& id3);
+	void processID3v1(zeppelin::library::Metadata& info, const mpg123_id3v1& id3);
+	void processID3v2(zeppelin::library::Metadata& info, const mpg123_id3v2& id3);
 
     private:
 	mpg123_handle* m_handle;

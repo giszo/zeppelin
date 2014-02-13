@@ -124,11 +124,11 @@ void Scanner::scanDirectory(const Directory& path, std::deque<Directory>& paths)
 	}
 	else if (m_codecManager.isMediaFile(name))
 	{
-	    zeppelin::library::File file(-1);
-	    file.m_directoryId = path.m_id;
-	    file.m_path = path.m_path;
-	    file.m_name = name;
-	    file.m_size = st.st_size;
+	    std::shared_ptr<zeppelin::library::File> file = std::make_shared<zeppelin::library::File>(-1);
+	    file->m_directoryId = path.m_id;
+	    file->m_path = path.m_path;
+	    file->m_name = name;
+	    file->m_size = st.st_size;
 
 	    m_listener.musicFound(file);
 	}

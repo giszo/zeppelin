@@ -1,9 +1,9 @@
 #ifndef CODEC_BASECODEC_H_INCLUDED
 #define CODEC_BASECODEC_H_INCLUDED
 
-#include "metadata.h"
-
 #include <player/format.h>
+
+#include <zeppelin/library/metadata.h>
 
 #include <string>
 #include <stdexcept>
@@ -46,7 +46,7 @@ class BaseCodec
 	virtual void seek(off_t sample) = 0;
 
 	/// returns informations about the media
-	virtual Metadata readMetadata() = 0;
+	virtual std::unique_ptr<zeppelin::library::Metadata> readMetadata() = 0;
 
     protected:
 	std::string m_file;

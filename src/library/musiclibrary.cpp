@@ -49,11 +49,9 @@ void MusicLibraryImpl::scanningFinished()
 }
 
 // =====================================================================================================================
-void MusicLibraryImpl::musicFound(const zeppelin::library::File& file)
+void MusicLibraryImpl::musicFound(const std::shared_ptr<zeppelin::library::File>& file)
 {
-    std::shared_ptr<zeppelin::library::File> f(new zeppelin::library::File(file));
-
     // add the file into the library and start metadata parsing if it is a new one
-    if (m_storage.addFile(*f))
-	m_metaParser.add(f);
+    if (m_storage.addFile(*file))
+	m_metaParser.add(file);
 }

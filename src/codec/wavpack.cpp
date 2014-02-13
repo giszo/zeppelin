@@ -78,7 +78,7 @@ void WavPack::seek(off_t sample)
 }
 
 // =====================================================================================================================
-codec::Metadata WavPack::readMetadata()
+std::unique_ptr<zeppelin::library::Metadata> WavPack::readMetadata()
 {
     char error[100];
 
@@ -87,15 +87,14 @@ codec::Metadata WavPack::readMetadata()
     if (!m_context)
 	throw CodecException("unable to open file");
 
-    Metadata m;
+    std::unique_ptr<zeppelin::library::Metadata> metadata(new zeppelin::library::Metadata("wv"));;
 
-    m.m_codec = "WV";
-    m.m_rate = WavpackGetSampleRate(m_context);
-    m.m_channels = WavpackGetReducedChannels(m_context); // use GetNumChannels() once we support more than 2 ...
-    m.m_sampleSize = WavpackGetBitsPerSample(m_context);
-    m.m_samples = WavpackGetNumSamples(m_context);
+    metadata->setFormat(WavpackGetReducedChannels(m_context), // use GetNumChannels() once we support more than 2 ...
+			WavpackGetSampleRate(m_context),
+			WavpackGetBitsPerSample(m_context));
+    metadata->setLength(WavpackGetNumSamples(m_context) / WavpackGetSampleRate(m_context));
 
-    return m;
+    return metadata;
 }
 
 // =====================================================================================================================

@@ -62,8 +62,8 @@ class SqliteStorage : public zeppelin::library::Storage
 	void prepareStatement(sqlite3_stmt** stmt, const std::string& sql);
 
 	int getFileIdByPath(const std::string& path, const std::string& name);
-	int getArtistId(const zeppelin::library::File& file);
-	int getAlbumId(const zeppelin::library::File& file, int artistId);
+	int getArtistId(const zeppelin::library::Metadata& metadata);
+	int getAlbumId(int artistId, const zeppelin::library::Metadata& metadata);
 
 	static void serializeIntList(std::ostringstream& stream, const std::vector<int>& list);
 

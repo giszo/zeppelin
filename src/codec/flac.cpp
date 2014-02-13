@@ -1,5 +1,7 @@
 #include "flac.h"
 
+#include <library/vorbismetadata.h>
+
 #include <zeppelin/logger.h>
 
 #include <cstring>
@@ -87,8 +89,10 @@ player::Format Flac::getFormat() const
 }
 
 // =====================================================================================================================
-codec::Metadata Flac::readMetadata()
+std::unique_ptr<zeppelin::library::Metadata> Flac::readMetadata()
 {
+    std::unique_ptr<zeppelin::library::Metadata> metadata(new library::VorbisMetadata("flac"));
+
     m_iterator = FLAC__metadata_simple_iterator_new();
 
     if (!m_iterator)
@@ -108,10 +112,10 @@ codec::Metadata Flac::readMetadata()
 		if (!meta)
 		    break;
 
-		m_metadata.m_rate = meta->data.stream_info.sample_rate;
-		m_metadata.m_channels = meta->data.stream_info.channels;
-		m_metadata.m_samples = meta->data.stream_info.total_samples;
-		m_metadata.m_sampleSize = meta->data.stream_info.bits_per_sample;
+		metadata->setFormat(meta->data.stream_info.channels,
+				    meta->data.stream_info.sample_rate,
+				    meta->data.stream_info.bits_per_sample);
+		metadata->setLength(meta->data.stream_info.total_samples / meta->data.stream_info.sample_rate);
 
 		FLAC__metadata_object_delete(meta);
 
@@ -125,7 +129,13 @@ codec::Metadata Flac::readMetadata()
 		if (!meta)
 		    break;
 
-		parseVorbisComment(meta->data.vorbis_comment);
+		for (FLAC__uint32 i = 0; i < meta->data.vorbis_comment.num_comments; ++i)
+		{
+		    FLAC__StreamMetadata_VorbisComment_Entry* entry = &meta->data.vorbis_comment.comments[i];
+		    const char* data = reinterpret_cast<const char*>(entry->entry);
+
+		    static_cast<library::VorbisMetadata&>(*metadata).setVorbisComment(data);
+		}
 
 		FLAC__metadata_object_delete(meta);
 
@@ -137,9 +147,7 @@ codec::Metadata Flac::readMetadata()
 	}
     } while (FLAC__metadata_simple_iterator_next(m_iterator));
 
-    m_metadata.m_codec = "flac";
-
-    return m_metadata;
+    return metadata;
 }
 
 // =====================================================================================================================
@@ -234,18 +242,6 @@ void Flac::errorCallback(FLAC__StreamDecoderErrorStatus status)
 {
     LOG("flac: error=" << status);
     m_error = true;
-}
-
-// =====================================================================================================================
-void Flac::parseVorbisComment(const FLAC__StreamMetadata_VorbisComment& vc)
-{
-    for (FLAC__uint32 i = 0; i < vc.num_comments; ++i)
-    {
-	FLAC__StreamMetadata_VorbisComment_Entry* entry = &vc.comments[i];
-	const char* data = reinterpret_cast<const char*>(entry->entry);
-
-	m_metadata.setVorbisComment(data);
-    }
 }
 
 // =====================================================================================================================

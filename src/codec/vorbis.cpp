@@ -1,5 +1,7 @@
 #include "vorbis.h"
 
+#include <library/vorbismetadata.h>
+
 #include <zeppelin/logger.h>
 
 #include <endian.h>
@@ -129,10 +131,9 @@ void Vorbis::seek(off_t sample)
 }
 
 // =====================================================================================================================
-codec::Metadata Vorbis::readMetadata()
+std::unique_ptr<zeppelin::library::Metadata> Vorbis::readMetadata()
 {
-    Metadata m;
-    m.m_codec = "ogg";
+    std::unique_ptr<zeppelin::library::Metadata> metadata(new library::VorbisMetadata("ogg"));
 
     if (ov_fopen(m_file.c_str(), &m_vf) != 0)
 	throw CodecException("unable to open file");
@@ -145,8 +146,7 @@ codec::Metadata Vorbis::readMetadata()
     if (!info)
 	throw CodecException("unable to get vorbis info");
 
-    m.m_rate = info->rate;
-    m.m_channels = info->channels;
+    metadata->setFormat(info->channels, info->rate, 16);
 
     // total number of samples
     ogg_int64_t samples = ov_pcm_total(&m_vf, -1);
@@ -154,8 +154,7 @@ codec::Metadata Vorbis::readMetadata()
     if (samples == OV_EINVAL)
 	throw CodecException("unable to get number of samples");
 
-    m.m_sampleSize = 16;
-    m.m_samples = samples;
+    metadata->setLength(samples / info->rate);
 
     // vorbis comment
     vorbis_comment* vc = ov_comment(&m_vf, -1);
@@ -164,7 +163,7 @@ codec::Metadata Vorbis::readMetadata()
 	throw CodecException("unable to get vorbis comment");
 
     for (int i = 0; i < vc->comments; ++i)
-	m.setVorbisComment(vc->user_comments[i]);
+	static_cast<library::VorbisMetadata&>(*metadata).setVorbisComment(vc->user_comments[i]);
 
-    return m;
+    return metadata;
 }

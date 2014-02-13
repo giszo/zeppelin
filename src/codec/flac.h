@@ -25,15 +25,13 @@ class Flac : public BaseCodec
 
 	void seek(off_t sample) override;
 
-	Metadata readMetadata() override;
+	std::unique_ptr<zeppelin::library::Metadata> readMetadata() override;
 
     private:
 	FLAC__StreamDecoderWriteStatus writeCallback(const FLAC__Frame* frame,
 						     const FLAC__int32* const buffer[]);
 	void metadataCallback(const FLAC__StreamMetadata* metadata);
 	void errorCallback(FLAC__StreamDecoderErrorStatus status);
-
-	void parseVorbisComment(const FLAC__StreamMetadata_VorbisComment& vc);
 
 	static FLAC__StreamDecoderWriteStatus _writeCallback(const FLAC__StreamDecoder* decoder,
 							    const FLAC__Frame* frame,
@@ -62,8 +60,6 @@ class Flac : public BaseCodec
 
 	bool m_error;
 	std::vector<float> m_samples;
-
-	Metadata m_metadata;
 };
 
 }

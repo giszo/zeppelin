@@ -24,7 +24,7 @@ class WavPack : public BaseCodec
 
 	void seek(off_t sample) override;
 
-	Metadata readMetadata() override;
+	std::unique_ptr<zeppelin::library::Metadata> readMetadata() override;
 
     private:
 	bool decodeInt(size_t& count);

@@ -65,9 +65,9 @@ player::Format Mp3::getFormat() const
 }
 
 // =====================================================================================================================
-codec::Metadata Mp3::readMetadata()
+std::unique_ptr<zeppelin::library::Metadata> Mp3::readMetadata()
 {
-    Metadata info;
+    std::unique_ptr<zeppelin::library::Metadata> metadata(new zeppelin::library::Metadata("mp3"));
 
     // create handle
     create();
@@ -75,18 +75,16 @@ codec::Metadata Mp3::readMetadata()
     if (mpg123_scan(m_handle) != MPG123_OK)
 	throw CodecException("unable to scan media");
 
-    if (mpg123_getformat(m_handle, &m_rate, &info.m_channels, NULL) != MPG123_OK)
+    if (mpg123_getformat(m_handle, &m_rate, &m_channels, NULL) != MPG123_OK)
 	throw CodecException("unable to get file format");
-
-    info.m_rate = m_rate;
 
     off_t samples = mpg123_length(m_handle);
 
     if (samples == MPG123_ERR)
 	throw CodecException("unable to get media length");
 
-    info.m_samples = samples;
-    info.m_sampleSize = 16; // currently we support only 16bit samples
+    metadata->setFormat(m_channels, m_rate, 16);
+    metadata->setLength(samples / m_rate);
 
     mpg123_id3v1* id3_v1;
     mpg123_id3v2* id3_v2;
@@ -95,13 +93,11 @@ codec::Metadata Mp3::readMetadata()
 	throw CodecException("unable to get id3");
 
     if (id3_v2)
-	processID3v2(info, *id3_v2);
+	processID3v2(*metadata, *id3_v2);
     if (id3_v1)
-	processID3v1(info, *id3_v1);
+	processID3v1(*metadata, *id3_v1);
 
-    info.m_codec = "mp3";
-
-    return info;
+    return metadata;
 }
 
 // =====================================================================================================================
@@ -181,7 +177,7 @@ static inline void readID3v1Field(const char* field, size_t length, std::string&
 }
 
 // =====================================================================================================================
-void Mp3::processID3v1(Metadata& info, const mpg123_id3v1& id3)
+void Mp3::processID3v1(zeppelin::library::Metadata& info, const mpg123_id3v1& id3)
 {
     std::string tmp;
 
@@ -206,11 +202,11 @@ void Mp3::processID3v1(Metadata& info, const mpg123_id3v1& id3)
 	info.setTitle(tmp);
     }
 
-    if (info.m_year == 0)
+    if (info.getYear() == 0)
     {
 	try
 	{
-	    info.m_year = boost::lexical_cast<int>(std::string(id3.year, 4));
+	    info.setYear(boost::lexical_cast<int>(std::string(id3.year, 4)));
 	}
 	catch (const boost::bad_lexical_cast&)
 	{
@@ -221,7 +217,7 @@ void Mp3::processID3v1(Metadata& info, const mpg123_id3v1& id3)
 }
 
 // =====================================================================================================================
-void Mp3::processID3v2(Metadata& info, const mpg123_id3v2& id3)
+void Mp3::processID3v2(zeppelin::library::Metadata& info, const mpg123_id3v2& id3)
 {
     if (id3.artist && id3.artist->p)
 	info.setArtist(id3.artist->p);
@@ -236,7 +232,7 @@ void Mp3::processID3v2(Metadata& info, const mpg123_id3v2& id3)
     {
 	try
 	{
-	    info.m_year = boost::lexical_cast<int>(id3.year->p);
+	    info.setYear(boost::lexical_cast<int>(id3.year->p));
 	}
 	catch (const boost::bad_lexical_cast&)
 	{
@@ -251,7 +247,7 @@ void Mp3::processID3v2(Metadata& info, const mpg123_id3v2& id3)
 	{
 	    try
 	    {
-		info.m_trackIndex = boost::lexical_cast<int>(t.text.p);
+		info.setTrackIndex(boost::lexical_cast<int>(t.text.p));
 	    }
 	    catch (const boost::bad_lexical_cast&)
 	    {

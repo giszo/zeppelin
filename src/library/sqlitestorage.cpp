@@ -372,13 +372,12 @@ std::vector<std::shared_ptr<zeppelin::library::File>> SqliteStorage::getFiles(co
 	file->m_artistId = stmt.getInt(4);
 	file->m_albumId = stmt.getInt(5);
 	file->m_size = stmt.getInt(6);
-	file->m_length = stmt.getInt(7);
-	file->m_title = stmt.getText(8);
-	file->m_year = stmt.getInt(9);
-	file->m_trackIndex = stmt.getInt(10);
-	file->m_codec = stmt.getText(11);
-	file->m_sampleRate = stmt.getInt(12);
-	file->m_sampleSize = stmt.getInt(13);
+	file->m_metadata.reset(new zeppelin::library::Metadata(stmt.getText(11) /* codec */));
+	file->m_metadata->setLength(stmt.getInt(7));
+	file->m_metadata->setTitle(stmt.getText(8));
+	file->m_metadata->setYear(stmt.getInt(9));
+	file->m_metadata->setTrackIndex(stmt.getInt(10));
+	file->m_metadata->setFormat(2 /* channels, for now ... */, stmt.getInt(12), stmt.getInt(13));
 	files.push_back(file);
     }
 
@@ -424,22 +423,25 @@ std::vector<int> SqliteStorage::getFileIdsOfDirectory(int directoryId)
 // =====================================================================================================================
 void SqliteStorage::setFileMetadata(const zeppelin::library::File& file)
 {
+    if (!file.m_metadata)
+	throw zeppelin::library::StorageException("file has no metadata");
+
     thread::BlockLock bl(m_mutex);
 
-    int artistId = getArtistId(file);
-    int albumId = getAlbumId(file, artistId);
+    int artistId = getArtistId(*file.m_metadata);
+    int albumId = getAlbumId(artistId, *file.m_metadata);
 
     StatementHolder stmt(m_setFileMeta);
 
     stmt.bindIndex(1, artistId);
     stmt.bindIndex(2, albumId);
-    stmt.bindInt(3, file.m_length);
-    stmt.bindText(4, file.m_title);
-    stmt.bindInt(5, file.m_year);
-    stmt.bindInt(6, file.m_trackIndex);
-    stmt.bindText(7, file.m_codec);
-    stmt.bindInt(8, file.m_sampleRate);
-    stmt.bindInt(9, file.m_sampleSize);
+    stmt.bindInt(3, file.m_metadata->getLength());
+    stmt.bindText(4, file.m_metadata->getTitle());
+    stmt.bindInt(5, file.m_metadata->getYear());
+    stmt.bindInt(6, file.m_metadata->getTrackIndex());
+    stmt.bindText(7, file.m_metadata->getCodec());
+    stmt.bindInt(8, file.m_metadata->getSampleRate());
+    stmt.bindInt(9, file.m_metadata->getSampleSize());
     stmt.bindInt(10, file.m_id);
 
     stmt.step();
@@ -448,18 +450,21 @@ void SqliteStorage::setFileMetadata(const zeppelin::library::File& file)
 // =====================================================================================================================
 void SqliteStorage::updateFileMetadata(const zeppelin::library::File& file)
 {
+    if (!file.m_metadata)
+	throw zeppelin::library::StorageException("file has no metadata");
+
     thread::BlockLock bl(m_mutex);
 
-    int artistId = getArtistId(file);
-    int albumId = getAlbumId(file, artistId);
+    int artistId = getArtistId(*file.m_metadata);
+    int albumId = getAlbumId(artistId, *file.m_metadata);
 
     StatementHolder stmt(m_updateFileMeta);
 
     stmt.bindIndex(1, artistId);
     stmt.bindIndex(2, albumId);
-    stmt.bindText(3, file.m_title);
-    stmt.bindInt(4, file.m_year);
-    stmt.bindInt(5, file.m_trackIndex);
+    stmt.bindText(3, file.m_metadata->getTitle());
+    stmt.bindInt(4, file.m_metadata->getYear());
+    stmt.bindInt(5, file.m_metadata->getTrackIndex());
     stmt.bindInt(6, file.m_id);
 
     stmt.step();
@@ -665,15 +670,15 @@ int SqliteStorage::getFileIdByPath(const std::string& path, const std::string& n
 }
 
 // =====================================================================================================================
-int SqliteStorage::getArtistId(const zeppelin::library::File& file)
+int SqliteStorage::getArtistId(const zeppelin::library::Metadata& metadata)
 {
-    if (file.m_artist.empty())
+    if (metadata.getArtist().empty())
 	return -1;
 
     // add artist
     {
 	StatementHolder stmt(m_addArtist);
-	stmt.bindText(1, file.m_artist);
+	stmt.bindText(1, metadata.getArtist());
 	if (stmt.step() != SQLITE_DONE)
 	    throw zeppelin::library::StorageException("unable to insert artist");
     }
@@ -681,7 +686,7 @@ int SqliteStorage::getArtistId(const zeppelin::library::File& file)
     // get artist
     {
 	StatementHolder stmt(m_getArtistIdByName);
-	stmt.bindText(1, file.m_artist);
+	stmt.bindText(1, metadata.getArtist());
 	if (stmt.step() != SQLITE_ROW)
 	    throw zeppelin::library::StorageException("unable to get artist after inserting!");
 	return stmt.getInt(0);
@@ -689,16 +694,16 @@ int SqliteStorage::getArtistId(const zeppelin::library::File& file)
 }
 
 // =====================================================================================================================
-int SqliteStorage::getAlbumId(const zeppelin::library::File& file, int artistId)
+int SqliteStorage::getAlbumId(int artistId, const zeppelin::library::Metadata& metadata)
 {
-    if (file.m_album.empty())
+    if (metadata.getAlbum().empty())
 	return -1;
 
     // add album
     {
 	StatementHolder stmt(m_addAlbum);
 	stmt.bindIndex(1, artistId);
-	stmt.bindText(2, file.m_album);
+	stmt.bindText(2, metadata.getAlbum());
 	if (stmt.step() != SQLITE_DONE)
 	    throw zeppelin::library::StorageException("unable to insert album");
     }
@@ -707,7 +712,7 @@ int SqliteStorage::getAlbumId(const zeppelin::library::File& file, int artistId)
     {
 	StatementHolder stmt(m_getAlbumIdByName);
 	stmt.bindIndex(1, artistId);
-	stmt.bindText(2, file.m_album);
+	stmt.bindText(2, metadata.getAlbum());
 	if (stmt.step() != SQLITE_ROW)
 	    throw zeppelin::library::StorageException("unable to get album after inserting!");
 	return stmt.getInt(0);

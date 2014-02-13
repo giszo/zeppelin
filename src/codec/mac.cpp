@@ -126,10 +126,8 @@ void Mac::seek(off_t sample)
 }
 
 // =====================================================================================================================
-codec::Metadata Mac::readMetadata()
+std::unique_ptr<zeppelin::library::Metadata> Mac::readMetadata()
 {
-    codec::Metadata m;
-
     int error;
     str_utf16* file = GetUTF16FromANSI(m_file.c_str());
     m_decompress = CreateIAPEDecompress(file, &error);
@@ -138,11 +136,12 @@ codec::Metadata Mac::readMetadata()
     if (!m_decompress)
 	throw CodecException("unable to open file");
 
-    m.m_codec = "APE";
-    m.m_rate = m_decompress->GetInfo(APE_INFO_SAMPLE_RATE);
-    m.m_channels = m_decompress->GetInfo(APE_INFO_CHANNELS);
-    m.m_sampleSize = m_decompress->GetInfo(APE_INFO_BITS_PER_SAMPLE);
-    m.m_samples = (int64_t)m_decompress->GetInfo(APE_DECOMPRESS_LENGTH_MS) * m.m_rate / 1000;
+    std::unique_ptr<zeppelin::library::Metadata> metadata(new zeppelin::library::Metadata("ape"));
 
-    return m;
+    metadata->setFormat(m_decompress->GetInfo(APE_INFO_CHANNELS),
+			m_decompress->GetInfo(APE_INFO_SAMPLE_RATE),
+			m_decompress->GetInfo(APE_INFO_BITS_PER_SAMPLE));
+    metadata->setLength(m_decompress->GetInfo(APE_DECOMPRESS_LENGTH_MS) / 1000);
+
+    return metadata;
 }

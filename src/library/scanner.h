@@ -7,6 +7,7 @@
 
 #include <string>
 #include <deque>
+#include <memory>
 
 namespace zeppelin
 {
@@ -34,7 +35,7 @@ class ScannerListener
 	virtual void scanningStarted() = 0;
 	virtual void scanningFinished() = 0;
 
-	virtual void musicFound(const zeppelin::library::File& file) = 0;
+	virtual void musicFound(const std::shared_ptr<zeppelin::library::File>& file) = 0;
 };
 
 class Scanner : public thread::Thread

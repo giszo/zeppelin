@@ -110,10 +110,9 @@ class FakeCodec : public codec::BaseCodec
 	void seek(off_t sample) override
 	{}
 
-	codec::Metadata readMetadata() override
+	std::unique_ptr<zeppelin::library::Metadata> readMetadata() override
 	{
-	    codec::Metadata m;
-	    return m;
+	    return nullptr;
 	}
 
 	bool m_openShouldFail;
