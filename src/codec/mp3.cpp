@@ -245,9 +245,12 @@ void Mp3::processID3v2(zeppelin::library::Metadata& info, const mpg123_id3v2& id
 
 	if ((memcmp(t.id, "TRCK", 4) == 0) && t.text.p)
 	{
+	    std::string trck = t.text.p;
+	    std::string::size_type p = trck.find('/');
+
 	    try
 	    {
-		info.setTrackIndex(boost::lexical_cast<int>(t.text.p));
+		info.setTrackIndex(boost::lexical_cast<int>(p == std::string::npos ? trck : trck.substr(0, p)));
 	    }
 	    catch (const boost::bad_lexical_cast&)
 	    {
