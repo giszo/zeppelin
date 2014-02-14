@@ -75,6 +75,7 @@ void SqliteStorage::open(const config::Library& config)
 	    year INTEGER DEFAULT NULL,
 	    track_index INTEGER DEFAULT NULL,
 	    codec TEXT DEFAULT NULL,
+	    channels INTEGER DEFAULT NULL,
 	    sample_rate INTEGER DEFAULT NULL,
 	    sample_size INTEGER DEFAULT NULL,
 	    mark INTEGER DEFAULT 1,
@@ -116,7 +117,7 @@ void SqliteStorage::open(const config::Library& config)
     prepareStatement(&m_setDirectoryMark, "UPDATE directories SET mark = 1 WHERE id = ?");
     prepareStatement(&m_setFileMeta,
                      R"(UPDATE files
-                        SET artist_id = ?, album_id = ?, length = ?, title = ?, year = ?, track_index = ?, codec = ?, sample_rate = ?, sample_size = ?
+                        SET artist_id = ?, album_id = ?, length = ?, title = ?, year = ?, track_index = ?, codec = ?, sample_rate = ?, sample_size = ?, channels = ?
                         WHERE id = ?)");
     prepareStatement(&m_updateFileMeta,
                      R"(UPDATE files
@@ -350,7 +351,7 @@ std::vector<std::shared_ptr<zeppelin::library::File>> SqliteStorage::getFiles(co
 
     std::ostringstream query;
 
-    query << "SELECT id, path, name, directory_id, artist_id, album_id, size, length, title, year, track_index, codec, sample_rate, sample_size ";
+    query << "SELECT id, path, name, directory_id, artist_id, album_id, size, length, title, year, track_index, codec, sample_rate, sample_size, channels ";
     query << "FROM files ";
     if (!ids.empty())
     {
@@ -377,7 +378,7 @@ std::vector<std::shared_ptr<zeppelin::library::File>> SqliteStorage::getFiles(co
 	file->m_metadata->setTitle(stmt.getText(8));
 	file->m_metadata->setYear(stmt.getInt(9));
 	file->m_metadata->setTrackIndex(stmt.getInt(10));
-	file->m_metadata->setFormat(2 /* channels, for now ... */, stmt.getInt(12), stmt.getInt(13));
+	file->m_metadata->setFormat(stmt.getInt(14), stmt.getInt(12), stmt.getInt(13));
 	files.push_back(file);
     }
 
@@ -442,7 +443,8 @@ void SqliteStorage::setFileMetadata(const zeppelin::library::File& file)
     stmt.bindText(7, file.m_metadata->getCodec());
     stmt.bindInt(8, file.m_metadata->getSampleRate());
     stmt.bindInt(9, file.m_metadata->getSampleSize());
-    stmt.bindInt(10, file.m_id);
+    stmt.bindInt(10, file.m_metadata->getChannels());
+    stmt.bindInt(11, file.m_id);
 
     stmt.step();
 }
