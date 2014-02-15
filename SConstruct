@@ -63,6 +63,7 @@ sources = [
     "library/album.cpp",
     "library/metadata.cpp",
     "library/vorbismetadata.cpp",
+    "library/picture.cpp",
     "player/player.cpp",
     "player/decoder.cpp",
     "player/controller.cpp",

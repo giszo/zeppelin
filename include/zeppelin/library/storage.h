@@ -11,6 +11,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <map>
 
 namespace zeppelin
 {
@@ -95,6 +96,8 @@ class Storage
 	virtual std::vector<int> getAlbumIdsByArtist(int artistId) = 0;
 	/// returns the available albums from the database (without artist filtering)
 	virtual std::vector<std::shared_ptr<Album>> getAlbums(const std::vector<int>& ids) = 0;
+	/// returns the pictures associated to the given albums
+	virtual std::map<int, std::map<Picture::Type, std::shared_ptr<Picture>>> getPicturesOfAlbums(const std::vector<int>& ids) = 0;
 
 	// creates a new playlist
 	virtual int createPlaylist(const std::string& name) = 0;

@@ -28,7 +28,7 @@ class Mp3 : public BaseCodec
 
     private:
 	// creates the mpg123 handle for the given file
-	void create();
+	void create(bool picture = false);
 
 	void processID3v1(zeppelin::library::Metadata& info, const mpg123_id3v1& id3);
 	void processID3v2(zeppelin::library::Metadata& info, const mpg123_id3v2& id3);

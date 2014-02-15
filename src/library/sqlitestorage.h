@@ -50,6 +50,7 @@ class SqliteStorage : public zeppelin::library::Storage
 
 	std::vector<int> getAlbumIdsByArtist(int artistId) override;
 	std::vector<std::shared_ptr<zeppelin::library::Album>> getAlbums(const std::vector<int>& ids) override;
+	std::map<int, std::map<zeppelin::library::Picture::Type, std::shared_ptr<zeppelin::library::Picture>>> getPicturesOfAlbums(const std::vector<int>& ids) override;
 
 	int createPlaylist(const std::string& name) override;
 	void deletePlaylist(int id) override;
@@ -78,6 +79,7 @@ class SqliteStorage : public zeppelin::library::Storage
 	    void bindInt(int col, int value);
 	    void bindInt64(int col, int64_t value);
 	    void bindText(int col, const std::string& value);
+	    void bindBlob(int col, const std::vector<unsigned char>& data);
 	    // a special bind function that binds NULL if the value is -1, otherwise the numeric value
 	    void bindIndex(int col, int value);
 
@@ -91,6 +93,7 @@ class SqliteStorage : public zeppelin::library::Storage
 	    int getInt(int col);
 	    int64_t getInt64(int col);
 	    std::string getText(int col);
+	    void getBlob(int col, std::vector<unsigned char>& data);
 
 	    bool isNull(int col);
 
@@ -120,6 +123,7 @@ class SqliteStorage : public zeppelin::library::Storage
 
 	sqlite3_stmt* m_setFileMeta;
 	sqlite3_stmt* m_updateFileMeta;
+	sqlite3_stmt* m_addAlbumPicture;
 
 	/// artist handling
 	sqlite3_stmt* m_addArtist;

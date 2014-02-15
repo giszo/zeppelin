@@ -6,6 +6,9 @@
 #include <zeppelin/logger.h>
 
 #include <sstream>
+#include <cstring>
+
+using zeppelin::library::Picture;
 
 using library::SqliteStorage;
 
@@ -49,6 +52,15 @@ void SqliteStorage::open(const config::Library& config)
 	    UNIQUE(artist_id, name),
 	    FOREIGN KEY(artist_id) REFERENCES artists(id)))");
     execute("CREATE INDEX IF NOT EXISTS albums_artist_id ON albums(artist_id)");
+    execute(
+	R"(CREATE TABLE IF NOT EXISTS album_pictures(
+	    id INTEGER PRIMARY KEY,
+	    album_id INTEGER,
+	    type TEXT,
+	    mimetype TEXT,
+	    data BLOB,
+	    UNIQUE(album_id, type),
+	    FOREIGN KEY(album_id) REFERENCES albums(id) ON DELETE CASCADE))");
 
     // directories
     execute(
@@ -123,6 +135,7 @@ void SqliteStorage::open(const config::Library& config)
                      R"(UPDATE files
                         SET artist_id = ?, album_id = ?, title = ?, year = ?, track_index = ?
                         WHERE id = ?)");
+    prepareStatement(&m_addAlbumPicture, "INSERT OR IGNORE INTO album_pictures(album_id, type, mimetype, data) VALUES(?, ?, ?, ?)");
 
     // artists
     prepareStatement(&m_addArtist, "INSERT OR IGNORE INTO artists(name) VALUES(?)");
@@ -134,6 +147,7 @@ void SqliteStorage::open(const config::Library& config)
     prepareStatement(&m_getAlbumIdByName, "SELECT id FROM albums WHERE artist_id IS ? AND name = ?");
     prepareStatement(&m_getAlbumIdsByArtist, "SELECT id FROM albums WHERE artist_id = ?");
     prepareStatement(&m_getNumOfAlbums, "SELECT COUNT(id) FROM albums");
+
 
     // playlists
     prepareStatement(&m_createPlaylist, "INSERT INTO playlists(name) VALUES(?)");
@@ -432,21 +446,44 @@ void SqliteStorage::setFileMetadata(const zeppelin::library::File& file)
     int artistId = getArtistId(*file.m_metadata);
     int albumId = getAlbumId(artistId, *file.m_metadata);
 
-    StatementHolder stmt(m_setFileMeta);
+    // set metadata informations on the files table
+    {
+	StatementHolder stmt(m_setFileMeta);
+	stmt.bindIndex(1, artistId);
+	stmt.bindIndex(2, albumId);
+	stmt.bindInt(3, file.m_metadata->getLength());
+	stmt.bindText(4, file.m_metadata->getTitle());
+	stmt.bindInt(5, file.m_metadata->getYear());
+	stmt.bindInt(6, file.m_metadata->getTrackIndex());
+	stmt.bindText(7, file.m_metadata->getCodec());
+	stmt.bindInt(8, file.m_metadata->getSampleRate());
+	stmt.bindInt(9, file.m_metadata->getSampleSize());
+	stmt.bindInt(10, file.m_metadata->getChannels());
+	stmt.bindInt(11, file.m_id);
+	stmt.step();
+    }
 
-    stmt.bindIndex(1, artistId);
-    stmt.bindIndex(2, albumId);
-    stmt.bindInt(3, file.m_metadata->getLength());
-    stmt.bindText(4, file.m_metadata->getTitle());
-    stmt.bindInt(5, file.m_metadata->getYear());
-    stmt.bindInt(6, file.m_metadata->getTrackIndex());
-    stmt.bindText(7, file.m_metadata->getCodec());
-    stmt.bindInt(8, file.m_metadata->getSampleRate());
-    stmt.bindInt(9, file.m_metadata->getSampleSize());
-    stmt.bindInt(10, file.m_metadata->getChannels());
-    stmt.bindInt(11, file.m_id);
-
-    stmt.step();
+    if (albumId != -1)
+    {
+	// add pictures
+	for (auto& it : file.m_metadata->getPictures())
+	{
+	    StatementHolder stmt(m_addAlbumPicture);
+	    stmt.bindInt(1, albumId);
+	    switch (it.first)
+	    {
+		case Picture::FrontCover :
+		    stmt.bindText(2, "frontcover");
+		    break;
+		case Picture::BackCover :
+		    stmt.bindText(2, "backcover");
+		    break;
+	    }
+	    stmt.bindText(3, it.second->getMimeType());
+	    stmt.bindBlob(4, it.second->getData());
+	    stmt.step();
+	}
+    }
 }
 
 // =====================================================================================================================
@@ -551,6 +588,43 @@ std::vector<std::shared_ptr<zeppelin::library::Album>> SqliteStorage::getAlbums(
     }
 
     return albums;
+}
+
+// =====================================================================================================================
+std::map<int, std::map<Picture::Type, std::shared_ptr<Picture>>> SqliteStorage::getPicturesOfAlbums(const std::vector<int>& ids)
+{
+    std::map<int, std::map<Picture::Type, std::shared_ptr<Picture>>> result;
+
+    if (ids.empty())
+	return result;
+
+    std::ostringstream query;
+    query << "SELECT album_id, type, mimetype, data FROM album_pictures WHERE album_id IN (";
+    serializeIntList(query, ids);
+    query << ")";
+
+    thread::BlockLock bl(m_mutex);
+
+    StatementHolder stmt(m_db, query.str());
+
+    while (stmt.step() == SQLITE_ROW)
+    {
+	std::map<Picture::Type, std::shared_ptr<Picture>>& pictures = result[stmt.getInt(0) /* album ID */];
+
+	std::vector<unsigned char> data;
+	stmt.getBlob(3, data);
+
+	std::shared_ptr<Picture> picture = std::make_shared<Picture>(stmt.getText(2), std::move(data));
+
+	std::string type = stmt.getText(1);
+
+	if (type == "frontcover")
+	    pictures[Picture::FrontCover] = picture;
+	else if (type == "backcover")
+	    pictures[Picture::BackCover] = picture;
+    }
+
+    return result;
 }
 
 // =====================================================================================================================
@@ -779,7 +853,13 @@ void SqliteStorage::StatementHolder::bindInt64(int col, int64_t value)
 // =====================================================================================================================
 void SqliteStorage::StatementHolder::bindText(int col, const std::string& value)
 {
-    sqlite3_bind_text(m_stmt, col, value.c_str(), value.length(), NULL);
+    sqlite3_bind_text(m_stmt, col, value.c_str(), value.length(), SQLITE_TRANSIENT);
+}
+
+// =====================================================================================================================
+void SqliteStorage::StatementHolder::bindBlob(int col, const std::vector<unsigned char>& data)
+{
+    sqlite3_bind_blob(m_stmt, col, &data[0], data.size(), SQLITE_TRANSIENT);
 }
 
 // =====================================================================================================================
@@ -842,6 +922,13 @@ std::string SqliteStorage::StatementHolder::getText(int col)
 	return "";
 
     return s;
+}
+
+// =====================================================================================================================
+void SqliteStorage::StatementHolder::getBlob(int col, std::vector<unsigned char>& data)
+{
+    data.resize(sqlite3_column_bytes(m_stmt, col));
+    memcpy(&data[0], sqlite3_column_blob(m_stmt, col), data.size());
 }
 
 // =====================================================================================================================

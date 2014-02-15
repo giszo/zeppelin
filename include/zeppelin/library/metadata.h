@@ -1,7 +1,11 @@
 #ifndef ZEPPELIN_LIBRARY_METADATA_H_INCLUDED
 #define ZEPPELIN_LIBRARY_METADATA_H_INCLUDED
 
+#include "picture.h"
+
 #include <string>
+#include <map>
+#include <memory>
 
 namespace zeppelin
 {
@@ -25,6 +29,8 @@ class Metadata
 	int getSampleRate() const;
 	int getSampleSize() const;
 
+	const std::map<Picture::Type, std::shared_ptr<Picture>>& getPictures() const;
+
 	void setArtist(const std::string& artist);
 	void setAlbum(const std::string& album);
 	void setTitle(const std::string& title);
@@ -33,6 +39,8 @@ class Metadata
 
 	void setFormat(int channels, int sampleRate, int sampleSize);
 	void setLength(int length);
+
+	void addPicture(Picture::Type type, const std::shared_ptr<Picture>& picture);
 
     protected:
 	// name of the artist
@@ -56,6 +64,8 @@ class Metadata
 	int m_sampleRate;
 	// size of a sample in bits
 	int m_sampleSize;
+
+	std::map<Picture::Type, std::shared_ptr<Picture>> m_pictures;
 };
 
 }

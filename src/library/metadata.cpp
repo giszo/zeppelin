@@ -76,6 +76,12 @@ int Metadata::getSampleSize() const
 }
 
 // =====================================================================================================================
+auto Metadata::getPictures() const -> const std::map<Picture::Type, std::shared_ptr<Picture>>&
+{
+    return m_pictures;
+}
+
+// =====================================================================================================================
 void Metadata::setArtist(const std::string& artist)
 {
     m_artist = artist;
@@ -120,4 +126,10 @@ void Metadata::setFormat(int channels, int sampleRate, int sampleSize)
 void Metadata::setLength(int length)
 {
     m_length = length;
+}
+
+// =====================================================================================================================
+void Metadata::addPicture(Picture::Type type, const std::shared_ptr<Picture>& picture)
+{
+    m_pictures[type] = picture;
 }

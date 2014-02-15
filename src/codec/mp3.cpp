@@ -70,7 +70,7 @@ std::unique_ptr<zeppelin::library::Metadata> Mp3::readMetadata()
     std::unique_ptr<zeppelin::library::Metadata> metadata(new zeppelin::library::Metadata("mp3"));
 
     // create handle
-    create();
+    create(true);
 
     if (mpg123_scan(m_handle) != MPG123_OK)
 	throw CodecException("unable to scan media");
@@ -150,7 +150,7 @@ void Mp3::seek(off_t sample)
 }
 
 // =====================================================================================================================
-void Mp3::create()
+void Mp3::create(bool picture)
 {
     m_handle = mpg123_new(NULL, NULL);
 
@@ -159,6 +159,9 @@ void Mp3::create()
 
     // turn the fancy error messages of mpg123 off
     mpg123_param(m_handle, MPG123_ADD_FLAGS, MPG123_QUIET, 0);
+
+    if (picture)
+	mpg123_param(m_handle, MPG123_ADD_FLAGS, MPG123_PICTURE, 0);
 
     if (mpg123_open(m_handle, m_file.c_str()) != 0)
 	throw CodecException("unable to open file");
@@ -256,5 +259,30 @@ void Mp3::processID3v2(zeppelin::library::Metadata& info, const mpg123_id3v2& id
 	    {
 	    }
 	}
+    }
+
+    // pictures
+    for (size_t i = 0; i < id3.pictures; ++i)
+    {
+	const mpg123_picture& p = id3.picture[i];
+
+	zeppelin::library::Picture::Type type;
+
+	switch (p.type)
+	{
+	    case mpg123_id3_pic_front_cover :
+		type = zeppelin::library::Picture::FrontCover;
+		break;
+
+	    case mpg123_id3_pic_back_cover :
+		type = zeppelin::library::Picture::BackCover;
+		break;
+
+	    default :
+		// do nothing with the remaining pictures ...
+		continue;
+	}
+
+	info.addPicture(type, std::make_shared<zeppelin::library::Picture>(p.mime_type.p, p.data, p.size));
     }
 }
