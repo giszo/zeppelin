@@ -7,6 +7,10 @@
 
 #include <cstring>
 
+#if defined(MPG123_API_VERSION) && MPG123_API_VERSION >= 38
+#define MPG123_PICTURE_SUPPORTED 1
+#endif
+
 using codec::Mp3;
 using codec::CodecException;
 
@@ -160,8 +164,10 @@ void Mp3::create(bool picture)
     // turn the fancy error messages of mpg123 off
     mpg123_param(m_handle, MPG123_ADD_FLAGS, MPG123_QUIET, 0);
 
+#ifdef MPG123_PICTURE_SUPPORTED
     if (picture)
 	mpg123_param(m_handle, MPG123_ADD_FLAGS, MPG123_PICTURE, 0);
+#endif
 
     if (mpg123_open(m_handle, m_file.c_str()) != 0)
 	throw CodecException("unable to open file");
@@ -261,6 +267,7 @@ void Mp3::processID3v2(zeppelin::library::Metadata& info, const mpg123_id3v2& id
 	}
     }
 
+#ifdef MPG123_PICTURE_SUPPORTED
     // pictures
     for (size_t i = 0; i < id3.pictures; ++i)
     {
@@ -285,4 +292,5 @@ void Mp3::processID3v2(zeppelin::library::Metadata& info, const mpg123_id3v2& id
 
 	info.addPicture(type, std::make_shared<zeppelin::library::Picture>(p.mime_type.p, p.data, p.size));
     }
+#endif
 }
