@@ -12,6 +12,7 @@ vars.Add(PathVariable('CXX', 'path of the C++ compiler used for building', None)
 vars.Add(BoolVariable('DEBUG', 'compile a debuggable executable', 0))
 vars.Add(PathVariable('PREFIX', 'prefix used to install files', '/usr'))
 vars.Add(PathVariable('JSONCPP', 'path of jsoncpp library', None))
+vars.Add(PathVariable('MPG123', 'path of mpg123 library', None))
 vars.Add(BoolVariable('COVERAGE', 'set to 1 to measure coverage', 0))
 vars.Add(ListVariable('CODECS', 'list of compiled codecs', CODECS, CODECS))
 vars.Add(EnumVariable('OUTPUT', 'name of the output driver to use', 'alsa', ('alsa', 'pulseaudio')))
@@ -34,10 +35,10 @@ if env["DEBUG"] :
 else :
     env["CPPFLAGS"] += ["-O2"]
 
-# jsoncpp library
-if "JSONCPP" in env :
-    env["CPPPATH"] += ["%s/include" % env["JSONCPP"]]
-    env["LIBPATH"] += ["%s/lib" % env["JSONCPP"]]
+for lib in ["JSONCPP", "MPG123"] :
+    if lib in env :
+        env["CPPPATH"] += ["%s/include" % env[lib]]
+        env["LIBPATH"] += ["%s/lib" % env[lib]]
 
 env["CXXCOMSTR"] = "Compiling $SOURCE"
 env["SHCXXCOMSTR"] = "Compiling $SOURCE"
