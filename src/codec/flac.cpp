@@ -142,6 +142,37 @@ std::unique_ptr<zeppelin::library::Metadata> Flac::readMetadata()
 		break;
 	    }
 
+	    case FLAC__METADATA_TYPE_PICTURE :
+	    {
+		FLAC__StreamMetadata* meta = FLAC__metadata_simple_iterator_get_block(m_iterator);
+
+		if (!meta)
+		    break;
+
+		zeppelin::library::Picture::Type type;
+
+		switch (meta->data.picture.type)
+		{
+		    case FLAC__STREAM_METADATA_PICTURE_TYPE_FRONT_COVER :
+			type = zeppelin::library::Picture::FrontCover;
+			break;
+
+		    case FLAC__STREAM_METADATA_PICTURE_TYPE_BACK_COVER :
+			type = zeppelin::library::Picture::BackCover;
+			break;
+
+		    default :
+			// do nothing with the remaining pictures ...
+			continue;
+		}
+
+		metadata->addPicture(type, std::make_shared<zeppelin::library::Picture>(meta->data.picture.mime_type,
+											meta->data.picture.data,
+											meta->data.picture.data_length));
+
+		break;
+	    }
+
 	    default :
 		break;
 	}
