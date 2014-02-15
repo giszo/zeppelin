@@ -9,6 +9,7 @@ CODECS = ['mp3', 'flac', 'ogg', 'wavpack', 'monkeysaudio']
 
 vars = Variables()
 vars.Add(PathVariable('CXX', 'path of the C++ compiler used for building', None))
+vars.Add(BoolVariable('DEBUG', 'compile a debuggable executable', 0))
 vars.Add(PathVariable('PREFIX', 'prefix used to install files', '/usr'))
 vars.Add(PathVariable('JSONCPP', 'path of jsoncpp library', None))
 vars.Add(BoolVariable('COVERAGE', 'set to 1 to measure coverage', 0))
@@ -27,6 +28,9 @@ env["LIBS"] = ["samplerate", "sqlite3", "jsoncpp"]
 if env["COVERAGE"] :
     env["CPPFLAGS"] += ["-coverage"]
     env["LINKFLAGS"] += ["-coverage"]
+
+if env["DEBUG"] :
+    env["CPPFLAGS"] += ["-g"]
 else :
     env["CPPFLAGS"] += ["-O2"]
 
