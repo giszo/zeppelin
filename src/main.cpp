@@ -183,8 +183,9 @@ int main(int argc, char** argv)
     std::shared_ptr<zeppelin::player::Controller> ctrl = player::ControllerImpl::create(codecManager, decoder, player, config);
 
     // initialize the plugin manager
-    plugin::PluginManagerImpl pm(lib, ctrl);
-    pm.loadAll(config);
+    plugin::PluginManagerImpl pm(lib, ctrl, config.m_plugins);
+    pm.loadAll();
+    pm.startAll();
 
     // start the main loop of the player
     std::static_pointer_cast<player::ControllerImpl>(ctrl)->start();

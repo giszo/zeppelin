@@ -11,21 +11,32 @@ using plugin::PluginManagerImpl;
 
 // =====================================================================================================================
 PluginManagerImpl::PluginManagerImpl(const std::shared_ptr<zeppelin::library::MusicLibrary>& library,
-				     const std::shared_ptr<zeppelin::player::Controller>& controller)
-    : m_library(library),
+				     const std::shared_ptr<zeppelin::player::Controller>& controller,
+				     const config::Plugins& config)
+    : m_config(config),
+      m_library(library),
       m_controller(controller)
 {
 }
 
 // =====================================================================================================================
-void PluginManagerImpl::loadAll(const config::Config& config)
+void PluginManagerImpl::loadAll()
 {
-    const config::Plugins& plugins = config.m_plugins;
-
-    for (const auto& name : plugins.m_enabled)
+    for (const auto& name : m_config.m_enabled)
     {
 	LOG("plugin: loading " << name);
-	load(plugins.m_root + "/lib" + name + ".so", plugins.m_available.find(name)->second);
+	load(name);
+    }
+}
+
+
+// =====================================================================================================================
+void PluginManagerImpl::startAll()
+{
+    for (const auto& name : m_config.m_enabled)
+    {
+	LOG("plugin: starting " << name);
+	start(name);
     }
 }
 
@@ -48,9 +59,10 @@ void PluginManagerImpl::registerInterface(const std::string& name, zeppelin::plu
 }
 
 // =====================================================================================================================
-void PluginManagerImpl::load(const std::string& path, const Json::Value& config)
+void PluginManagerImpl::load(const std::string& name)
 {
     void* p;
+    std::string path = m_config.m_root + "/lib" + name + ".so";
 
     // open the plugin file
     p = dlopen(path.c_str(), RTLD_NOW);
@@ -80,5 +92,11 @@ void PluginManagerImpl::load(const std::string& path, const Json::Value& config)
 	return;
     }
 
-    plugin->start(config, *this);
+    m_plugins[name] = plugin;
+}
+
+// =====================================================================================================================
+void PluginManagerImpl::start(const std::string& name)
+{
+    m_plugins[name]->start(m_config.m_available.find(name)->second, *this);
 }
