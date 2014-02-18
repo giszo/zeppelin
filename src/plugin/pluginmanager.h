@@ -40,13 +40,14 @@ class PluginManagerImpl : public zeppelin::plugin::PluginManager
     private:
 	const config::Plugins& m_config;
 
-	typedef zeppelin::plugin::Plugin* PluginCreate(const std::shared_ptr<zeppelin::library::MusicLibrary>&,
-						       const std::shared_ptr<zeppelin::player::Controller>&);
+	typedef std::shared_ptr<zeppelin::plugin::Plugin> PluginCreate(
+	    const std::shared_ptr<zeppelin::library::MusicLibrary>&,
+	    const std::shared_ptr<zeppelin::player::Controller>&);
 
 	std::shared_ptr<zeppelin::library::MusicLibrary> m_library;
 	std::shared_ptr<zeppelin::player::Controller> m_controller;
 
-	std::unordered_map<std::string, zeppelin::plugin::Plugin*> m_plugins;
+	std::unordered_map<std::string, std::shared_ptr<zeppelin::plugin::Plugin>> m_plugins;
 
 	std::unordered_map<std::string, zeppelin::plugin::PluginInterface*> m_interfaces;
 };

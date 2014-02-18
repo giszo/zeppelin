@@ -83,7 +83,7 @@ void PluginManagerImpl::load(const std::string& name)
 	return;
     }
 
-    zeppelin::plugin::Plugin* plugin = create(m_library, m_controller);
+    std::shared_ptr<zeppelin::plugin::Plugin> plugin = create(m_library, m_controller);
 
     if (!plugin)
     {
