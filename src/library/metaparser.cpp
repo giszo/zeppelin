@@ -52,20 +52,20 @@ void MetaParser::run()
 
 	m_mutex.unlock();
 
-	parse(*file);
-	m_storage.setFileMetadata(*file);
+	if (parse(*file))
+	    m_storage.setFileMetadata(*file);
     }
 }
 
 // =====================================================================================================================
-void MetaParser::parse(zeppelin::library::File& file)
+bool MetaParser::parse(zeppelin::library::File& file)
 {
     LOG("metaparser: parsing: " << file.m_path << "/" << file.m_name);
 
     std::shared_ptr<codec::BaseCodec> codec = m_codecManager.create(file.m_path + "/" + file.m_name);
 
     if (!codec)
-	return;
+	return false;
 
     try
     {
@@ -74,5 +74,8 @@ void MetaParser::parse(zeppelin::library::File& file)
     catch (const codec::CodecException& e)
     {
 	LOG("metaparser: error: " << e.what());
+	return false;
     }
+
+    return true;
 }

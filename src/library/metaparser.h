@@ -38,7 +38,7 @@ class MetaParser : public thread::Thread
 	void run() override;
 
     private:
-	void parse(zeppelin::library::File& file);
+	bool parse(zeppelin::library::File& file);
 
     private:
 	std::deque<std::shared_ptr<zeppelin::library::File>> m_files;
