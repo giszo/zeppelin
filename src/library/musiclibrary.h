@@ -20,6 +20,8 @@ class MusicLibraryImpl : public zeppelin::library::MusicLibrary,
 			 zeppelin::library::Storage& storage,
 			 const config::Library& config);
 
+	Status getStatus() override;
+
 	zeppelin::library::Storage& getStorage() override;
 
 	void scan() override;

@@ -8,6 +8,7 @@
 #include <string>
 #include <deque>
 #include <memory>
+#include <atomic>
 
 namespace zeppelin
 {
@@ -44,6 +45,9 @@ class Scanner : public thread::Thread
 	Scanner(const codec::CodecManager& codecManager,
 		zeppelin::library::Storage& storage,
 		ScannerListener& listener);
+
+	// returns whether scanner is currently running
+	bool isRunning() const;
 
 	void add(const std::string& path);
 
@@ -82,6 +86,9 @@ class Scanner : public thread::Thread
 
 	zeppelin::library::Storage& m_storage;
 	ScannerListener& m_listener;
+
+	// indicates whether scanning is currently running or not
+	std::atomic_bool m_running;
 
 	const codec::CodecManager& m_codecManager;
 };

@@ -18,6 +18,14 @@ MusicLibraryImpl::MusicLibraryImpl(const codec::CodecManager& codecManager,
 }
 
 // =====================================================================================================================
+auto MusicLibraryImpl::getStatus() -> Status
+{
+    Status status;
+    status.m_scannerRunning = m_scanner.isRunning();
+    return status;
+}
+
+// =====================================================================================================================
 zeppelin::library::Storage& MusicLibraryImpl::getStorage()
 {
     return m_storage;

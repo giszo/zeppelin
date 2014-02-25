@@ -18,8 +18,15 @@ Scanner::Scanner(const codec::CodecManager& codecManager,
 		 ScannerListener& listener)
     : m_storage(storage),
       m_listener(listener),
+      m_running(false),
       m_codecManager(codecManager)
 {
+}
+
+// =====================================================================================================================
+bool Scanner::isRunning() const
+{
+    return m_running;
 }
 
 // =====================================================================================================================
@@ -56,8 +63,10 @@ void Scanner::run()
 	{
 	    case SCAN :
 		m_listener.scanningStarted();
+		m_running = true;
 		scanDirectories();
 		m_listener.scanningFinished();
+		m_running = false;
 		break;
 	}
     }
