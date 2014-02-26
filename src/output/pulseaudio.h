@@ -1,3 +1,9 @@
+/**
+ * This file is part of the Zeppelin music player project.
+ * Copyright (c) 2013-2014 Zoltan Kovacs, Lajos Santa
+ * See http://zeppelin-player.com for more details.
+ */
+
 #ifndef OUTPUT_PULSEAUDIO_H_INCLUDED
 #define OUTPUT_PULSEAUDIO_H_INCLUDED
 

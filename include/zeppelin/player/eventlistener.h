@@ -1,3 +1,9 @@
+/**
+ * This file is part of the Zeppelin music player project.
+ * Copyright (c) 2013-2014 Zoltan Kovacs, Lajos Santa
+ * See http://zeppelin-player.com for more details.
+ */
+
 #ifndef ZEPPELIN_PLAYER_EVENTLISTENER_H_INCLUDED
 #define ZEPPELIN_PLAYER_EVENTLISTENER_H_INCLUDED
 

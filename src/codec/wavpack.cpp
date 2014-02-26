@@ -1,3 +1,9 @@
+/**
+ * This file is part of the Zeppelin music player project.
+ * Copyright (c) 2013-2014 Zoltan Kovacs, Lajos Santa
+ * See http://zeppelin-player.com for more details.
+ */
+
 #include "wavpack.h"
 
 #include <zeppelin/logger.h>
