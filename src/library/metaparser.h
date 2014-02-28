@@ -33,6 +33,9 @@ class MetaParser : public thread::Thread
 	MetaParser(const codec::CodecManager& codecManager,
 		   zeppelin::library::Storage& storage);
 
+	// returns whether metadata parsing is running
+	bool isRunning() const;
+
 	void add(const std::shared_ptr<zeppelin::library::File>& file);
 
 	void run() override;
@@ -45,6 +48,9 @@ class MetaParser : public thread::Thread
 
 	thread::Mutex m_mutex;
 	thread::Condition m_cond;
+
+	// indicates whether metadata parsing is currently running
+	bool m_running;
 
 	zeppelin::library::Storage& m_storage;
 

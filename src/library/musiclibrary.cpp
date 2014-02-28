@@ -28,6 +28,7 @@ auto MusicLibraryImpl::getStatus() -> Status
 {
     Status status;
     status.m_scannerRunning = m_scanner.isRunning();
+    status.m_metaParserRunning = m_metaParser.isRunning();
     return status;
 }
 

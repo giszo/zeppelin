@@ -19,9 +19,17 @@ using library::MetaParser;
 // =====================================================================================================================
 MetaParser::MetaParser(const codec::CodecManager& codecManager,
 		       zeppelin::library::Storage& storage)
-    : m_storage(storage),
+    : m_running(false),
+      m_storage(storage),
       m_codecManager(codecManager)
 {
+}
+
+// =====================================================================================================================
+bool MetaParser::isRunning() const
+{
+    thread::BlockLock bl(m_mutex);
+    return m_running;
 }
 
 // =====================================================================================================================
@@ -51,10 +59,14 @@ void MetaParser::run()
 	m_mutex.lock();
 
 	while (m_files.empty())
+	{
+	    m_running = false;
 	    m_cond.wait(m_mutex);
+	}
 
 	file = m_files.front();
 	m_files.pop_front();
+	m_running = true;
 
 	m_mutex.unlock();
 

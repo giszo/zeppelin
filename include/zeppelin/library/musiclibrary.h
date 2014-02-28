@@ -20,6 +20,7 @@ class MusicLibrary
 	struct Status
 	{
 	    bool m_scannerRunning;
+	    bool m_metaParserRunning;
 	};
 
 	virtual ~MusicLibrary()
