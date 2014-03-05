@@ -34,6 +34,10 @@ config::Config Parser::parse() const
 
     Json::Value& root = cfg.m_raw;
 
+    // make sure root is an object
+    if (!root.isObject())
+	throw ConfigException("root node is not an object");
+
     // plugins section
     if (root.isMember("plugins") && root["plugins"].isObject())
 	parsePlugins(cfg.m_raw["plugins"], cfg.m_plugins);
