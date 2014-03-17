@@ -225,14 +225,18 @@ void ControllerImpl::processCommands()
 		{
 		    m_decoderQueue.reset(zeppelin::player::QueueItem::FIRST);
 		    m_playerQueue.reset(zeppelin::player::QueueItem::FIRST);
+
+		    if (m_decoderQueue.isValid())
+		    {
+			// a new song was just loaded, send an event
+			sendSongChanged();
+		    }
+		    else
+		    {
+			// do nothing in case of the queue is still invalid
+			break;
+		    }
 		}
-
-		// do nothing in case of the queue is still invalid
-		if (!m_decoderQueue.isValid())
-		    break;
-
-		// a new song was just loaded, send an event
-		sendSongChanged();
 
 		// initialize the decoder if it has no input
 		if (!m_decoderInitialized)

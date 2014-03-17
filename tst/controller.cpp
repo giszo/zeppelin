@@ -296,6 +296,63 @@ BOOST_FIXTURE_TEST_CASE(playback_started_first_time, ControllerFixture)
     BOOST_CHECK_EQUAL(m_events[2], "started");
 }
 
+BOOST_FIXTURE_TEST_CASE(playback_started_from_stopped_state, ControllerFixture)
+{
+    queueFile(createFile(42, "hello.mp3"));
+
+    m_ctrl->play();
+    m_ctrl->stop();
+    process();
+
+    BOOST_REQUIRE_EQUAL(m_ctrl->m_state, Controller::STOPPED);
+
+    // clear everything for our test-case
+    m_decoder->m_cmds.clear();
+    m_player->m_cmds.clear();
+    m_events.clear();
+
+    // start playback from stopped state
+    m_ctrl->play();
+    process();
+
+    BOOST_REQUIRE_EQUAL(m_decoder->m_cmds.size(), 2);
+    BOOST_CHECK_EQUAL(m_decoder->m_cmds[0], "input file");
+    BOOST_CHECK_EQUAL(m_decoder->m_cmds[1], "start");
+    BOOST_REQUIRE_EQUAL(m_player->m_cmds.size(), 1);
+    BOOST_CHECK_EQUAL(m_player->m_cmds[0], "start");
+
+    BOOST_REQUIRE_EQUAL(m_events.size(), 1);
+    BOOST_CHECK_EQUAL(m_events[0], "started");
+}
+
+BOOST_FIXTURE_TEST_CASE(playback_started_from_paused_state, ControllerFixture)
+{
+    queueFile(createFile(42, "hello.mp3"));
+
+    m_ctrl->play();
+    m_ctrl->pause();
+    process();
+
+    BOOST_REQUIRE_EQUAL(m_ctrl->m_state, Controller::PAUSED);
+
+    // clear everything for our test-case
+    m_decoder->m_cmds.clear();
+    m_player->m_cmds.clear();
+    m_events.clear();
+
+    // start playback from stopped state
+    m_ctrl->play();
+    process();
+
+    BOOST_REQUIRE_EQUAL(m_decoder->m_cmds.size(), 1);
+    BOOST_CHECK_EQUAL(m_decoder->m_cmds[0], "start");
+    BOOST_REQUIRE_EQUAL(m_player->m_cmds.size(), 1);
+    BOOST_CHECK_EQUAL(m_player->m_cmds[0], "start");
+
+    BOOST_REQUIRE_EQUAL(m_events.size(), 1);
+    BOOST_CHECK_EQUAL(m_events[0], "started");
+}
+
 BOOST_FIXTURE_TEST_CASE(playback_not_started_for_unknown_codec, ControllerFixture)
 {
     // make the codec of the  input file invalid
